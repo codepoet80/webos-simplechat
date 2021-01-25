@@ -1,0 +1,3 @@
+var secrets = {
+    'clientid': 'SecretSharedWithServer'
+};

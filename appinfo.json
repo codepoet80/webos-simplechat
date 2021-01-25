@@ -1,0 +1,11 @@
+{
+    "id": "com.jonandnic.simplechat",
+    "version": "0.1.1",
+    "vendor": "Jon Wise",
+    "type": "web",
+    "main": "index.html",
+    "title": "SimpleChat",
+    "icon": "icon.png",
+    "uiRevision": "2",
+    "theme": "light"
+}

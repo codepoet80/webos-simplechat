@@ -1,0 +1,20 @@
+[
+    { "source": "app/assistants/app-assistant.js" },
+    { "source": "app/assistants/stage-assistant.js" },
+    {
+        "scenes": "main",
+        "source": "app/assistants/main-assistant.js"
+    },
+    {
+        "scenes": "preferences",
+        "source": "app/assistants/preferences-assistant.js"
+    },
+    {
+        "source": "app/assistants/user-assistant.js",
+        "comment": "since this will be a dialog, not a scene, we do not include the 'scenes' member (or we get errors)"
+    },
+    { "source": "app/models/system-model.js" },
+    { "source": "app/models/updater-model.js" },
+    { "source": "app/models/app-model.js" },
+    { "source": "secrets.js" }
+]

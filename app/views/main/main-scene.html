@@ -1,0 +1,22 @@
+<div class="palm-hasheader" style="margin-bottom:60px">
+    <div id="watchViewTitle" class="palm-header center">
+        webOS SimpleChat
+    </div>
+</div>
+
+<div id="showChatList" name="showChatList" style="display:block;">
+    <div class="palm-group">
+        <div class="palm-group-title"><span x-mojo-loc=''>Chat Log</span></div>
+        <div x-mojo-element="Scroller" id="chatScroller" class="scrollerClass" name="chatScroller">
+            <div id="chatList" x-mojo-element="List"></div>
+        </div>
+    </div>
+</div>
+
+<div class="palm-group" style="height:36px;">
+    <div class="palm-group-title"><span x-mojo-loc=''>Send Message</span></div>
+    <div x-mojo-element="TextField" id="txtMessage" class="textFieldClass" name="txtMessage" style="margin-right:12px"></div>
+    <div id="divSpinnerContainer" style="width: 30px;margin-left: auto;margin-right: auto; align-items: center; margin-top:-25px;">
+        <div x-mojo-element="Spinner" class="spinnerClass" id="workingSpinner" name="workingSpinner"></div>
+    </div>
+</div>
