@@ -17,7 +17,7 @@ MainAssistant.prototype.setup = function() {
         'original': ''
     };
     this.messageFieldModel.attributes = {
-        hintText: $L("Enter a message..."),
+        hintText: $L(" Enter a message..."),
         enterSubmits: true,
         focus: true,
         multiline: false,
@@ -61,11 +61,6 @@ MainAssistant.prototype.setup = function() {
         friction: 'low'
     };
     this.controller.setupWidget('chatScroller', {}, this.scrollerModel);
-    this.chatScroller = this.controller.get("chatScroller");
-    this.scalingFactor = this.controller.window.zoomFactor || 1;
-    //TODO: This will be different on different devices
-    this.scaledHeight = Math.floor(Mojo.Environment.DeviceInfo.screenHeight / this.scalingFactor) - 320;
-    this.chatScroller.style.height = this.scaledHeight + "px";
     //Menu
     this.appMenuAttributes = { omitDefaultItems: true };
     this.appMenuModel = {
@@ -78,15 +73,30 @@ MainAssistant.prototype.setup = function() {
         ]
     };
     this.controller.setupWidget(Mojo.Menu.appMenu, this.appMenuAttributes, this.appMenuModel);
+    //Command Buttons
+    this.cmdMenuAttributes = {}
+    this.cmdMenuModel = {
+        visible: true,
+        items: [{
+                items: []
+            },
+            {
+                items: [
+                    { label: 'Send', icon: 'send', command: 'do-Send' }
+                ]
+            }
+        ]
+    };
+    this.controller.setupWidget(Mojo.Menu.commandMenu, this.cmdMenuAttributes, this.cmdMenuModel);
 
     /* Always on Event handlers */
-    Mojo.Event.listen(this.controller.get("txtMessage"), Mojo.Event.propertyChange, this.handleSendMessage.bind(this));
+    //Mojo.Event.listen(this.controller.get("txtMessage"), Mojo.Event.propertyChange, this.handleSendMessage.bind(this));
     Mojo.Event.listen(this.controller.get("chatList"), Mojo.Event.listTap, this.handleListClick.bind(this));
 
     //Check for updates
     if (!appModel.UpdateCheckDone) {
         appModel.UpdateCheckDone = true;
-        updaterModel.CheckForUpdate("SimpleChat", this.handleUpdateResponse.bind(this));
+        updaterModel.CheckForUpdate("webOS SimpleChat", this.handleUpdateResponse.bind(this));
     }
 };
 
@@ -140,12 +150,25 @@ MainAssistant.prototype.activate = function(event) {
             Mojo.Log.warn("Device detected as Pixi or Veer");
         }
     }
+    this.scaleScroller();
     systemModel.PreventDisplaySleep();
     this.pendingMessages = [];
     this.firstPoll = true;
     this.startPollingServer();
-
 };
+
+MainAssistant.prototype.scaleScroller = function() {
+    this.chatScroller = this.controller.get("chatScroller");
+    this.scalingFactor = this.controller.window.zoomFactor || 1;
+    //TODO: This will be different in landscape
+    var bottomBuffer;
+    if (this.DeviceType == "TouchPad")
+        bottomBuffer = 350;
+    else
+        bottomBuffer = 280;
+    this.scaledHeight = Math.floor(Mojo.Environment.DeviceInfo.screenHeight / this.scalingFactor) - bottomBuffer;
+    this.chatScroller.style.height = this.scaledHeight + "px";
+}
 
 MainAssistant.prototype.startPollingServer = function() {
     this.getChats();
@@ -164,6 +187,9 @@ MainAssistant.prototype.pausePollingServer = function() {
 MainAssistant.prototype.handleCommand = function(event) {
     if (event.type == Mojo.Event.command) {
         switch (event.command) {
+            case 'do-Send':
+                this.handleSendMessage();
+                break;
             case 'do-Username':
                 this.pausePollingServer();
                 var stageController = Mojo.Controller.getAppController().getActiveStageController();
@@ -202,8 +228,9 @@ MainAssistant.prototype.handleSendMessage = function(event) {
     this.controller.get('txtMessage').mojo.blur();
     var newMessage = this.controller.get('txtMessage').mojo.getValue();
     this.disableUI();
+    systemModel.PlaySound("down2");
 
-    this.postChatToService(appModel.AppSettingsCurrent["SenderName"], newMessage, "", function(response) {
+    serviceModel.postChat(appModel.AppSettingsCurrent["SenderName"], newMessage, this.serviceEndpointBase, this.clientId, function(response) {
         this.controller.get('txtMessage').mojo.setValue("");
         this.enableUI();
         try {
@@ -244,7 +271,7 @@ MainAssistant.prototype.handleListClick = function(event) {
 
 //Send a search request to MeTube to send to Google for us (never worry about HTTPS encryption again)
 MainAssistant.prototype.getChats = function() {
-    this.getChatsFromService("", function(response) {
+    serviceModel.getChats(this.serviceEndpointBase, function(response) {
         if (response != null && response != "") {
             var responseObj = JSON.parse(response);
             if (responseObj.status == "error") {
@@ -315,54 +342,16 @@ MainAssistant.prototype.updateChatsList = function(results) {
     if (listUpdated > -1) {
         this.controller.modelChanged(thisWidgetSetup.model);
         if (listUpdated > 0 && !this.firstPoll) {
-            systemModel.PlaySound("default_425hz");
+            if (appModel.AppSettingsCurrent["AlertSound"] != "off") {
+                var soundPath = "/media/internal/ringtones/" + appModel.AppSettingsCurrent["AlertSound"] + ".mp3";
+                Mojo.Log.info("trying to play: " + soundPath);
+                Mojo.Controller.getAppController().playSoundNotification("media", soundPath, 3000);
+            }
         }
         this.chatScroller.mojo.revealBottom();
         this.chatScroller.mojo.adjustBy(0, -200);
         this.firstPoll = false;
     }
-}
-
-MainAssistant.prototype.getChatsFromService = function(serviceURL, callback) {
-    serviceURL = this.serviceEndpointBase + "get-chat.php";
-    this.retVal = "";
-    if (callback)
-        callback = callback.bind(this);
-
-    var xmlhttp = new XMLHttpRequest();
-    xmlhttp.open("GET", serviceURL);
-    xmlhttp.send();
-    xmlhttp.onreadystatechange = function() {
-        if (xmlhttp.readyState == XMLHttpRequest.DONE) {
-            if (callback)
-                callback(xmlhttp.responseText);
-        }
-    }.bind(this);
-}
-
-MainAssistant.prototype.postChatToService = function(useSender, useMessage, serviceURL, callback) {
-    serviceURL = this.serviceEndpointBase + "post-chat.php";
-    var msgToPost = {
-        sender: useSender,
-        message: useMessage
-    }
-    Mojo.Log.info("Posting chat to: " + serviceURL);
-    Mojo.Log.info(JSON.stringify(msgToPost));
-
-    this.retVal = "";
-    if (callback)
-        callback = callback.bind(this);
-
-    var xmlhttp = new XMLHttpRequest();
-    xmlhttp.open("POST", serviceURL);
-    xmlhttp.setRequestHeader("Client-Id", this.clientId);
-    xmlhttp.send(JSON.stringify(msgToPost));
-    xmlhttp.onreadystatechange = function() {
-        if (xmlhttp.readyState == XMLHttpRequest.DONE) {
-            if (callback)
-                callback(xmlhttp.responseText);
-        }
-    }.bind(this);
 }
 
 MainAssistant.prototype.convertTimeStamp = function(timeStamp, isUTC) {

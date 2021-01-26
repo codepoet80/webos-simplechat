@@ -13,6 +13,7 @@
         "source": "app/assistants/user-assistant.js",
         "comment": "since this will be a dialog, not a scene, we do not include the 'scenes' member (or we get errors)"
     },
+    { "source": "app/models/service-model.js" },
     { "source": "app/models/system-model.js" },
     { "source": "app/models/updater-model.js" },
     { "source": "app/models/app-model.js" },

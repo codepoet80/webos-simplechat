@@ -9,6 +9,7 @@ function AppAssistant() {
     appModel = new AppModel();
     updaterModel = new UpdaterModel();
     systemModel = new SystemModel();
+    serviceModel = new ServiceModel();
     Mojo.Additions = Additions;
 }
 

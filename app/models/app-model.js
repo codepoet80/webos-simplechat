@@ -21,6 +21,7 @@ var AppModel = function() {
     this.AppSettingsCurrent = null;
     this.AppSettingsDefaults = {
         ForegroundUpdate: 10000,
+        AlertSound: "Subtle (short)",
         UseClientAPIKey: false,
         UseCustomEndpoint: false,
         ClientAPIKey: "",

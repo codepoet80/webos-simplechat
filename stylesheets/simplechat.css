@@ -1,5 +1,10 @@
 /* TODO: put your application-specific CSS here */
 
+.palm-page-header .header-icon.preferences {
+    background: url(../icon.png) no-repeat;
+    background-size: 32px 32px;
+}
+
 .explanation-text {
     margin-top: -5px;
     padding: 14px;

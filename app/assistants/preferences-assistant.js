@@ -43,6 +43,25 @@ PreferencesAssistant.prototype.setup = function() {
             disabled: true
         }
     );
+    //Setup sound picker
+    this.soundChoices = {
+        choices: [
+            { label: "Choose...", value: "choose" },
+            { label: "Off", value: "off" }
+        ]
+    };
+    if (appModel.AppSettingsCurrent["AlertSound"] != "off") {
+        var useVal = appModel.AppSettingsCurrent["AlertSound"]
+        this.soundChoices.choices.unshift({ label: useVal, value: useVal });
+        //{ label: appModel.AppSettingsCurrent["AlertSound"], value: "custom" },
+    }
+    this.controller.setupWidget("listAlertSound",
+        this.attributes = this.soundChoices,
+        this.model = {
+            value: appModel.AppSettingsCurrent["AlertSound"],
+            disabled: false
+        }
+    );
     //API Toggles
     this.controller.setupWidget("toggleClientAPI",
         this.attributes = {
@@ -107,6 +126,7 @@ PreferencesAssistant.prototype.setup = function() {
     /* add event handlers to listen to events from widgets */
     Mojo.Event.listen(this.controller.get("listForegroundUpdate"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.controller.get("listBackgroundUpdate"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
+    Mojo.Event.listen(this.controller.get("listAlertSound"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.controller.get("txtClientAPI"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.controller.get("txtEndpointURL"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.controller.get("toggleClientAPI"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
@@ -127,30 +147,28 @@ PreferencesAssistant.prototype.showBetaFeatures = function() {
 PreferencesAssistant.prototype.handleValueChange = function(event) {
 
     Mojo.Log.info(event.srcElement.id + " value changed to " + event.value);
-    if (event.srcElement.id == "toggleGoogleAPI") {
-        var thisWidgetSetup = this.controller.getWidgetSetup("txtGoogleAPI");
-        thisWidgetSetup.model.disabled = !event.value;
-        this.controller.modelChanged(thisWidgetSetup.model);
-        if (event.value)
-            this.controller.get('txtGoogleAPI').mojo.focus();
-    } else if (event.srcElement.id == "toggleClientAPI") {
-        var thisWidgetSetup = this.controller.getWidgetSetup("txtClientAPI");
-        thisWidgetSetup.model.disabled = !event.value;
-        this.controller.modelChanged(thisWidgetSetup.model);
-        if (event.value)
-            this.controller.get('txtClientAPI').mojo.focus();
-    } else if (event.srcElement.id == "toggleServerKey") {
-        var thisWidgetSetup = this.controller.getWidgetSetup("txtServerKey");
-        thisWidgetSetup.model.disabled = !event.value;
-        this.controller.modelChanged(thisWidgetSetup.model);
-        if (event.value)
-            this.controller.get('txtServerKey').mojo.focus();
-    } else if (event.srcElement.id == "toggleCustomEndPoint") {
-        var thisWidgetSetup = this.controller.getWidgetSetup("txtEndpointURL");
-        thisWidgetSetup.model.disabled = !event.value;
-        this.controller.modelChanged(thisWidgetSetup.model);
-        if (event.value)
-            this.controller.get('txtEndpointURL').mojo.focus();
+    switch (event.srcElement.id) {
+        case "listAlertSound":
+            if (event.value == "choose") {
+                this.setAlarmSound();
+            } else {
+                appModel.AppSettingsCurrent["AlertSound"] = event.value;
+            }
+            break;
+        case "toggleClientAPI":
+            var thisWidgetSetup = this.controller.getWidgetSetup("txtClientAPI");
+            thisWidgetSetup.model.disabled = !event.value;
+            this.controller.modelChanged(thisWidgetSetup.model);
+            if (event.value)
+                this.controller.get('txtClientAPI').mojo.focus();
+            break;
+        case "toggleCustomEndPoint":
+            var thisWidgetSetup = this.controller.getWidgetSetup("txtEndpointURL");
+            thisWidgetSetup.model.disabled = !event.value;
+            this.controller.modelChanged(thisWidgetSetup.model);
+            if (event.value)
+                this.controller.get('txtEndpointURL').mojo.focus();
+            break;
     }
 
     //We stashed the preference name in the title of the HTML element, so we don't have to use a case statement
@@ -161,6 +179,37 @@ PreferencesAssistant.prototype.handleValueChange = function(event) {
     //Show/hide beta features
     this.showBetaFeatures();
 };
+
+// opens ringtone picker.
+PreferencesAssistant.prototype.setAlarmSound = function() {
+    var self = this;
+    var params = {
+        defaultKind: 'ringtone',
+        onSelect: function(file) {
+            var fileToUse = file.fullPath.replace("/media/internal/ringtones/", "").replace(".mp3", "");
+            appModel.AppSettingsCurrent["AlertSound"] = fileToUse;
+            appModel.SaveSettings();
+
+            //Mojo.Log.info(JSON.stringify(self.controller.getWidgetSetup("listAlertSound")));
+
+            self.soundChoices.choices[0].label = fileToUse;
+            self.soundChoices.choices[0].value = fileToUse;
+
+            var thisWidgetSetup = self.controller.getWidgetSetup("listAlertSound");
+            var thisWidgetModel = thisWidgetSetup.model;
+            thisWidgetModel.value = fileToUse;
+
+            self.controller.setWidgetModel("listAlertSound", thisWidgetModel);
+            self.controller.modelChanged(thisWidgetModel);
+
+            //Mojo.Log.info(JSON.stringify(self.controller.getWidgetSetup("listAlertSound")));
+
+            Mojo.Log.info("alarm sound changed to: " + fileToUse)
+
+        }
+    }
+    Mojo.FilePicker.pickFile(params, Mojo.Controller.stageController);
+}
 
 //Handle menu and button bar commands
 PreferencesAssistant.prototype.handleCommand = function(event) {
@@ -184,13 +233,12 @@ PreferencesAssistant.prototype.deactivate = function(event) {
     /* remove any event handlers you added in activate and do any other cleanup that should happen before
        this scene is popped or another scene is pushed on top */
 
-    Mojo.Event.stopListening(this.controller.get("listSearchmax"), Mojo.Event.propertyChange, this.handleValueChange);
-    Mojo.Event.stopListening(this.controller.get("listTimeout"), Mojo.Event.propertyChange, this.handleValueChange);
-    Mojo.Event.stopListening(this.controller.get("txtGoogleAPI"), Mojo.Event.propertyChange, this.handleValueChange);
+    Mojo.Event.stopListening(this.controller.get("listForegroundUpdate"), Mojo.Event.propertyChange, this.handleValueChange);
+    Mojo.Event.stopListening(this.controller.get("listBackgroundUpdate"), Mojo.Event.propertyChange, this.handleValueChange);
+    Mojo.Event.stopListening(this.controller.get("listAlertSound"), Mojo.Event.propertyChange, this.handleValueChange);
     Mojo.Event.stopListening(this.controller.get("txtClientAPI"), Mojo.Event.propertyChange, this.handleValueChange);
-    Mojo.Event.stopListening(this.controller.get("toggleGoogleAPI"), Mojo.Event.propertyChange, this.handleValueChange);
     Mojo.Event.stopListening(this.controller.get("toggleClientAPI"), Mojo.Event.propertyChange, this.handleValueChange);
-    Mojo.Event.stopListening(this.controller.get("toggleServerKey"), Mojo.Event.propertyChange, this.handleValueChange);
+    Mojo.Event.stopListening(this.controller.get("toggleCustomEndPoint"), Mojo.Event.propertyChange, this.handleValueChange);
     Mojo.Event.stopListening(this.controller.get("btnOK"), Mojo.Event.tap, this.okClick.bind(this));
 
 };

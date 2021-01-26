@@ -1,6 +1,7 @@
-<div class="palm-hasheader" style="margin-bottom:60px">
-    <div id="watchViewTitle" class="palm-header center" onclick="Mojo.Controller.stageController.popScene();">
-        Preferences
+<div class="palm-page-header">
+    <div class="header-icon preferences"></div>
+    <div class="header-text">
+        <span x-mojo-loc=''>Preferences</span>
     </div>
 </div>
 
@@ -9,18 +10,26 @@
         <span x-mojo-loc=''>Basic</span>
     </div>
 
-    <div class="palm-list">
+    <div class="palm-list" id="divTest">
         <div class="palm-row first">
             <div class="palm-row-wrapper">
                 <div id="listForegroundUpdate" x-mojo-element="ListSelector" title="ForegroundUpdate" class="right"></div>
             </div>
         </div>
 
-        <div class="palm-row last">
+        <div class="palm-row">
             <div class="palm-row-wrapper">
                 <div id="listBackgroundUpdate" x-mojo-element="ListSelector" title="BackgroundUpdate" class="right"></div>
             </div>
         </div>
+
+        <div class="palm-row last">
+            <div class="palm-row-wrapper">
+                <span x-mojo-loc="" id="SoundOptionLabel" width="100%" class="label truncating-text" style="float:left; width:100%; margin-left: 14px; margin-top: 14px;">Alert Sound</span>
+                <div x-mojo-element="ListSelector" id="listAlertSound" class="listselectorClass" style="float:right" name="listAlertSound"></div>
+            </div>
+        </div>
+
     </div>
 </div>
 
