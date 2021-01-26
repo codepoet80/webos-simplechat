@@ -342,15 +342,22 @@ MainAssistant.prototype.updateChatsList = function(results) {
     if (listUpdated > -1) {
         this.controller.modelChanged(thisWidgetSetup.model);
         if (listUpdated > 0 && !this.firstPoll) {
-            if (appModel.AppSettingsCurrent["AlertSound"] != "off") {
-                var soundPath = "/media/internal/ringtones/" + appModel.AppSettingsCurrent["AlertSound"] + ".mp3";
-                Mojo.Log.info("trying to play: " + soundPath);
-                Mojo.Controller.getAppController().playSoundNotification("media", soundPath, 3000);
-            }
+            this.playAlertSound();
         }
         this.chatScroller.mojo.revealBottom();
         this.chatScroller.mojo.adjustBy(0, -200);
         this.firstPoll = false;
+    }
+}
+
+MainAssistant.prototype.playAlertSound = function() {
+    if (!appModel.AppSettingsCurrent["AlertSound"] || appModel.AppSettingsCurrent["AlertSound"] == "") {
+        appModel.AppSettingsCurrent["AlertSound"] = "Subtle (short)";
+    }
+    if (appModel.AppSettingsCurrent["AlertSound"] != "off") {
+        var soundPath = "/media/internal/ringtones/" + appModel.AppSettingsCurrent["AlertSound"] + ".mp3";
+        Mojo.Log.info("trying to play: " + soundPath);
+        Mojo.Controller.getAppController().playSoundNotification("media", soundPath, 3000);
     }
 }
 
