@@ -51,9 +51,12 @@ PreferencesAssistant.prototype.setup = function() {
         ]
     };
     if (appModel.AppSettingsCurrent["AlertSound"] != "off") {
-        var useVal = appModel.AppSettingsCurrent["AlertSound"]
-        this.soundChoices.choices.unshift({ label: useVal, value: useVal });
-        //{ label: appModel.AppSettingsCurrent["AlertSound"], value: "custom" },
+        var useVal = appModel.AppSettingsCurrent["AlertSound"];
+        var labelVal = useVal;
+        if (Mojo.Environment.DeviceInfo.platformVersionMajor < 3) {
+            labelVal = useVal.substring(0, 8) + "...";
+        }
+        this.soundChoices.choices.unshift({ label: labelVal, value: useVal });
     }
     this.controller.setupWidget("listAlertSound",
         this.attributes = this.soundChoices,
@@ -99,7 +102,7 @@ PreferencesAssistant.prototype.setup = function() {
     );
     this.controller.setupWidget("txtEndpointURL",
         this.attributes = {
-            hintText: $L("http://your-simplechat-server.com"),
+            hintText: $L("http://your-chat-server.com"),
             multiline: false,
             enterSubmits: false,
             autoReplace: false,
@@ -192,8 +195,14 @@ PreferencesAssistant.prototype.setAlarmSound = function() {
 
             //Mojo.Log.info(JSON.stringify(self.controller.getWidgetSetup("listAlertSound")));
 
-            self.soundChoices.choices[0].label = fileToUse;
-            self.soundChoices.choices[0].value = fileToUse;
+            var useVal = fileToUse;
+            var labelVal = useVal;
+            if (Mojo.Environment.DeviceInfo.platformVersionMajor < 3) {
+                labelVal = useVal.substring(0, 8) + "...";
+            }
+
+            self.soundChoices.choices[0].label = labelVal;
+            self.soundChoices.choices[0].value = useVal;
 
             var thisWidgetSetup = self.controller.getWidgetSetup("listAlertSound");
             var thisWidgetModel = thisWidgetSetup.model;
