@@ -74,7 +74,10 @@ MainAssistant.prototype.setup = function() {
     };
     this.controller.setupWidget(Mojo.Menu.appMenu, this.appMenuAttributes, this.appMenuModel);
     //Command Buttons
-    this.cmdMenuAttributes = {}
+    this.cmdMenuAttributes = {
+        spacerHeight: 0,
+        menuClass: 'no-fade'
+    };
     this.cmdMenuModel = {
         visible: true,
         items: [{
