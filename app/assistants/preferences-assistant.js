@@ -102,7 +102,7 @@ PreferencesAssistant.prototype.setup = function() {
     );
     this.controller.setupWidget("txtEndpointURL",
         this.attributes = {
-            hintText: $L("http://your-chat-server.com"),
+            hintText: $L("http://your-chat-server.com/"),
             multiline: false,
             enterSubmits: false,
             autoReplace: false,
