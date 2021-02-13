@@ -93,9 +93,7 @@ MainAssistant.prototype.setup = function() {
     this.controller.setupWidget(Mojo.Menu.commandMenu, this.cmdMenuAttributes, this.cmdMenuModel);
 
     /* Always on Event handlers */
-    //Mojo.Event.listen(this.controller.get("txtMessage"), Mojo.Event.propertyChange, this.handleSendMessage.bind(this));
     Mojo.Event.listen(this.controller.get("chatList"), Mojo.Event.listTap, this.handleListClick.bind(this));
-
     //Check for updates
     if (!appModel.UpdateCheckDone) {
         appModel.UpdateCheckDone = true;
@@ -127,13 +125,9 @@ MainAssistant.prototype.activate = function(event) {
     }
     Mojo.Log.warn("*** Using secret: " + this.clientId + " because secrets were: " + secrets.clientid);
     //Figure out if this is our first time
-    if (appModel.AppSettingsCurrent["FirstRun"]) {
+    if (appModel.AppSettingsCurrent["FirstRun"] || (appModel.AppSettingsCurrent["SenderName"] && appModel.AppSettingsCurrent["SenderName"].toLowerCase() == "webos user")) {
         appModel.AppSettingsCurrent["FirstRun"] = false;
-        var pretendEvent = {
-            type: Mojo.Event.command,
-            command: 'do-Username'
-        }
-        this.handleCommand(pretendEvent);
+        this.getUsername();
     } else {
         this.controller.get('txtMessage').mojo.focus();
     }
@@ -153,24 +147,54 @@ MainAssistant.prototype.activate = function(event) {
             Mojo.Log.warn("Device detected as Pixi or Veer");
         }
     }
-    this.scaleScroller();
+    //Scale UI for orientation and listen for future orientation changes
+    window.addEventListener('resize', this.orientationChanged.bind(this)); //we have to do this for TouchPad because it does not get orientationChanged events
+    this.orientationChanged();
+
     systemModel.PreventDisplaySleep();
     this.pendingMessages = [];
     this.firstPoll = true;
     this.startPollingServer();
 };
 
-MainAssistant.prototype.scaleScroller = function() {
-    this.chatScroller = this.controller.get("chatScroller");
-    this.scalingFactor = this.controller.window.zoomFactor || 1;
-    //TODO: This will be different in landscape
-    var bottomBuffer;
-    if (this.DeviceType == "TouchPad")
-        bottomBuffer = 350;
-    else
-        bottomBuffer = 280;
-    this.scaledHeight = Math.floor(Mojo.Environment.DeviceInfo.screenHeight / this.scalingFactor) - bottomBuffer;
-    this.chatScroller.style.height = this.scaledHeight + "px";
+var lastOrientation;
+//This is called by Mojo on phones, but has to be manually attached on TouchPad
+MainAssistant.prototype.orientationChanged = function(orientation) {
+    if (this.DeviceType != "TouchPad") {
+        //For phones, it doesn't make sense to allow wide orientations
+        //  But we need this for initial setup, so we'll force it to always be tall
+        this.controller.stageController.setWindowOrientation("up");
+        this.scaleScroller("tall")
+    } else {
+        if (window.screen.height < window.screen.width) {
+            this.scaleScroller("wide");
+        } else {
+            this.scaleScroller("tall");
+        }
+    }
+};
+
+MainAssistant.prototype.scaleScroller = function(orientation) {
+    if (!lastOrientation || orientation != lastOrientation) {
+        this.controller.get('txtMessage').mojo.blur();
+        this.chatScroller = this.controller.get("chatScroller");
+        this.scalingFactor = this.controller.window.zoomFactor || 1;
+
+        var bottomBuffer;
+        if (this.DeviceType == "TouchPad")
+            bottomBuffer = 580;
+        else
+            bottomBuffer = 240;
+
+        this.scaledHeight = Math.floor(window.screen.height / this.scalingFactor) - bottomBuffer;
+        this.chatScroller.style.height = this.scaledHeight + "px";
+        this.scrollToBottom();
+        this.controller.get('txtMessage').mojo.focus();
+        setTimeout(fixScroll = function() {
+            this.controller.getSceneScroller().mojo.revealTop(true);
+        }.bind(this), 100);
+    }
+    lastOrientation = orientation;
 }
 
 MainAssistant.prototype.startPollingServer = function() {
@@ -194,19 +218,7 @@ MainAssistant.prototype.handleCommand = function(event) {
                 this.handleSendMessage();
                 break;
             case 'do-Username':
-                this.pausePollingServer();
-                var stageController = Mojo.Controller.getAppController().getActiveStageController();
-                if (stageController) {
-                    this.controller = stageController.activeScene();
-                    this.controller.showDialog({
-                        template: 'user/user-scene',
-                        assistant: new UserAssistant(this, function(val) {
-                                Mojo.Log.error("got value from dialog: " + val);
-                                this.startPollingServer();
-                                //this.handleDialogDone(val);
-                            }.bind(this)) //since this will be a dialog, not a scene, it must be defined in sources.json without a 'scenes' member
-                    });
-                }
+                this.getUsername();
                 break;
             case 'do-Preferences':
                 this.pausePollingServer();
@@ -219,6 +231,22 @@ MainAssistant.prototype.handleCommand = function(event) {
         }
     }
 };
+
+MainAssistant.prototype.getUsername = function() {
+    var stageController = Mojo.Controller.getAppController().getActiveStageController();
+    if (stageController) {
+        this.controller = stageController.activeScene();
+        this.controller.showDialog({
+            template: 'user/user-scene',
+            preventCancel: true,
+            assistant: new UserAssistant(this, function(val) {
+                    Mojo.Log.error("got value from dialog: " + val);
+                    //this.startPollingServer();
+                    //this.handleDialogDone(val);
+                }.bind(this)) //since this will be a dialog, not a scene, it must be defined in sources.json without a 'scenes' member
+        });
+    }
+}
 
 //Handle mojo button taps
 MainAssistant.prototype.handleClick = function(event) {
@@ -256,8 +284,7 @@ MainAssistant.prototype.handleSendMessage = function(event) {
                     var thisWidgetSetup = this.controller.getWidgetSetup("chatList");
                     thisWidgetSetup.model.items.push(newMsg);
                     this.controller.modelChanged(thisWidgetSetup.model);
-                    this.chatScroller.mojo.revealBottom();
-                    this.chatScroller.mojo.adjustBy(0, -200);
+                    this.scrollToBottom();
                 }
             }
         } catch (error) {
@@ -272,7 +299,7 @@ MainAssistant.prototype.handleListClick = function(event) {
     return false;
 }
 
-//Send a search request to MeTube to send to Google for us (never worry about HTTPS encryption again)
+//Send a request to Service to get chat messages
 MainAssistant.prototype.getChats = function() {
     serviceModel.getChats(this.serviceEndpointBase, function(response) {
         if (response != null && response != "") {
@@ -295,62 +322,71 @@ MainAssistant.prototype.getChats = function() {
     }.bind(this));
 }
 
-//Update the UI with search results from Search Request
+//Update the UI with search results from chat request
 MainAssistant.prototype.updateChatsList = function(results) {
 
-    Mojo.Log.info("Updating chat list widget with " + results.length + " results!");
+    Mojo.Log.info("Proccessing " + results.length + " chat messages...");
     var thisWidgetSetup = this.controller.getWidgetSetup("chatList");
     //figure out what messages we already have
     var knownMessages = [];
-    var noLongerPending = [];
     for (var j = 0; j < thisWidgetSetup.model.items.length; j++) {
         knownMessages.push(thisWidgetSetup.model.items[j].uid);
     }
-    //find out if there are new or updates messages
-    var listUpdated = -1;
+    //now make the new list
+    var newMessages = [];
     for (var i = 0; i < results.length; i++) {
-        if (knownMessages.indexOf(results[i].uid) == -1) { //brand new message
+        newMessages.push({
+            uid: results[i].uid,
+            sender: results[i].sender,
+            message: results[i].message,
+            timestamp: this.convertTimeStamp(results[i].timestamp, true),
+            color: "black"
+        });
+    }
+    var listUpdated = -1;
+    var scrollPos = this.chatScroller.mojo.getState();
+    //compare the known list to the new list, only if something has changed...
+    if (this.checkForMessageListChanges(newMessages, thisWidgetSetup.model.items)) {
+        if (newMessages.length > thisWidgetSetup.model.items.length) {
+            Mojo.Log.info("New message in list!");
             listUpdated = 1;
-            thisWidgetSetup.model.items.push({
-                uid: results[i].uid,
-                sender: results[i].sender,
-                message: results[i].message,
-                timestamp: this.convertTimeStamp(results[i].timestamp, true),
-                color: "black"
-            });
         } else {
-            //update a pending message
-            if (this.pendingMessages.length > 0 && this.pendingMessages.indexOf(results[i].uid) != -1) {
-                for (var j = 0; j < thisWidgetSetup.model.items.length; j++) {
-                    if (thisWidgetSetup.model.items[j].uid == results[i].uid) {
-                        noLongerPending.push(results[i].uid);
-                        thisWidgetSetup.model.items[j].color = "black";
-                        listUpdated = 0;
-                    }
-                }
-            }
+            Mojo.Log.info("Existing message needs an update");
+            listUpdated = 0;
         }
-    }
-    //rebuild pending messages array to remove confirmed messages
-    if (noLongerPending && noLongerPending.length > 0) {
-        var newPending = [];
-        for (var k = 0; k < this.pendingMessages.length; k++) {
-            if (noLongerPending.indexOf(this.pendingMessages[k]) == -1)
-                newPending.push(this.pendingMessages[k]);
-        }
-        this.pendingMessages = newPending;
-        Mojo.Log.info("pending messages now: " + this.pendingMessages);
-    }
-    //update the UI
-    if (listUpdated > -1) {
+        thisWidgetSetup.model.items = [];
+        thisWidgetSetup.model.items = newMessages;
         this.controller.modelChanged(thisWidgetSetup.model);
-        if (listUpdated > 0 && !this.firstPoll) {
-            this.playAlertSound();
-        }
-        this.chatScroller.mojo.revealBottom();
-        this.chatScroller.mojo.adjustBy(0, -200);
-        this.firstPoll = false;
     }
+    if (listUpdated == 1) {
+        this.scrollToBottom();
+        if (!this.firstPoll)
+            this.playAlertSound();
+    } else if (listUpdated == 0) {
+        Mojo.Log.info("Scrolling back to: " + JSON.stringify(scrollPos));
+        this.chatScroller.mojo.setState(scrollPos);
+    } else {
+        Mojo.Log.info("Found no changes to apply.")
+    }
+    this.firstPoll = false;
+}
+
+//Determine if there's anything changed in the message list
+MainAssistant.prototype.checkForMessageListChanges = function(newList, oldList) {
+    if (newList.length != oldList.length)
+        return true;
+    for (var l = 0; l < oldList.length; l++) {
+        if (oldList[l].guid != newList[l].guid) {
+            return true;
+        }
+        if (oldList[l].message != newList[l].message) {
+            return true;
+        }
+        if (oldList[l].color != newList[l].color) {
+            return true;
+        }
+    }
+    return false;
 }
 
 MainAssistant.prototype.playAlertSound = function() {
@@ -360,8 +396,14 @@ MainAssistant.prototype.playAlertSound = function() {
     if (appModel.AppSettingsCurrent["AlertSound"] != "off") {
         var soundPath = "/media/internal/ringtones/" + appModel.AppSettingsCurrent["AlertSound"] + ".mp3";
         Mojo.Log.info("trying to play: " + soundPath);
-        Mojo.Controller.getAppController().playSoundNotification("media", soundPath, 3000);
+        Mojo.Controller.getAppController().playSoundNotification("media", soundPath, 2500);
     }
+}
+
+MainAssistant.prototype.scrollToBottom = function() {
+    Mojo.Log.info("scroller height: " + document.getElementById("chatScroller").clientHeight);
+    this.chatScroller.mojo.revealBottom();
+    this.chatScroller.mojo.adjustBy(0, -document.getElementById("chatScroller").clientHeight);
 }
 
 MainAssistant.prototype.convertTimeStamp = function(timeStamp, isUTC) {
@@ -373,14 +415,6 @@ MainAssistant.prototype.convertTimeStamp = function(timeStamp, isUTC) {
     }
     timeStamp = timeStamp.toLocaleString();
     return timeStamp;
-}
-
-//Try to make strings easier on tiny devices
-MainAssistant.prototype.cleanupString = function(str, mxwl, mxsl) {
-    str = str.substring(0, mxsl);
-    str = str.replace(/\s+/g, ' ').trim();
-    str = str.replace(/[^a-z0-9\s]/gi, '');
-    return str;
 }
 
 MainAssistant.prototype.disableUI = function(statusValue) {
@@ -398,31 +432,12 @@ MainAssistant.prototype.enableUI = function() {
     this.controller.get('txtMessage').mojo.focus();
 }
 
-MainAssistant.prototype.decodeEntities = function(text) {
-    var entities = [
-        ['amp', '&'],
-        ['apos', '\''],
-        ['#x27', '\''],
-        ['#x2F', '/'],
-        ['#39', '\''],
-        ['#47', '/'],
-        ['lt', '<'],
-        ['gt', '>'],
-        ['nbsp', ' '],
-        ['quot', '"']
-    ];
-
-    for (var i = 0, max = entities.length; i < max; ++i)
-        text = text.replace(new RegExp('&' + entities[i][0] + ';', 'g'), entities[i][1]);
-
-    return text;
-}
-
 MainAssistant.prototype.deactivate = function(event) {
     /* remove any event handlers you added in activate and do any other cleanup that should happen before
        this scene is popped or another scene is pushed on top */
     Mojo.Event.stopListening(this.controller.get("chatList"), Mojo.Event.listTap, this.handleListClick);
     Mojo.Event.stopListening(this.controller.get("txtMessage"), Mojo.Event.propertyChange, this.handleSendMessage);
+    window.removeEventListener('resize', this.orientationChanged);
     this.pausePollingServer();
 };
 

@@ -32,13 +32,13 @@ UserAssistant.prototype.setup = function(widget) {
             disabled: false
         }
     );
-    this.sceneAssistant.controller.setupWidget("goButton", { type: Mojo.Widget.activityButton }, { label: "OK", disabled: false });
-    this.sceneAssistant.controller.setupWidget("cancelButton", { type: Mojo.Widget.button }, { label: "Cancel", disabled: false });
+    this.sceneAssistant.controller.setupWidget("goButton", { type: Mojo.Widget.defaultButton }, { label: "OK", disabled: false });
+    //this.sceneAssistant.controller.setupWidget("cancelButton", { type: Mojo.Widget.button }, { label: "Cancel", disabled: false });
 
     /* add event handlers to listen to events from widgets */
     Mojo.Event.listen(this.sceneAssistant.controller.get("txtUserName"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.sceneAssistant.controller.get("goButton"), Mojo.Event.tap, this.handleGoPress.bind(this));
-    Mojo.Event.listen(this.sceneAssistant.controller.get("cancelButton"), Mojo.Event.tap, this.handleCancelPress.bind(this));
+    //Mojo.Event.listen(this.sceneAssistant.controller.get("cancelButton"), Mojo.Event.tap, this.handleCancelPress.bind(this));
 };
 
 UserAssistant.prototype.handleValueChange = function(event) {
@@ -47,16 +47,15 @@ UserAssistant.prototype.handleValueChange = function(event) {
 
 UserAssistant.prototype.handleGoPress = function(event) {
     var newName = this.sceneAssistant.controller.get('txtUserName').mojo.getValue();
-    //Remember the address they entered
-    appModel.AppSettingsCurrent["SenderName"] = newName;
-    appModel.SaveSettings();
-    this.doneCallBack(newName);
-    this.widget.mojo.close();
-}
-
-UserAssistant.prototype.handleCancelPress = function(event) {
-    this.doneCallBack("cancel");
-    this.widget.mojo.close();
+    if (newName && newName != "" && newName != " " && newName.toLowerCase() != "webos user") {
+        //Remember the name they entered
+        appModel.AppSettingsCurrent["SenderName"] = newName;
+        appModel.SaveSettings();
+        this.doneCallBack(newName);
+        this.widget.mojo.close();
+    } else {
+        Mojo.Controller.getAppController().showBanner({ messageText: "Provide a unique username!" }, "", "");
+    }
 }
 
 UserAssistant.prototype.activate = function(event) {
@@ -70,7 +69,7 @@ UserAssistant.prototype.deactivate = function(event) {
        this scene is popped or another scene is pushed on top */
     Mojo.Event.stopListening(this.sceneAssistant.controller.get("txtUserName"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.stopListening(this.sceneAssistant.controller.get("goButton"), Mojo.Event.tap, this.handleGoPress.bind(this));
-    Mojo.Event.stopListening(this.sceneAssistant.controller.get("cancelButton"), Mojo.Event.tap, this.handleCancelPress.bind(this));
+    //Mojo.Event.stopListening(this.sceneAssistant.controller.get("cancelButton"), Mojo.Event.tap, this.handleCancelPress.bind(this));
 };
 
 UserAssistant.prototype.cleanup = function(event) {

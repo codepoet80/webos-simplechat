@@ -33,3 +33,7 @@ AppAssistant.prototype.handleLaunch = function(params) {
     }
     return;
 };
+
+AppAssistant.prototype.orientationChanged = function(orientation) {
+    Mojo.Log.info("app orientation changed to: " + orientation);
+};
