@@ -401,7 +401,6 @@ MainAssistant.prototype.playAlertSound = function() {
 }
 
 MainAssistant.prototype.scrollToBottom = function() {
-    Mojo.Log.info("scroller height: " + document.getElementById("chatScroller").clientHeight);
     this.chatScroller.mojo.revealBottom();
     this.chatScroller.mojo.adjustBy(0, -document.getElementById("chatScroller").clientHeight);
 }
