@@ -4,6 +4,7 @@
     "vendor": "Jon Wise",
     "type": "web",
     "main": "index.html",
+    "noWindow": true,
     "title": "SimpleChat",
     "icon": "icon.png",
     "uiRevision": "2",

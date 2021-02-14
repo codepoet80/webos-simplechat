@@ -94,6 +94,7 @@ MainAssistant.prototype.setup = function() {
 
     /* Always on Event handlers */
     Mojo.Event.listen(this.controller.get("chatList"), Mojo.Event.listTap, this.handleListClick.bind(this));
+
     //Check for updates
     if (!appModel.UpdateCheckDone) {
         appModel.UpdateCheckDone = true;
@@ -111,9 +112,6 @@ MainAssistant.prototype.handleUpdateResponse = function(responseObj) {
 }
 
 MainAssistant.prototype.activate = function(event) {
-    //Load preferences
-    appModel.LoadSettings();
-    Mojo.Log.info("settings now: " + JSON.stringify(appModel.AppSettingsCurrent));
     //Figure out server info
     this.serviceEndpointBase = appModel.ServiceEndpointBase;
     if (appModel.AppSettingsCurrent["UseCustomEndpoint"] && appModel.AppSettingsCurrent["EndpointURL"]) {
@@ -123,7 +121,7 @@ MainAssistant.prototype.activate = function(event) {
     if (appModel.AppSettingsCurrent["UseClientAPIKey"] && appModel.AppSettingsCurrent["ClientAPIKey"]) {
         this.clientId = appModel.AppSettingsCurrent["ClientAPIKey"];
     }
-    Mojo.Log.warn("*** Using secret: " + this.clientId + " because secrets were: " + secrets.clientid);
+
     //Figure out if this is our first time
     if (appModel.AppSettingsCurrent["FirstRun"] || (appModel.AppSettingsCurrent["SenderName"] && appModel.AppSettingsCurrent["SenderName"].toLowerCase() == "webos user")) {
         appModel.AppSettingsCurrent["FirstRun"] = false;
@@ -160,6 +158,7 @@ MainAssistant.prototype.activate = function(event) {
 var lastOrientation;
 //This is called by Mojo on phones, but has to be manually attached on TouchPad
 MainAssistant.prototype.orientationChanged = function(orientation) {
+    //TODO: This might be broken now
     if (this.DeviceType != "TouchPad") {
         //For phones, it doesn't make sense to allow wide orientations
         //  But we need this for initial setup, so we'll force it to always be tall
@@ -175,6 +174,7 @@ MainAssistant.prototype.orientationChanged = function(orientation) {
 };
 
 MainAssistant.prototype.scaleScroller = function(orientation) {
+
     if (!lastOrientation || orientation != lastOrientation) {
         this.controller.get('txtMessage').mojo.blur();
         this.chatScroller = this.controller.get("chatScroller");
@@ -186,7 +186,7 @@ MainAssistant.prototype.scaleScroller = function(orientation) {
         else
             bottomBuffer = 240;
 
-        this.scaledHeight = Math.floor(window.screen.height / this.scalingFactor) - bottomBuffer;
+        this.scaledHeight = Math.floor(Mojo.Environment.DeviceInfo.screenHeight / this.scalingFactor) - bottomBuffer;
         this.chatScroller.style.height = this.scaledHeight + "px";
         this.scrollToBottom();
         this.controller.get('txtMessage').mojo.focus();
@@ -202,12 +202,13 @@ MainAssistant.prototype.startPollingServer = function() {
     var useInt = 10000;
     if (appModel.AppSettingsCurrent["ForegroundUpdate"])
         useInt = appModel.AppSettingsCurrent["ForegroundUpdate"];
-    this.FileCheckInt = setInterval(this.getChats.bind(this), useInt);
+    var stageController = Mojo.Controller.getAppController().getActiveStageController();
+    this.controller = stageController.activeScene();
+    this.FileCheckInt = this.controller.window.setInterval(this.getChats.bind(this), useInt);
 }
 
 MainAssistant.prototype.pausePollingServer = function() {
-    this.getChats();
-    clearInterval(this.FileCheckInt);
+    this.controller.window.clearInterval(this.FileCheckInt);
 }
 
 //Handle menu and button bar commands
@@ -222,7 +223,8 @@ MainAssistant.prototype.handleCommand = function(event) {
                 break;
             case 'do-Preferences':
                 this.pausePollingServer();
-                var stageController = Mojo.Controller.stageController;
+                //var stageController = Mojo.Controller.stageController;
+                var stageController = Mojo.Controller.getAppController().getActiveStageController();
                 stageController.pushScene({ name: "preferences", disableSceneScroller: false });
                 break;
             case 'do-myAbout':
@@ -411,7 +413,8 @@ MainAssistant.prototype.playAlertSound = function() {
 
 MainAssistant.prototype.scrollToBottom = function() {
     this.chatScroller.mojo.revealBottom();
-    this.chatScroller.mojo.adjustBy(0, -document.getElementById("chatScroller").clientHeight);
+    Mojo.Log.info("client height: " + this.controller.get('chatScroller').clientHeight);
+    this.chatScroller.mojo.adjustBy(0, (this.controller.get('chatScroller').clientHeight) * -1);
 }
 
 MainAssistant.prototype.convertTimeStamp = function(timeStamp, isUTC) {
@@ -443,6 +446,8 @@ MainAssistant.prototype.enableUI = function() {
 MainAssistant.prototype.deactivate = function(event) {
     /* remove any event handlers you added in activate and do any other cleanup that should happen before
        this scene is popped or another scene is pushed on top */
+    Mojo.Log.info("Main scene deactivated " + Mojo.Controller.appInfo.id);
+
     Mojo.Event.stopListening(this.controller.get("chatList"), Mojo.Event.listTap, this.handleListClick);
     Mojo.Event.stopListening(this.controller.get("txtMessage"), Mojo.Event.propertyChange, this.handleSendMessage);
     window.removeEventListener('resize', this.orientationChanged);

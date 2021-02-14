@@ -26,21 +26,25 @@ PreferencesAssistant.prototype.setup = function() {
             disabled: false
         }
     );
+    var backgroundValue;
+    if (!appModel.AppSettingsCurrent["BackgroundUpdate"] || appModel.AppSettingsCurrent["BackgroundUpdate"] == 0 || appModel.AppSettingsCurrent["BackgroundUpdate"] == "")
+        backgroundValue = "-1";
+    else
+        backgroundValue = appModel.AppSettingsCurrent["BackgroundUpdate"]
     this.controller.setupWidget("listBackgroundUpdate",
         this.attributes = {
             label: $L("Background Update"),
             choices: [
-                { label: "2 minutes", value: 120000 },
-                { label: "5 minutes", value: 300000 },
-                { label: "10 minutes", value: 600000 },
-                { label: "15 minutes", value: 900000 },
-                { label: "30 minutes", value: 1800000 },
-                { label: "1 Hour", value: 3600000 },
+                { label: "Off", value: -1 },
+                { label: "30 minutes", value: "00:30:00" },
+                { label: "1 Hour", value: "01:00:00" },
+                { label: "2 Hours", value: "02:00:00" },
+                { label: "5 Hours", value: "05:00:00" },
             ]
         },
         this.model = {
-            value: appModel.AppSettingsCurrent["BackgroundUpdate"],
-            disabled: true
+            value: backgroundValue,
+            disabled: false
         }
     );
     //Setup sound picker
@@ -225,7 +229,7 @@ PreferencesAssistant.prototype.handleCommand = function(event) {
     if (event.type == Mojo.Event.command) {
         switch (event.command) {
             case 'do-goBack':
-                Mojo.Controller.stageController.popScene();
+                this.okClick();
                 break;
             case 'do-resetSettings':
                 appModel.ResetSettings(appModel.AppSettingsDefaults);
@@ -235,7 +239,9 @@ PreferencesAssistant.prototype.handleCommand = function(event) {
 };
 
 PreferencesAssistant.prototype.okClick = function(event) {
-    Mojo.Controller.stageController.popScene();
+    var appController = Mojo.Controller.getAppController();
+    var stageController = appController.getStageProxy("main");
+    stageController.popScene();
 }
 
 PreferencesAssistant.prototype.deactivate = function(event) {
