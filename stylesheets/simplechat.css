@@ -27,3 +27,7 @@
 .textFieldClass input {
     padding: 1px;
 }
+
+.dashboard-icon-chat {
+    background: url(../icon-48.png);
+}

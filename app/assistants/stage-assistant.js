@@ -10,7 +10,5 @@ StageAssistant.prototype.activate = function() {
 }
 
 StageAssistant.prototype.setup = function() {
-    /* this function is for setup tasks that have to happen when the stage is first created */
-    //this.controller.pushScene({ name: "main" });
-    //this.controller.setWindowOrientation("free");
+    Mojo.Log.info("Stage assistant created!");
 };

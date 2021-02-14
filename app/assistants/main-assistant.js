@@ -134,10 +134,10 @@ MainAssistant.prototype.activate = function(event) {
         this.DeviceType = "TouchPad";
         Mojo.Log.info("Device detected as TouchPad");
     } else {
-        if (window.screen.width == 800 || window.screen.height == 800) {
+        if (this.controller.window.screen.width == 800 || this.controller.window.screen.height == 800) {
             this.DeviceType = "Pre3";
             Mojo.Log.info("Device detected as Pre3");
-        } else if ((window.screen.width == 480 || window.screen.height == 480) && (window.screen.width == 320 || window.screen.height == 320)) {
+        } else if ((this.controller.window.screen.width == 480 || this.controller.window.screen.height == 480) && (this.controller.window.screen.width == 320 || this.controller.window.screen.height == 320)) {
             this.DeviceType = "Pre";
             Mojo.Log.warn("Device detected as Pre or Pre2");
         } else {
@@ -146,7 +146,7 @@ MainAssistant.prototype.activate = function(event) {
         }
     }
     //Scale UI for orientation and listen for future orientation changes
-    window.addEventListener('resize', this.orientationChanged.bind(this)); //we have to do this for TouchPad because it does not get orientationChanged events
+    this.controller.window.addEventListener('resize', this.orientationChanged.bind(this)); //we have to do this for TouchPad because it does not get orientationChanged events
     this.orientationChanged();
 
     systemModel.PreventDisplaySleep();
@@ -165,7 +165,7 @@ MainAssistant.prototype.orientationChanged = function(orientation) {
         this.controller.stageController.setWindowOrientation("up");
         this.scaleScroller("tall")
     } else {
-        if (window.screen.height < window.screen.width) {
+        if (this.controller.window.screen.height < this.controller.window.screen.width) {
             this.scaleScroller("wide");
         } else {
             this.scaleScroller("tall");
@@ -413,7 +413,6 @@ MainAssistant.prototype.playAlertSound = function() {
 
 MainAssistant.prototype.scrollToBottom = function() {
     this.chatScroller.mojo.revealBottom();
-    Mojo.Log.info("client height: " + this.controller.get('chatScroller').clientHeight);
     this.chatScroller.mojo.adjustBy(0, (this.controller.get('chatScroller').clientHeight) * -1);
 }
 
@@ -448,9 +447,16 @@ MainAssistant.prototype.deactivate = function(event) {
        this scene is popped or another scene is pushed on top */
     Mojo.Log.info("Main scene deactivated " + Mojo.Controller.appInfo.id);
 
+    var thisWidgetSetup = this.controller.getWidgetSetup("chatList");
+    if (thisWidgetSetup.model.items.length > 0) {
+        var lastMessage = thisWidgetSetup.model.items[thisWidgetSetup.model.items.length - 1];
+        appModel.AppSettingsCurrent["LastKnownMessage"] = lastMessage.uid;
+        appModel.SaveSettings();
+    }
+
     Mojo.Event.stopListening(this.controller.get("chatList"), Mojo.Event.listTap, this.handleListClick);
     Mojo.Event.stopListening(this.controller.get("txtMessage"), Mojo.Event.propertyChange, this.handleSendMessage);
-    window.removeEventListener('resize', this.orientationChanged);
+    this.controller.window.removeEventListener('resize', this.orientationChanged);
     this.pausePollingServer();
 };
 

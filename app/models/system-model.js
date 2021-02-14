@@ -14,28 +14,36 @@ var SystemModel = function() {
 
 //Create a named System Alarm using relative time ("in")
 SystemModel.prototype.SetSystemAlarmRelative = function(alarmName, alarmTime) {
-    this.wakeupRequest = new Mojo.Service.Request("palm://com.palm.power/timeout", {
-        method: "set",
-        parameters: {
-            "key": Mojo.Controller.appInfo.id + "-" + alarmName,
-            "in": alarmTime,
-            "wakeup": true,
-            "uri": "palm://com.palm.applicationManager/open",
-            "params": {
-                "id": Mojo.Controller.appInfo.id,
-                "params": { "action": alarmName }
+        this.wakeupRequest = new Mojo.Service.Request("palm://com.palm.power/timeout", {
+            method: "set",
+            parameters: {
+                "key": Mojo.Controller.appInfo.id + "-" + alarmName,
+                "in": alarmTime,
+                "wakeup": true,
+                "uri": "palm://com.palm.applicationManager/open",
+                "params": {
+                    "id": Mojo.Controller.appInfo.id,
+                    "params": { "action": alarmName }
+                }
+            },
+            onSuccess: function(response) {
+                Mojo.Log.info("Alarm Set Success", JSON.stringify(response));
+            },
+            onFailure: function(response) {
+                Mojo.Log.error("Alarm Set Failure, " + alarmTime + ":",
+                    JSON.stringify(response), response.errorText);
             }
-        },
-        onSuccess: function(response) {
-            Mojo.Log.info("Alarm Set Success", JSON.stringify(response));
-        },
-        onFailure: function(response) {
-            Mojo.Log.error("Alarm Set Failure, " + alarmTime + ":",
-                JSON.stringify(response), response.errorText);
+        });
+        return true;
+    }
+    /*
+    parameters: {
+        "id": "com.jonandnic.simplechat",
+        "params": {
+            "params": { "action": "SimpleChat" }
         }
-    });
-    return true;
-}
+    },
+    */
 
 //Create a named System Alarm using absolute time ("at")
 SystemModel.prototype.SetSystemAlarmAbsolute = function(alarmName, alarmTime) {
@@ -64,7 +72,6 @@ SystemModel.prototype.SetSystemAlarmAbsolute = function(alarmName, alarmTime) {
 
 //Remove a named System alarm
 SystemModel.prototype.ClearSystemAlarm = function(alarmName) {
-    Mojo.Log.warn("Clearing alarm: " + alarmName);
     this.wakeupRequest = new Mojo.Service.Request("palm://com.palm.power/timeout", {
         method: "clear",
         parameters: { "key": Mojo.Controller.appInfo.id + "-" + alarmName },
@@ -132,7 +139,7 @@ SystemModel.prototype.ShowNotificationStage = function(stageName, sceneName, hei
         soundToUse = "/media/internal/ringtones/Dulcimer (short).mp3"
     else
         soundToUse = sound;
-    if (vibrate != null)
+    if (vibrate)
         this.Vibrate(vibrate);
 
     var stageCallBack = function(stageController) {

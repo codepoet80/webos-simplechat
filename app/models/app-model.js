@@ -28,7 +28,8 @@ var AppModel = function() {
         ClientAPIKey: "",
         EndpointURL: "",
         SenderName: "webOS User",
-        FirstRun: true
+        FirstRun: true,
+        LastKnownMessage: ""
     };
 }
 
