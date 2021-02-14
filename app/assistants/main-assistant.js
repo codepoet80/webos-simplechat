@@ -347,7 +347,11 @@ MainAssistant.prototype.updateChatsList = function(results) {
     var scrollPos = this.chatScroller.mojo.getState();
     //compare the known list to the new list, only if something has changed...
     if (this.checkForMessageListChanges(newMessages, thisWidgetSetup.model.items)) {
-        if (newMessages.length > thisWidgetSetup.model.items.length) {
+        if (newMessages.length > 0)
+            var newLastMessage = newMessages[newMessages.length - 1].uid;
+        if (thisWidgetSetup.model.items.length > 0)
+            var oldLastMessage = thisWidgetSetup.model.items[thisWidgetSetup.model.items.length - 1].uid;
+        if (oldLastMessage != newLastMessage) {
             Mojo.Log.info("New message in list!");
             listUpdated = 1;
         } else {
@@ -358,13 +362,18 @@ MainAssistant.prototype.updateChatsList = function(results) {
         thisWidgetSetup.model.items = newMessages;
         this.controller.modelChanged(thisWidgetSetup.model);
     }
-    if (listUpdated == 1) {
+    if (listUpdated == 1) { //if there was a new message
         this.scrollToBottom();
         if (!this.firstPoll)
             this.playAlertSound();
-    } else if (listUpdated == 0) {
-        Mojo.Log.info("Scrolling back to: " + JSON.stringify(scrollPos));
-        this.chatScroller.mojo.setState(scrollPos);
+    } else if (listUpdated == 0) { //if there was just an update to an existing message
+        if (this.pendingMessages.length == 0) {
+            Mojo.Log.info("Scrolling back to: " + JSON.stringify(scrollPos));
+            this.chatScroller.mojo.setState(scrollPos);
+        } else {
+            this.scrollToBottom();
+            this.pendingMessages = [];
+        }
     } else {
         Mojo.Log.info("Found no changes to apply.")
     }
