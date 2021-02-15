@@ -160,23 +160,21 @@ MainAssistant.prototype.activate = function(event) {
 var lastOrientation;
 //This is called by Mojo on phones, but has to be manually attached on TouchPad
 MainAssistant.prototype.orientationChanged = function(orientation) {
-    //TODO: This might be broken now
     if (this.DeviceType != "TouchPad") {
         //For phones, it doesn't make sense to allow wide orientations
         //  But we need this for initial setup, so we'll force it to always be tall
         this.controller.stageController.setWindowOrientation("up");
         this.scaleScroller("tall")
     } else {
-        if (this.controller.window.screen.height < this.controller.window.screen.width) {
-            this.scaleScroller("wide");
-        } else {
+        if (this.controller.window.screen.height < this.controller.window.screen.width) { //touchpad orientations are sideways from phones
             this.scaleScroller("tall");
+        } else {
+            this.scaleScroller("wide");
         }
     }
 };
 
 MainAssistant.prototype.scaleScroller = function(orientation) {
-
     if (!lastOrientation || orientation != lastOrientation) {
         this.controller.get('txtMessage').mojo.blur();
         this.chatScroller = this.controller.get("chatScroller");
@@ -188,7 +186,12 @@ MainAssistant.prototype.scaleScroller = function(orientation) {
         else
             bottomBuffer = 240;
 
-        this.scaledHeight = Math.floor(Mojo.Environment.DeviceInfo.screenHeight / this.scalingFactor) - bottomBuffer;
+        if (orientation == "tall")
+            this.scaledHeight = Math.floor(Mojo.Environment.DeviceInfo.screenHeight / this.scalingFactor) - bottomBuffer;
+        else
+            this.scaledHeight = Math.floor(Mojo.Environment.DeviceInfo.screenWidth / this.scalingFactor) - bottomBuffer;
+
+        Mojo.Log.info(this.DeviceType + " orientation is " + orientation + " bottom buffer is: " + bottomBuffer + " scaled height: " + this.scaledHeight);
         this.chatScroller.style.height = this.scaledHeight + "px";
         this.scrollToBottom();
         this.controller.get('txtMessage').mojo.focus();
