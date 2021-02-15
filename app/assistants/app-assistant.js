@@ -15,8 +15,7 @@ function AppAssistant() {
 }
 
 //This function will handle relaunching the app when an alarm goes off(see the device/alarm scene)
-AppAssistant.prototype.handleLaunch = function(launchParams) {
-    Mojo.Log.info("Launch Params: " + JSON.stringify(launchParams));
+AppAssistant.prototype.handleLaunch = function(params) {
     //Load preferences
     appModel.LoadSettings();
     Mojo.Log.info("settings now: " + JSON.stringify(appModel.AppSettingsCurrent));
@@ -26,9 +25,6 @@ AppAssistant.prototype.handleLaunch = function(launchParams) {
     }
 
     //get the proxy for the stage in the event it already exists (eg: app is currently open)
-    var params;
-    if (launchParams)
-        params = launchParams;
     var mainStage = this.controller.getStageProxy("main");
     Mojo.Log.info("SimpleChat is Launching! Launch params: " + JSON.stringify(params));
 
@@ -44,7 +40,6 @@ AppAssistant.prototype.handleLaunch = function(launchParams) {
     } else {
         Mojo.Log.info("Did not find existing stage, this is a new app launch!");
     }
-    Mojo.Log.info("Running state: " + AppRunning);
 
     if (AppRunning) //If the stage exists, use it
     {
@@ -61,7 +56,6 @@ AppAssistant.prototype.handleLaunch = function(launchParams) {
         }
     } else //If not, determine if we should make one
     {
-        Mojo.Log.info("params: " + JSON.stringify(params));
         if (!params || params["action"] == undefined) //If no parameters were passed, this is a normal launch
         {
             Mojo.Log.info("This is a normal launch");
@@ -72,7 +66,7 @@ AppAssistant.prototype.handleLaunch = function(launchParams) {
             return;
         } else //If parameters were passed, this is a launch from a system alarm
         {
-            Mojo.Log.info("This is a launch with parameters: " + JSON.stringify(params));
+            Mojo.Log.info("This is an alarm launch: " + JSON.stringify(params));
 
             //For some reason, if we get this far, we have no choice but to create then destroy the main stage
             var stageArguments = { name: MainStageName, lightweight: true };

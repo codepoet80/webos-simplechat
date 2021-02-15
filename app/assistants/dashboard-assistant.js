@@ -79,7 +79,6 @@ DashboardAssistant.prototype.displayDashboard = function(title, message, count) 
     var infoElement = this.controller.get("dashboardinfo");
 
     var info = { title: title, message: message, count: count };
-    Mojo.Log.info("Updating dashboard with: " + JSON.stringify(info));
     var renderedInfo = Mojo.View.render({ object: info, template: "dashboard/item-info" });
     infoElement.update(renderedInfo);
     infoElement.show();
