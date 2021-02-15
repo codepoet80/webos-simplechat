@@ -149,6 +149,8 @@ MainAssistant.prototype.activate = function(event) {
     this.controller.window.addEventListener('resize', this.orientationChanged.bind(this)); //we have to do this for TouchPad because it does not get orientationChanged events
     this.orientationChanged();
 
+    this.controller.window.removeEventListener('resize', this.orientationChanged);
+
     systemModel.PreventDisplaySleep();
     this.pendingMessages = [];
     this.firstPoll = true;
@@ -367,7 +369,7 @@ MainAssistant.prototype.updateChatsList = function(results) {
     if (listUpdated == 1) { //if there was a new message
         this.scrollToBottom();
         if (!this.firstPoll)
-            this.playAlertSound();
+            appModel.playAlertSound();
     } else if (listUpdated == 0) { //if there was just an update to an existing message
         if (this.pendingMessages.length == 0) {
             Mojo.Log.info("Scrolling back to: " + JSON.stringify(scrollPos));
@@ -400,20 +402,12 @@ MainAssistant.prototype.checkForMessageListChanges = function(newList, oldList) 
     return false;
 }
 
-MainAssistant.prototype.playAlertSound = function() {
-    if (!appModel.AppSettingsCurrent["AlertSound"] || appModel.AppSettingsCurrent["AlertSound"] == "") {
-        appModel.AppSettingsCurrent["AlertSound"] = "Subtle (short)";
-    }
-    if (appModel.AppSettingsCurrent["AlertSound"] != "off") {
-        var soundPath = "/media/internal/ringtones/" + appModel.AppSettingsCurrent["AlertSound"] + ".mp3";
-        Mojo.Log.info("trying to play: " + soundPath);
-        Mojo.Controller.getAppController().playSoundNotification("media", soundPath, 2500);
-    }
-}
-
 MainAssistant.prototype.scrollToBottom = function() {
     this.chatScroller.mojo.revealBottom();
-    this.chatScroller.mojo.adjustBy(0, (this.controller.get('chatScroller').clientHeight) * -1);
+    setTimeout(function() {
+        this.chatScroller.mojo.revealBottom();
+    }.bind(this), 500);
+    //this.chatScroller.mojo.adjustBy(0, (this.controller.get('chatScroller').clientHeight) * -1);
 }
 
 MainAssistant.prototype.convertTimeStamp = function(timeStamp, isUTC) {
@@ -447,17 +441,21 @@ MainAssistant.prototype.deactivate = function(event) {
        this scene is popped or another scene is pushed on top */
     Mojo.Log.info("Main scene deactivated " + Mojo.Controller.appInfo.id);
 
+    //Remember last known messages
+    this.pausePollingServer();
     var thisWidgetSetup = this.controller.getWidgetSetup("chatList");
     if (thisWidgetSetup.model.items.length > 0) {
-        var lastMessage = thisWidgetSetup.model.items[thisWidgetSetup.model.items.length - 1];
-        appModel.AppSettingsCurrent["LastKnownMessage"] = lastMessage.uid;
+        var knownMessages = [];
+        for (var i = 0; i < thisWidgetSetup.model.items.length; i++) {
+            knownMessages.push(thisWidgetSetup.model.items[i].uid);
+        }
+        appModel.AppSettingsCurrent["LastKnownMessages"] = knownMessages;
         appModel.SaveSettings();
     }
 
+    //Detach UI
     Mojo.Event.stopListening(this.controller.get("chatList"), Mojo.Event.listTap, this.handleListClick);
-    Mojo.Event.stopListening(this.controller.get("txtMessage"), Mojo.Event.propertyChange, this.handleSendMessage);
     this.controller.window.removeEventListener('resize', this.orientationChanged);
-    this.pausePollingServer();
 };
 
 MainAssistant.prototype.cleanup = function(event) {

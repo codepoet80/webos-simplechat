@@ -1,7 +1,7 @@
 /*
 System Model
- Version 0.9
- Created: 2020
+ Version 1.0
+ Created: 2021
  Author: Jonathan Wise
  License: MIT
  Description: A generic and re-usable model for accessing webOS system features more easily
@@ -136,14 +136,20 @@ SystemModel.prototype.ShowNotificationStage = function(stageName, sceneName, hei
 
     var stageCallBack = function(stageController) {
         stageController.pushScene({ name: stageName, sceneTemplate: sceneName });
+    }.bind(this);
+    var appController = Mojo.Controller.getAppController();
+    var stageController = appController.getStageController(stageName);
+    if (stageController) {
+        stageCallBack(stageController);
+    } else {
+        Mojo.Controller.getAppController().createStageWithCallback({
+            name: stageName,
+            lightweight: true,
+            height: heightToUse,
+            sound: soundToUse,
+            clickableWhenLocked: true
+        }, stageCallBack, 'dashboard');
     }
-    Mojo.Controller.getAppController().createStageWithCallback({
-        name: stageName,
-        lightweight: true,
-        height: heightToUse,
-        sound: soundToUse,
-        clickableWhenLocked: true
-    }, stageCallBack, 'popupalert');
 }
 
 //Vibrate the device
@@ -367,6 +373,23 @@ SystemModel.prototype.setLEDLightNotifications = function(value) {
         Mojo.Log.error("Privileged system services can only be called by apps with an ID that starts with 'com.palm.webos'!");
         throw ("Privileged system service call not allowed for this App ID!");
     }
+}
+
+//Get Internet Connection State
+SystemModel.prototype.GetInternetConnectionState = function(callback) {
+    if (Mojo.Controller.appInfo.id.indexOf("com.palm.webos") == -1) {
+        Mojo.Log.error("Privileged system services can only be called by apps with an ID that starts with 'com.palm.webos'!");
+        throw ("Privileged system service call not allowed for this App ID!");
+    }
+    Mojo.Log.info("Requesting Internet connection state from Connection Manager");
+    this.connectedRequest = new Mojo.Service.Request("palm://com.palm.connectionamanager", {
+        method: "getStatus",
+        parameters: {
+            subscribe: false
+        },
+        onSuccess: callback.bind(this),
+        onFailure: callback.bind(this)
+    });
 }
 
 //Set the WAN state

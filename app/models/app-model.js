@@ -29,8 +29,20 @@ var AppModel = function() {
         EndpointURL: "",
         SenderName: "webOS User",
         FirstRun: true,
-        LastKnownMessage: ""
+        LastKnownMessages: ""
     };
+}
+
+//TODO: This is common to two scenes
+AppModel.prototype.playAlertSound = function() {
+    if (!appModel.AppSettingsCurrent["AlertSound"] || appModel.AppSettingsCurrent["AlertSound"] == "") {
+        appModel.AppSettingsCurrent["AlertSound"] = "Subtle (short)";
+    }
+    if (appModel.AppSettingsCurrent["AlertSound"] != "off") {
+        var soundPath = "/media/internal/ringtones/" + appModel.AppSettingsCurrent["AlertSound"] + ".mp3";
+        Mojo.Log.info("trying to play: " + soundPath);
+        Mojo.Controller.getAppController().playSoundNotification("media", soundPath, 2500);
+    }
 }
 
 //You probably don't need to change the below functions since they all work against the Cookie defaults you defined above.

@@ -8,8 +8,7 @@ function DashboardAssistant(argFromPusher) {
 }
 
 DashboardAssistant.prototype.setup = function() {
-    Mojo.Log.info("notification stage setup at " + new Date());
-    Mojo.Log.info("Last known message guid: " + appModel.AppSettingsCurrent["LastKnownMessage"]);
+    Mojo.Log.info("Notification stage setup at " + new Date());
     this.displayDashboard("SimpleChat", "Checking for new messages...");
 
     this.serviceEndpointBase = appModel.ServiceEndpointBase;
@@ -17,48 +16,45 @@ DashboardAssistant.prototype.setup = function() {
         this.serviceEndpointBase = appModel.AppSettingsCurrent["EndpointURL"];
     }
     serviceModel.getChats(this.serviceEndpointBase, function(response) {
+        var appController = Mojo.Controller.getAppController();
         if (response != null && response != "") {
             var responseObj = JSON.parse(response);
             if (responseObj.status == "error") {
                 Mojo.Log.error("Error message from server during background check: " + responseObj.msg);
-
+                appController.closeAllStages();
             } else {
                 if (responseObj.messages && responseObj.messages.length > 0) {
-                    var mostRecentServerMessage = responseObj.messages[responseObj.messages.length - 1].uid;
-                    if (appModel.AppSettingsCurrent["LastKnownMessage"] != mostRecentServerMessage) {
+                    var newMessageCount = this.findNewMessageCount(appModel.AppSettingsCurrent["LastKnownMessages"], responseObj.messages);
+                    if (newMessageCount > 0) {
                         Mojo.Log.info("Found new chat on server during background check!");
-                        this.displayDashboard("SimpleChat", "New messages in the chat!", 1);
-                        this.playAlertSound();
+                        this.displayDashboard("SimpleChat", "New messages in the chat!", newMessageCount);
+                        appModel.playAlertSound();
                     } else {
                         Mojo.Log.info("No new chats on server during background check.");
-                        var appController = Mojo.Controller.getAppController();
                         appController.closeAllStages();
                     }
                 } else {
                     Mojo.Log.warn("Chat results were empty during scheduled background check. This is unlikely; server, API or connectivity problem possible");
+                    appController.closeAllStages();
                 }
             }
         } else {
             Mojo.Log.error("No usable response from server during background check: " + response);
+            appController.closeAllStages();
         }
     }.bind(this));
 
     //Event handlers
     Mojo.Event.listen(this.controller.get("dashboardinfo"), Mojo.Event.tap, this.handleTap.bind(this));
-    Mojo.Event.listen(this.controller.get("dashboardinfo"), Mojo.Event.dragging, this.handleDrag.bind(this));
-    Mojo.Event.listen(this.controller.get("dashboardinfo"), Mojo.Event.dragEnd, this.handleDragEnd.bind(this));
 }
 
-//TODO: This is common to two scenes
-DashboardAssistant.prototype.playAlertSound = function() {
-    if (!appModel.AppSettingsCurrent["AlertSound"] || appModel.AppSettingsCurrent["AlertSound"] == "") {
-        appModel.AppSettingsCurrent["AlertSound"] = "Subtle (short)";
+DashboardAssistant.prototype.findNewMessageCount = function(oldMessageGuids, newMessages) {
+    var actuallyNewMessages = [];
+    for (var j = 0; j < newMessages.length; j++) {
+        if (oldMessageGuids.indexOf(newMessages[j].uid) == -1)
+            actuallyNewMessages.push(newMessages[j].uid);
     }
-    if (appModel.AppSettingsCurrent["AlertSound"] != "off") {
-        var soundPath = "/media/internal/ringtones/" + appModel.AppSettingsCurrent["AlertSound"] + ".mp3";
-        Mojo.Log.info("trying to play: " + soundPath);
-        Mojo.Controller.getAppController().playSoundNotification("media", soundPath, 2500);
-    }
+    return actuallyNewMessages.length;
 }
 
 DashboardAssistant.prototype.handleTap = function(event) {
@@ -88,6 +84,10 @@ DashboardAssistant.prototype.displayDashboard = function(title, message, count) 
     infoElement.update(renderedInfo);
     infoElement.show();
     this.controller.getSceneScroller().mojo.revealTop(true);
+}
+
+DashboardAssistant.prototype.deactivate = function(event) {
+    Mojo.Event.stopListening(this.controller.get("dashboardinfo"), Mojo.Event.tap, this.handleTap);
 }
 
 // Cleanup anything we did in setup function
