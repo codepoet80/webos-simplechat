@@ -35,7 +35,7 @@ AppAssistant.prototype.handleLaunch = function(launchParams) {
     //Reset alarms
     systemModel.ClearSystemAlarm("SimpleChat");
     if (appModel.AppSettingsCurrent["BackgroundUpdate"] && appModel.AppSettingsCurrent["BackgroundUpdate"] != "" && appModel.AppSettingsCurrent["BackgroundUpdate"] != -1)
-        systemModel.SetSystemAlarmRelative("SimpleChat", "00:05:01");
+        systemModel.SetSystemAlarmRelative("SimpleChat", appModel.AppSettingsCurrent["BackgroundUpdate"]);
 
     var AppRunning = false;
     if (mainStage) {

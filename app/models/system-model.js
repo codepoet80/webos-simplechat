@@ -14,36 +14,28 @@ var SystemModel = function() {
 
 //Create a named System Alarm using relative time ("in")
 SystemModel.prototype.SetSystemAlarmRelative = function(alarmName, alarmTime) {
-        this.wakeupRequest = new Mojo.Service.Request("palm://com.palm.power/timeout", {
-            method: "set",
-            parameters: {
-                "key": Mojo.Controller.appInfo.id + "-" + alarmName,
-                "in": alarmTime,
-                "wakeup": true,
-                "uri": "palm://com.palm.applicationManager/open",
-                "params": {
-                    "id": Mojo.Controller.appInfo.id,
-                    "params": { "action": alarmName }
-                }
-            },
-            onSuccess: function(response) {
-                Mojo.Log.info("Alarm Set Success", JSON.stringify(response));
-            },
-            onFailure: function(response) {
-                Mojo.Log.error("Alarm Set Failure, " + alarmTime + ":",
-                    JSON.stringify(response), response.errorText);
+    this.wakeupRequest = new Mojo.Service.Request("palm://com.palm.power/timeout", {
+        method: "set",
+        parameters: {
+            "key": Mojo.Controller.appInfo.id + "-" + alarmName,
+            "in": alarmTime,
+            "wakeup": true,
+            "uri": "palm://com.palm.applicationManager/open",
+            "params": {
+                "id": Mojo.Controller.appInfo.id,
+                "params": { "action": alarmName }
             }
-        });
-        return true;
-    }
-    /*
-    parameters: {
-        "id": "com.jonandnic.simplechat",
-        "params": {
-            "params": { "action": "SimpleChat" }
+        },
+        onSuccess: function(response) {
+            Mojo.Log.info("Alarm Set Success", JSON.stringify(response));
+        },
+        onFailure: function(response) {
+            Mojo.Log.error("Alarm Set Failure, " + alarmTime + ":",
+                JSON.stringify(response), response.errorText);
         }
-    },
-    */
+    });
+    return true;
+}
 
 //Create a named System Alarm using absolute time ("at")
 SystemModel.prototype.SetSystemAlarmAbsolute = function(alarmName, alarmTime) {
