@@ -80,8 +80,9 @@ DashboardAssistant.prototype.displayDashboard = function(title, message, count) 
 
     var info = { title: title, message: message, count: count };
     var renderedInfo = Mojo.View.render({ object: info, template: "dashboard/item-info" });
-    infoElement.update(renderedInfo);
-    infoElement.show();
+    infoElement.innerHTML = renderedInfo;
+    //infoElement.update(renderedInfo);
+    //infoElement.show();
     this.controller.getSceneScroller().mojo.revealTop(true);
 }
 

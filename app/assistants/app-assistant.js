@@ -74,7 +74,7 @@ AppAssistant.prototype.handleLaunch = function(params) {
                 Mojo.Controller.appController.closeStage("main");
 
             }.bind(this));
-            systemModel.ShowNotificationStage("dashboard", "dashboard/notification-scene", 60, false, false);
+            systemModel.ShowNotificationStage("dashboard", "dashboard/dashboard-scene", 60, false, false);
             return;
         }
     }
