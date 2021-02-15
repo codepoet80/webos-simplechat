@@ -52,6 +52,7 @@ AppAssistant.prototype.handleLaunch = function(params) {
         } else //If parameters were passed, this is a launch from a system alarm
         {
             Mojo.Log.info("This is a re-launch with parameters: " + JSON.stringify(params) + ". Safe to ignore, since app is already running.");
+            systemModel.ShowNotificationStage("dashboard", "dashboard/dashboard-scene", 60, false, false);
             return;
         }
     } else //If not, determine if we should make one
@@ -67,8 +68,6 @@ AppAssistant.prototype.handleLaunch = function(params) {
         } else //If parameters were passed, this is a launch from a system alarm
         {
             Mojo.Log.info("This is an alarm launch: " + JSON.stringify(params));
-
-            //For some reason, if we get this far, we have no choice but to create then destroy the main stage
             var stageArguments = { name: MainStageName, lightweight: true };
             this.controller.createStageWithCallback(stageArguments, function(stageController) {
                 Mojo.Controller.appController.closeStage("main");

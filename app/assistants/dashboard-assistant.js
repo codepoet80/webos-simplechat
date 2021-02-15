@@ -28,7 +28,12 @@ DashboardAssistant.prototype.setup = function() {
                     if (newMessageCount > 0) {
                         Mojo.Log.info("Found new chat on server during background check!");
                         this.displayDashboard("SimpleChat", "New messages in the chat!", newMessageCount);
-                        appModel.playAlertSound();
+                        //If the main app window is open, it will play a sound. If not, play a sound here.
+                        var appController = Mojo.Controller.getAppController();
+                        var mainStage = appController.getStageController("main");
+                        if (!mainStage) {
+                            appModel.playAlertSound();
+                        }
                     } else {
                         Mojo.Log.info("No new chats on server during background check.");
                         appController.closeAllStages();
@@ -59,9 +64,15 @@ DashboardAssistant.prototype.findNewMessageCount = function(oldMessageGuids, new
 
 DashboardAssistant.prototype.handleTap = function(event) {
     Mojo.Log.info("Dashboard tapped!");
-    systemModel.LaunchApp("com.jonandnic.simplechat");
     var appController = Mojo.Controller.getAppController();
-    appController.closeAllStages();
+    var mainStage = appController.getStageProxy("main");
+    if (!mainStage) {
+        systemModel.LaunchApp("com.jonandnic.simplechat");
+        appController.closeAllStages();
+    } else {
+        mainStage.activate();
+        appController.closeStage("dashboard")
+    }
 }
 
 DashboardAssistant.prototype.handleDrag = function(event) {
