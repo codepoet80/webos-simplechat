@@ -97,6 +97,8 @@ PreferencesAssistant.prototype.setup = function() {
             multiline: false,
             enterSubmits: false,
             autoReplace: false,
+            focus: false,
+            autoFocus: false,
             textCase: Mojo.Widget.steModeLowerCase
         },
         this.model = {
@@ -114,7 +116,7 @@ PreferencesAssistant.prototype.setup = function() {
         },
         this.model = {
             value: appModel.AppSettingsCurrent["EndpointURL"],
-            disabled: !appModel.AppSettingsCurrent["EndpointURL"]
+            disabled: !appModel.AppSettingsCurrent["UseCustomEndpoint"]
         }
     );
     //OK Button
@@ -197,8 +199,6 @@ PreferencesAssistant.prototype.setAlarmSound = function() {
             appModel.AppSettingsCurrent["AlertSound"] = fileToUse;
             appModel.SaveSettings();
 
-            //Mojo.Log.info(JSON.stringify(self.controller.getWidgetSetup("listAlertSound")));
-
             var useVal = fileToUse;
             var labelVal = useVal;
             if (Mojo.Environment.DeviceInfo.platformVersionMajor < 3) {
@@ -215,13 +215,13 @@ PreferencesAssistant.prototype.setAlarmSound = function() {
             self.controller.setWidgetModel("listAlertSound", thisWidgetModel);
             self.controller.modelChanged(thisWidgetModel);
 
-            //Mojo.Log.info(JSON.stringify(self.controller.getWidgetSetup("listAlertSound")));
-
             Mojo.Log.info("alarm sound changed to: " + fileToUse)
 
         }
     }
-    Mojo.FilePicker.pickFile(params, Mojo.Controller.stageController);
+    var appController = Mojo.Controller.getAppController();
+    var stageController = appController.getStageProxy("main");
+    Mojo.FilePicker.pickFile(params, stageController);
 }
 
 //Handle menu and button bar commands
