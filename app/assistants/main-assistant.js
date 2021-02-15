@@ -94,6 +94,8 @@ MainAssistant.prototype.setup = function() {
 
     /* Always on Event handlers */
     Mojo.Event.listen(this.controller.get("chatList"), Mojo.Event.listTap, this.handleListClick.bind(this));
+    Mojo.Event.listen(this.controller.stageController.document, Mojo.Event.stageActivate, this.activateWindow.bind(this));
+    Mojo.Event.listen(this.controller.stageController.document, Mojo.Event.stageDeactivate, this.deactivateWindow.bind(this));
 
     //Check for updates
     if (!appModel.UpdateCheckDone) {
@@ -157,7 +159,14 @@ MainAssistant.prototype.activate = function(event) {
     this.startPollingServer();
 };
 
-var lastOrientation;
+MainAssistant.prototype.activateWindow = function(event) {
+    this.rememberMessageGuids();
+};
+
+MainAssistant.prototype.deactivateWindow = function(event) {
+    this.rememberMessageGuids();
+};
+
 //This is called by Mojo on phones, but has to be manually attached on TouchPad
 MainAssistant.prototype.orientationChanged = function(orientation) {
     if (this.DeviceType != "TouchPad") {
@@ -175,7 +184,7 @@ MainAssistant.prototype.orientationChanged = function(orientation) {
 };
 
 MainAssistant.prototype.scaleScroller = function(orientation) {
-    if (!lastOrientation || orientation != lastOrientation) {
+    if (!this.lastOrientation || orientation != this.lastOrientation) {
         this.controller.get('txtMessage').mojo.blur();
         this.chatScroller = this.controller.get("chatScroller");
         this.scalingFactor = this.controller.window.zoomFactor || 1;
@@ -199,7 +208,7 @@ MainAssistant.prototype.scaleScroller = function(orientation) {
             this.controller.getSceneScroller().mojo.revealTop(true);
         }.bind(this), 100);
     }
-    lastOrientation = orientation;
+    this.lastOrientation = orientation;
 }
 
 MainAssistant.prototype.startPollingServer = function() {
@@ -439,13 +448,7 @@ MainAssistant.prototype.enableUI = function() {
     this.controller.get('txtMessage').mojo.focus();
 }
 
-MainAssistant.prototype.deactivate = function(event) {
-    /* remove any event handlers you added in activate and do any other cleanup that should happen before
-       this scene is popped or another scene is pushed on top */
-    Mojo.Log.info("Main scene deactivated " + Mojo.Controller.appInfo.id);
-
-    //Remember last known messages
-    this.pausePollingServer();
+MainAssistant.prototype.rememberMessageGuids = function() {
     var thisWidgetSetup = this.controller.getWidgetSetup("chatList");
     if (thisWidgetSetup.model.items.length > 0) {
         var knownMessages = [];
@@ -455,10 +458,23 @@ MainAssistant.prototype.deactivate = function(event) {
         appModel.AppSettingsCurrent["LastKnownMessages"] = knownMessages;
         appModel.SaveSettings();
     }
+}
+
+MainAssistant.prototype.deactivate = function(event) {
+    /* remove any event handlers you added in activate and do any other cleanup that should happen before
+       this scene is popped or another scene is pushed on top */
+    Mojo.Log.info("Main scene deactivated " + Mojo.Controller.appInfo.id);
+
+    //Remember last known messages
+    this.pausePollingServer();
+    this.rememberMessageGuids();
 
     //Detach UI
     Mojo.Event.stopListening(this.controller.get("chatList"), Mojo.Event.listTap, this.handleListClick);
     this.controller.window.removeEventListener('resize', this.orientationChanged);
+    Mojo.Event.stopListening(this.controller.stageController.document, Mojo.Event.stageActivate, this.activateWindow);
+    Mojo.Event.stopListening(this.controller.stageController.document, Mojo.Event.stageDeactivate, this.deactivateWindow);
+
 };
 
 MainAssistant.prototype.cleanup = function(event) {
