@@ -153,7 +153,7 @@ MainAssistant.prototype.activate = function(event) {
 
     this.controller.window.removeEventListener('resize', this.orientationChanged);
 
-    systemModel.PreventDisplaySleep();
+    //systemModel.PreventDisplaySleep();
     this.pendingMessages = [];
     this.firstPoll = true;
     this.startPollingServer();
