@@ -36,16 +36,16 @@ DashboardAssistant.prototype.setup = function() {
                         }
                     } else {
                         Mojo.Log.info("No new chats on server during background check.");
-                        appController.closeAllStages();
+                        appController.closeStage("dashboard");
                     }
                 } else {
                     Mojo.Log.warn("Chat results were empty during scheduled background check. This is unlikely; server, API or connectivity problem possible");
-                    appController.closeAllStages();
+                    appController.closeStage("dashboard");
                 }
             }
         } else {
             Mojo.Log.error("No usable response from server during background check: " + response);
-            appController.closeAllStages();
+            appController.closeStage("dashboard");
         }
     }.bind(this));
 

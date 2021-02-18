@@ -480,4 +480,6 @@ MainAssistant.prototype.deactivate = function(event) {
 MainAssistant.prototype.cleanup = function(event) {
     /* this function should do any cleanup needed before the scene is destroyed as 
        a result of being popped off the scene stack */
+    var appController = Mojo.Controller.getAppController();
+    appController.closeAllStages();
 };
