@@ -35,7 +35,7 @@ DashboardAssistant.prototype.setup = function() {
                         var appController = Mojo.Controller.getAppController();
                         var mainStage = appController.getStageController("main");
                         if (!mainStage) {
-                            systemModel.playAlertSound(appModel.AppSettingsCurrent["AlertSound"]);
+                            systemModel.PlayAlertSound(appModel.AppSettingsCurrent["AlertSound"]);
                         }
                     } else {
                         Mojo.Log.info("No new chats on server during background check.");
