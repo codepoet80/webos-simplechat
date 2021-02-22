@@ -80,19 +80,6 @@ SystemModel.prototype.ClearSystemAlarm = function(alarmName) {
     return true;
 }
 
-//Play a pre-defined system sound
-SystemModel.prototype.PlaySound = function(soundName) {
-    Mojo.Log.info("Playing sound: " + soundName);
-    this.soundRequest = new Mojo.Service.Request("palm://com.palm.audio/systemsounds", {
-        method: "playFeedback",
-        parameters: {
-            name: soundName
-        },
-        onSuccess: function() { success = true; },
-        onFailure: function() { success = false; }
-    });
-}
-
 //Allow the display to sleep
 SystemModel.prototype.AllowDisplaySleep = function(stageController) {
     if (!stageController)
@@ -152,8 +139,21 @@ SystemModel.prototype.ShowNotificationStage = function(stageName, sceneName, hei
     }
 }
 
+//Play a pre-defined system sound
+SystemModel.prototype.PlaySound = function(soundName) {
+    Mojo.Log.info("Playing sound: " + soundName);
+    this.soundRequest = new Mojo.Service.Request("palm://com.palm.audio/systemsounds", {
+        method: "playFeedback",
+        parameters: {
+            name: soundName
+        },
+        onSuccess: function() { success = true; },
+        onFailure: function() { success = false; }
+    });
+}
+
 //Play an alert sound
-AppModel.prototype.playAlertSound = function(sound) {
+AppModel.prototype.PlayAlertSound = function(sound) {
     if (!sound || sound == "") {
         sound = "Subtle (short)";
     }

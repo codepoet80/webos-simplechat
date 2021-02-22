@@ -425,7 +425,7 @@ MainAssistant.prototype.updateChatsList = function(results) {
     if (listUpdated == 1) { //if there was a new message
         this.scrollToBottom();
         if (!this.firstPoll)
-            systemModel.playAlertSound(appModel.AppSettingsCurrent["AlertSound"]);
+            systemModel.PlayAlertSound(appModel.AppSettingsCurrent["AlertSound"]);
     } else if (listUpdated == 0) { //if there was just an update to an existing message
         if (this.pendingMessages.length == 0) {
             Mojo.Log.info("Scrolling back to: " + JSON.stringify(scrollPos));
