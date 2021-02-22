@@ -151,7 +151,8 @@ MainAssistant.prototype.activate = function(event) {
     this.controller.window.addEventListener('resize', this.orientationChanged.bind(this)); //we have to do this for TouchPad because it does not get orientationChanged events
     this.orientationChanged();
 
-    this.controller.window.removeEventListener('resize', this.orientationChanged);
+    //this.controller.window.removeEventListener('resize', this.orientationChanged);
+    Mojo.Event.listen(this.controller.get("chatList"), Mojo.Event.listTap, this.handleListClick.bind(this));
 
     //systemModel.PreventDisplaySleep();
     this.pendingMessages = [];
@@ -226,6 +227,50 @@ MainAssistant.prototype.pausePollingServer = function() {
 }
 
 //Handle menu and button bar commands
+MainAssistant.prototype.handleListClick = function(event) {
+    appModel.LastMessageSelected = event.item;
+    var posTarget = event.originalEvent.target;
+    Mojo.Log.info(event.item.links)
+
+    var popupMenuItems = [
+        { label: 'Copy', command: 'do-copy' }
+    ];
+    if (event.item.links != null)
+        popupMenuItems.push({ label: 'Follow Link', command: 'do-followlink' });
+    this.controller.popupSubmenu({
+        onChoose: this.handlePopupChoose.bind(this, event.item),
+        placeNear: posTarget,
+        items: popupMenuItems
+    });
+    return true;
+}
+
+MainAssistant.prototype.handlePopupChoose = function(task, command) {
+    Mojo.Log.info("Perform: ", command, " on ", task.uid);
+    switch (command) {
+        case "do-copy":
+            //Mojo.Log.info("last message content: " + appModel.LastMessageSelected.message);
+            this.controller.get('txtClipboard').value = appModel.LastMessageSelected.message; //unrendered element on index.html
+            this.controller.get('txtClipboard').focus();
+            this.controller.get('txtClipboard').select();
+            this.controller.document.execCommand('copy');
+            Mojo.Controller.getAppController().showBanner("Content copied!", { source: 'notification' });
+            break;
+        case "do-followlink":
+            var useLink = "http://" + appModel.LastMessageSelected.links[0];
+            //TODO: Handle more than one link
+            Mojo.Log.info("Launching browser for URL " + useLink);
+            var parameters = {
+                "id": "com.palm.app.browser",
+                "params": {
+                    "target": useLink
+                }
+            }
+            systemModel.LaunchApp("com.palm.app.browser", parameters);
+            break;
+    }
+}
+
 MainAssistant.prototype.handleCommand = function(event) {
     if (event.type == Mojo.Event.command) {
         switch (event.command) {
@@ -309,12 +354,6 @@ MainAssistant.prototype.handleSendMessage = function(event) {
     }.bind(this));
 }
 
-//Handle list item taps
-MainAssistant.prototype.handleListClick = function(event) {
-    Mojo.Log.info("Item tapped: " + event.item.uid);
-    return false;
-}
-
 //Send a request to Service to get chat messages
 MainAssistant.prototype.getChats = function() {
     serviceModel.getChats(this.serviceEndpointBase, function(response) {
@@ -355,6 +394,7 @@ MainAssistant.prototype.updateChatsList = function(results) {
             uid: results[i].uid,
             sender: results[i].sender,
             message: results[i].message,
+            links: this.detectURLs(results[i].message),
             timestamp: this.convertTimeStamp(results[i].timestamp, true),
             color: "black"
         });
@@ -431,6 +471,12 @@ MainAssistant.prototype.convertTimeStamp = function(timeStamp, isUTC) {
     }
     timeStamp = timeStamp.toLocaleString();
     return timeStamp;
+}
+
+MainAssistant.prototype.detectURLs = function(message) {
+    if (!message) return
+    var urlRegex = /(((https?:\/\/)|(www\.))[^\s]+)/g;
+    return message.match(urlRegex)
 }
 
 MainAssistant.prototype.disableUI = function(statusValue) {

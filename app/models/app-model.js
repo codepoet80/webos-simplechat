@@ -16,6 +16,7 @@ var AppModel = function() {
     this.LaunchQuery = "";
     this.ServiceEndpointBase = "http://chat.webosarchive.com/";
     this.ClientId = secrets.clientid;
+    this.LastMessageSelected = null;
 
     //Define your app preferences (to be saved by OS)
     this.AppSettingsCurrent = null;
