@@ -15,6 +15,9 @@ DashboardAssistant.prototype.setup = function() {
     if (appModel.AppSettingsCurrent["UseCustomEndpoint"] && appModel.AppSettingsCurrent["EndpointURL"]) {
         this.serviceEndpointBase = appModel.AppSettingsCurrent["EndpointURL"];
     }
+    if (!appModel.AppSettingsCurrent["AlertSound"] || appModel.AppSettingsCurrent["AlertSound"] == "") {
+        appModel.AppSettingsCurrent["AlertSound"] = "Subtle (short)";
+    }
     serviceModel.getChats(this.serviceEndpointBase, function(response) {
         var appController = Mojo.Controller.getAppController();
         if (response != null && response != "") {
@@ -32,7 +35,7 @@ DashboardAssistant.prototype.setup = function() {
                         var appController = Mojo.Controller.getAppController();
                         var mainStage = appController.getStageController("main");
                         if (!mainStage) {
-                            appModel.playAlertSound();
+                            systemModel.playAlertSound(appModel.AppSettingsCurrent["AlertSound"]);
                         }
                     } else {
                         Mojo.Log.info("No new chats on server during background check.");

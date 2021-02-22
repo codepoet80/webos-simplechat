@@ -123,6 +123,10 @@ MainAssistant.prototype.activate = function(event) {
     if (appModel.AppSettingsCurrent["UseClientAPIKey"] && appModel.AppSettingsCurrent["ClientAPIKey"]) {
         this.clientId = appModel.AppSettingsCurrent["ClientAPIKey"];
     }
+    //Set an alert sound
+    if (!appModel.AppSettingsCurrent["AlertSound"] || appModel.AppSettingsCurrent["AlertSound"] == "") {
+        appModel.AppSettingsCurrent["AlertSound"] = "Subtle (short)";
+    }
 
     //Figure out if this is our first time
     if (appModel.AppSettingsCurrent["FirstRun"] || (appModel.AppSettingsCurrent["SenderName"] && appModel.AppSettingsCurrent["SenderName"].toLowerCase() == "webos user")) {
@@ -421,7 +425,7 @@ MainAssistant.prototype.updateChatsList = function(results) {
     if (listUpdated == 1) { //if there was a new message
         this.scrollToBottom();
         if (!this.firstPoll)
-            appModel.playAlertSound();
+            systemModel.playAlertSound(appModel.AppSettingsCurrent["AlertSound"]);
     } else if (listUpdated == 0) { //if there was just an update to an existing message
         if (this.pendingMessages.length == 0) {
             Mojo.Log.info("Scrolling back to: " + JSON.stringify(scrollPos));

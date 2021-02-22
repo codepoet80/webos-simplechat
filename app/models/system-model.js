@@ -1,6 +1,6 @@
 /*
 System Model
- Version 1.0
+ Version 1.1
  Created: 2021
  Author: Jonathan Wise
  License: MIT
@@ -149,6 +149,18 @@ SystemModel.prototype.ShowNotificationStage = function(stageName, sceneName, hei
             sound: soundToUse,
             clickableWhenLocked: true
         }, stageCallBack, 'dashboard');
+    }
+}
+
+//Play an alert sound
+AppModel.prototype.playAlertSound = function(sound) {
+    if (!sound || sound == "") {
+        sound = "Subtle (short)";
+    }
+    if (sound != "off") {
+        var soundPath = "/media/internal/ringtones/" + sound + ".mp3";
+        Mojo.Log.info("trying to play: " + soundPath);
+        Mojo.Controller.getAppController().playSoundNotification("media", soundPath, 2500);
     }
 }
 
