@@ -261,7 +261,9 @@ MainAssistant.prototype.handlePopupChoose = function(task, command) {
             Mojo.Controller.getAppController().showBanner("Content copied!", { source: 'notification' });
             break;
         case "do-followlink":
-            var useLink = "http://" + appModel.LastMessageSelected.links[0];
+            var useLink = appModel.LastMessageSelected.links[0].toLowerCase();
+            if (useLink.indexOf("http://") == -1 && useLink.indexOf("https://") == -1)
+                useLink = "http://" + appModel.LastMessageSelected.links[0];
             //TODO: Handle more than one link
             Mojo.Log.info("Launching browser for URL " + useLink);
             var parameters = {
