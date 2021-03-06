@@ -429,7 +429,7 @@ MainAssistant.prototype.editMessageToService = function(newMessage) {
                 for (var i = 0; i < thisWidgetSetup.model.items.length; i++) {
                     if (thisWidgetSetup.model.items[i].uid == appModel.LastMessageSelected.uid) {
                         thisWidgetSetup.model.items[i].color = "gray";
-                        thisWidgetSetup.model.items[i].message = newMessage;
+                        thisWidgetSetup.model.items[i].formattedMessage = newMessage;
                     }
                 }
                 this.controller.modelChanged(thisWidgetSetup.model);
