@@ -153,7 +153,7 @@ SystemModel.prototype.PlaySound = function(soundName) {
 }
 
 //Play an alert sound
-AppModel.prototype.PlayAlertSound = function(sound) {
+SystemModel.prototype.PlayAlertSound = function(sound) {
     if (!sound || sound == "") {
         sound = "Subtle (short)";
     }

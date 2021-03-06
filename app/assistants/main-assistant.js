@@ -8,6 +8,7 @@ function MainAssistant() {
        additional parameters (after the scene name) that were passed to pushScene. The reference
        to the scene controller (this.controller) has not be established yet, so any initialization
        that needs the scene controller should be done in the setup function below. */
+    this.myMessages = [];
 }
 
 MainAssistant.prototype.setup = function() {
@@ -17,13 +18,14 @@ MainAssistant.prototype.setup = function() {
         'original': ''
     };
     this.messageFieldModel.attributes = {
-        hintText: $L(" Enter a message..."),
-        enterSubmits: true,
+        //hintText: $L(" Enter a message..."),
+        enterSubmits: false,
         focus: true,
-        multiline: false,
+        multiline: true,
         textCase: Mojo.Widget.steModeSentenceCase,
         focusMode: Mojo.Widget.focusSelectMode,
         autoReplace: true,
+        autoEmoticons: true,
         requiresEnterKey: true,
         changeOnKeyPress: false
     };
@@ -196,9 +198,9 @@ MainAssistant.prototype.scaleScroller = function(orientation) {
 
         var bottomBuffer;
         if (this.DeviceType == "TouchPad")
-            bottomBuffer = 580;
+            bottomBuffer = 590;
         else
-            bottomBuffer = 240;
+            bottomBuffer = 250;
 
         if (orientation == "tall")
             this.scaledHeight = Math.floor(Mojo.Environment.DeviceInfo.screenHeight / this.scalingFactor) - bottomBuffer;
@@ -207,8 +209,11 @@ MainAssistant.prototype.scaleScroller = function(orientation) {
 
         Mojo.Log.info(this.DeviceType + " orientation is " + orientation + " bottom buffer is: " + bottomBuffer + " scaled height: " + this.scaledHeight);
         this.chatScroller.style.height = this.scaledHeight + "px";
+
         this.scrollToBottom();
         this.controller.get('txtMessage').mojo.focus();
+        this.controller.get('palm_anon_element_0mojo-scene-maintxtMessage-write').rows = "2";
+        this.controller.get('palm_anon_element_0mojo-scene-maintxtMessage-write').setAttribute("x-palm-enable-emoticons", true);
         setTimeout(fixScroll = function() {
             this.controller.getSceneScroller().mojo.revealTop(true);
         }.bind(this), 100);
@@ -241,6 +246,15 @@ MainAssistant.prototype.handleListClick = function(event) {
     ];
     if (event.item.links != null)
         popupMenuItems.push({ label: 'Follow Link', command: 'do-followlink' });
+    var isMine = false;
+    Mojo.Log.info("Checking myMessages for: " + appModel.LastMessageSelected.uid);
+    for (var m = 0; m < this.myMessages.length; m++) {
+        Mojo.Log.info("? " + this.myMessages[m].uid);
+        if (this.myMessages[m].uid == appModel.LastMessageSelected.uid)
+            isMine = true;
+    }
+    if (isMine)
+        popupMenuItems.push({ label: 'Edit message', command: 'do-editMessage' });
     this.controller.popupSubmenu({
         onChoose: this.handlePopupChoose.bind(this, event.item),
         placeNear: posTarget,
@@ -253,16 +267,15 @@ MainAssistant.prototype.handlePopupChoose = function(task, command) {
     Mojo.Log.info("Perform: ", command, " on ", task.uid);
     switch (command) {
         case "do-copy":
-            //Mojo.Log.info("last message content: " + appModel.LastMessageSelected.message);
-            this.controller.get('txtClipboard').value = appModel.LastMessageSelected.message; //unrendered element on index.html
-            this.controller.get('txtClipboard').focus();
-            this.controller.get('txtClipboard').select();
-            this.controller.document.execCommand('copy');
+            //TODO: Switch to Mojo method: Mojo.Controller.StageController.setClipboard(escapeHTML:, escapeHTML) 
+            //  http://sdk.webosarchive.com/docs/docs.html#reference/mojo/classes/mojo-controller-stagecontroller.html
+            var stageController = Mojo.Controller.getAppController().getActiveStageController();
+            stageController.setClipboard(appModel.LastMessageSelected.message);
             Mojo.Controller.getAppController().showBanner("Content copied!", { source: 'notification' });
             break;
         case "do-followlink":
-            var useLink = appModel.LastMessageSelected.links[0].toLowerCase();
-            if (useLink.indexOf("http://") == -1 && useLink.indexOf("https://") == -1)
+            var useLink = appModel.LastMessageSelected.links[0];
+            if (useLink.toLowerCase().indexOf("http://") == -1 && useLink.toLowerCase().indexOf("https://") == -1)
                 useLink = "http://" + appModel.LastMessageSelected.links[0];
             //TODO: Handle more than one link
             Mojo.Log.info("Launching browser for URL " + useLink);
@@ -273,6 +286,9 @@ MainAssistant.prototype.handlePopupChoose = function(task, command) {
                 }
             }
             systemModel.LaunchApp("com.palm.app.browser", parameters);
+            break;
+        case "do-editMessage":
+            Mojo.Additions.ShowDialogBox("In Development", "This feature is work-in-progress. If you ever see this message for a chat that is not your own, that would be a bug; please let the developer know!");
             break;
     }
 }
@@ -288,7 +304,6 @@ MainAssistant.prototype.handleCommand = function(event) {
                 break;
             case 'do-Preferences':
                 this.pausePollingServer();
-                //var stageController = Mojo.Controller.stageController;
                 var stageController = Mojo.Controller.getAppController().getActiveStageController();
                 stageController.pushScene({ name: "preferences", disableSceneScroller: false });
                 break;
@@ -337,7 +352,7 @@ MainAssistant.prototype.handleSendMessage = function(event) {
                 //Handle error
                 Mojo.Log.error("Server error returned: " + responseObj.error);
             } else {
-                Mojo.Log.info("message went through: " + responseObj.posted);
+                Mojo.Log.info("Message accpeted by server: " + responseObj.posted);
                 if (responseObj.posted && responseObj.posted != "") {
                     var newMsg = {
                         uid: responseObj.posted,
@@ -346,6 +361,9 @@ MainAssistant.prototype.handleSendMessage = function(event) {
                         timestamp: this.convertTimeStamp(new Date(), false),
                         color: "gray"
                     };
+                    if (responseObj.senderKey) {
+                        this.myMessages.push({ uid: responseObj.posted, senderKey: responseObj.senderKey })
+                    }
                     this.pendingMessages.push(responseObj.posted);
                     Mojo.Log.info("message:" + JSON.stringify(newMsg));
                     var thisWidgetSetup = this.controller.getWidgetSetup("chatList");

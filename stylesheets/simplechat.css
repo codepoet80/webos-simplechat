@@ -31,3 +31,7 @@
 .dashboard-icon-chat {
     background: url(../icon-48.png);
 }
+
+textarea {
+    margin-top: 0px !important;
+}
