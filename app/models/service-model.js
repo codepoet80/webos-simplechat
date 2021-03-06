@@ -43,3 +43,55 @@ ServiceModel.prototype.postChat = function(useSender, useMessage, serviceBase, c
         }
     }.bind(this);
 }
+
+ServiceModel.prototype.editChat = function(useSender, useMessage, uid, editKey, serviceBase, clientId, callback) {
+    serviceURL = serviceBase + "edit-chat.php";
+    var msgToPost = {
+        sender: useSender,
+        message: useMessage,
+        uid: uid,
+        editKey: editKey
+    }
+    Mojo.Log.info("Edit chat to: " + serviceURL);
+    Mojo.Log.info(JSON.stringify(msgToPost));
+
+    this.retVal = "";
+    if (callback)
+        callback = callback.bind(this);
+
+    var xmlhttp = new XMLHttpRequest();
+    xmlhttp.open("POST", serviceURL);
+    xmlhttp.setRequestHeader("Client-Id", clientId);
+    xmlhttp.send(JSON.stringify(msgToPost));
+    xmlhttp.onreadystatechange = function() {
+        if (xmlhttp.readyState == XMLHttpRequest.DONE) {
+            if (callback)
+                callback(xmlhttp.responseText);
+        }
+    }.bind(this);
+}
+
+ServiceModel.prototype.likeChat = function(uid, serviceBase, clientId, callback) {
+    serviceURL = serviceBase + "like-chat.php";
+    var msgToPost = {
+        uid: uid,
+        like: "+1"
+    }
+    Mojo.Log.info("Like chat to: " + serviceURL);
+    Mojo.Log.info(JSON.stringify(msgToPost));
+
+    this.retVal = "";
+    if (callback)
+        callback = callback.bind(this);
+
+    var xmlhttp = new XMLHttpRequest();
+    xmlhttp.open("POST", serviceURL);
+    xmlhttp.setRequestHeader("Client-Id", clientId);
+    xmlhttp.send(JSON.stringify(msgToPost));
+    xmlhttp.onreadystatechange = function() {
+        if (xmlhttp.readyState == XMLHttpRequest.DONE) {
+            if (callback)
+                callback(xmlhttp.responseText);
+        }
+    }.bind(this);
+}

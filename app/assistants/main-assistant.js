@@ -9,6 +9,7 @@ function MainAssistant() {
        to the scene controller (this.controller) has not be established yet, so any initialization
        that needs the scene controller should be done in the setup function below. */
     this.myMessages = [];
+    this.doingMessageEdit = false;
 }
 
 MainAssistant.prototype.setup = function() {
@@ -26,6 +27,7 @@ MainAssistant.prototype.setup = function() {
         focusMode: Mojo.Widget.focusSelectMode,
         autoReplace: true,
         autoEmoticons: true,
+        emoticons: true,
         requiresEnterKey: true,
         changeOnKeyPress: false
     };
@@ -51,9 +53,11 @@ MainAssistant.prototype.setup = function() {
     this.template = {
         itemTemplate: 'main/item-template',
         listTemplate: 'main/list-template',
+        hasNoWidgets: true,
         swipeToDelete: false,
         renderLimit: 25,
-        reorderable: false
+        reorderable: false,
+        onItemRendered: this.handleItemRendered.bind(this)
     };
     this.controller.setupWidget('chatList', this.template, this.listInfoModel);
     //Scroller
@@ -176,16 +180,18 @@ MainAssistant.prototype.deactivateWindow = function(event) {
     this.rememberMessageGuids();
 };
 
+/* Screen Adjustments */
 MainAssistant.prototype.handleTextFocus = function(event) {
     this.adustScrollerForKeyboard(this.lastOrientation);
-    /*
-    if (this.controller.document.activeElement.id == "palm_anon_element_0mojo-scene-maintxtMessage-write") {
-        Mojo.Log.info("textbox focused");
+}
 
-    } else {
-        Mojo.Log.info("textbox blurred");
-        this.adustScrollerForKeyboard(this.lastOrientation, true);
-    }*/
+MainAssistant.prototype.handleItemRendered = function(listWidget, itemModel, itemNode) {
+    Mojo.Log.info("was" + itemNode.innerHTML);
+    var newHTML = itemNode.innerHTML;
+    newHTML = newHTML.replace(/&gt;/g, ">");
+    newHTML = newHTML.replace(/&lt;/g, "<");
+    Mojo.Log.info("is " + newHTML);
+    itemNode.innerHTML = newHTML;
 }
 
 //This is called by Mojo on phones, but has to be manually attached on TouchPad
@@ -241,6 +247,7 @@ MainAssistant.prototype.adustScrollerForKeyboard = function(orientation) {
     }.bind(this), 100);
 }
 
+/* Start and Stop updates */
 MainAssistant.prototype.startPollingServer = function() {
     this.getChats();
     var useInt = 10000;
@@ -255,15 +262,13 @@ MainAssistant.prototype.pausePollingServer = function() {
     this.controller.window.clearInterval(this.FileCheckInt);
 }
 
-//Handle menu and button bar commands
+/* UI Handlers */
 MainAssistant.prototype.handleListClick = function(event) {
     appModel.LastMessageSelected = event.item;
     var posTarget = event.originalEvent.target;
 
     //Decide what items to put in pop-up menu
-    var popupMenuItems = [
-        { label: 'Copy', command: 'do-copy' }
-    ];
+    var popupMenuItems = [];
     var isMine = false;
     //Mojo.Log.info("Checking myMessages for: " + appModel.LastMessageSelected.uid);
     for (var m = 0; m < this.myMessages.length; m++) {
@@ -271,8 +276,11 @@ MainAssistant.prototype.handleListClick = function(event) {
             isMine = true;
     }
     if (isMine)
-        popupMenuItems.push({ label: 'Edit message', command: 'do-editMessage' });
-    //Mojo.Log.info(event.item.links)
+        popupMenuItems.push({ label: 'Edit', command: 'do-editMessage' });
+    else {
+        popupMenuItems.push({ label: 'Copy', command: 'do-copy' });
+        popupMenuItems.push({ label: 'Like', command: 'do-like' });
+    }
     if (event.item.links != null)
         popupMenuItems.push({ label: 'Follow Link', command: 'do-followlink' });
     this.controller.popupSubmenu({
@@ -306,7 +314,10 @@ MainAssistant.prototype.handlePopupChoose = function(task, command) {
             systemModel.LaunchApp("com.palm.app.browser", parameters);
             break;
         case "do-editMessage":
-            Mojo.Additions.ShowDialogBox("In Development", "This feature is work-in-progress. If you ever see this message for a chat that is not your own, that would be a bug; please let the developer know!");
+            this.doEditMessage();
+            break;
+        case "do-like":
+            this.doLikeMessage();
             break;
     }
 }
@@ -332,35 +343,32 @@ MainAssistant.prototype.handleCommand = function(event) {
     }
 };
 
-MainAssistant.prototype.getUsername = function() {
-    var stageController = Mojo.Controller.getAppController().getActiveStageController();
-    if (stageController) {
-        this.controller = stageController.activeScene();
-        this.controller.showDialog({
-            template: 'user/user-scene',
-            preventCancel: true,
-            assistant: new UserAssistant(this, function(val) {
-                    Mojo.Log.error("got value from dialog: " + val);
-                    //this.startPollingServer();
-                    //this.handleDialogDone(val);
-                }.bind(this)) //since this will be a dialog, not a scene, it must be defined in sources.json without a 'scenes' member
-        });
-    }
+MainAssistant.prototype.doEditMessage = function(event) {
+    this.controller.get('txtMessage').mojo.setValue(appModel.LastMessageSelected.message);
+    this.controller.get('spanCompose').innerHTML = "Edit";
+    this.doingMessageEdit = true;
 }
 
-//Handle mojo button taps
-MainAssistant.prototype.handleClick = function(event) {
-
-    //Nothing to do right now
+MainAssistant.prototype.doLikeMessage = function(event) {
+    //play a sound, post a like, update message
+    this.likeMessageToService();
 }
 
+/* Server Interactions */
 MainAssistant.prototype.handleSendMessage = function(event) {
-
     this.controller.get('txtMessage').mojo.blur();
     var newMessage = this.controller.get('txtMessage').mojo.getValue();
     this.disableUI();
     systemModel.PlaySound("down2");
 
+    if (this.doingMessageEdit) {
+        this.editMessageToService(newMessage);
+    } else {
+        this.postMessageToService(newMessage);
+    }
+}
+
+MainAssistant.prototype.postMessageToService = function(newMessage) {
     serviceModel.postChat(appModel.AppSettingsCurrent["SenderName"], newMessage, this.serviceEndpointBase, this.clientId, function(response) {
         this.controller.get('txtMessage').mojo.setValue("");
         this.enableUI();
@@ -370,7 +378,7 @@ MainAssistant.prototype.handleSendMessage = function(event) {
                 //Handle error
                 Mojo.Log.error("Server error returned: " + responseObj.error);
             } else {
-                Mojo.Log.info("Message accpeted by server: " + responseObj.posted);
+                Mojo.Log.info("Message accepted by server: " + responseObj.posted);
                 if (responseObj.posted && responseObj.posted != "") {
                     var newMsg = {
                         uid: responseObj.posted,
@@ -389,6 +397,69 @@ MainAssistant.prototype.handleSendMessage = function(event) {
                     this.controller.modelChanged(thisWidgetSetup.model);
                     this.scrollToBottom();
                 }
+            }
+        } catch (error) {
+            //Handle error
+        }
+    }.bind(this));
+}
+
+MainAssistant.prototype.editMessageToService = function(newMessage) {
+    var editKey;
+    for (var m = 0; m < this.myMessages.length; m++) {
+        if (this.myMessages[m].uid == appModel.LastMessageSelected.uid)
+            editKey = this.myMessages[m].senderKey;
+    }
+    serviceModel.editChat(appModel.AppSettingsCurrent["SenderName"], newMessage, appModel.LastMessageSelected.uid, editKey, this.serviceEndpointBase, this.clientId, function(response) {
+
+        this.controller.get('txtMessage').mojo.setValue("");
+        this.controller.get('spanCompose').innerHTML = "Compose";
+        this.doingMessageEdit = false;
+        this.enableUI();
+
+        try {
+            var responseObj = JSON.parse(response);
+            if (responseObj.error) {
+                //Handle error
+                Mojo.Log.error("Server error returned: " + responseObj.error);
+            } else {
+                Mojo.Log.info("Edit accepted by server: " + responseObj.edited);
+
+                var thisWidgetSetup = this.controller.getWidgetSetup("chatList");
+                for (var i = 0; i < thisWidgetSetup.model.items.length; i++) {
+                    if (thisWidgetSetup.model.items[i].uid == appModel.LastMessageSelected.uid) {
+                        thisWidgetSetup.model.items[i].color = "gray";
+                        thisWidgetSetup.model.items[i].message = newMessage;
+                    }
+                }
+                this.controller.modelChanged(thisWidgetSetup.model);
+            }
+        } catch (error) {
+            //Handle error
+        }
+    }.bind(this));
+}
+
+MainAssistant.prototype.likeMessageToService = function() {
+    Mojo.Log.info("trying to like: " + JSON.stringify(appModel.LastMessageSelected.uid));
+    serviceModel.likeChat(appModel.LastMessageSelected.uid, this.serviceEndpointBase, this.clientId, function(response) {
+        this.enableUI();
+        try {
+            var responseObj = JSON.parse(response);
+            Mojo.Log.info("like response from server: " + response);
+            if (responseObj.error) {
+                //Handle error
+                Mojo.Log.error("Server error returned: " + responseObj.error);
+            } else {
+                Mojo.Log.info("Like accepted by server: " + responseObj.liked);
+
+                var thisWidgetSetup = this.controller.getWidgetSetup("chatList");
+                for (var i = 0; i < thisWidgetSetup.model.items.length; i++) {
+                    if (thisWidgetSetup.model.items[i].uid == appModel.LastMessageSelected.uid) {
+                        thisWidgetSetup.model.items[i].likes = responseObj.likes;
+                    }
+                }
+                this.controller.modelChanged(thisWidgetSetup.model);
             }
         } catch (error) {
             //Handle error
@@ -432,12 +503,15 @@ MainAssistant.prototype.updateChatsList = function(results) {
     //now make the new list
     var newMessages = [];
     for (var i = 0; i < results.length; i++) {
+        Mojo.Log.info("transformed message: " + Mojo.Format.runTextIndexer(results[i].message));
         newMessages.push({
             uid: results[i].uid,
             sender: results[i].sender,
             message: results[i].message,
+            formattedMessage: Mojo.Format.runTextIndexer(results[i].message),
             links: this.detectURLs(results[i].message),
             timestamp: this.convertTimeStamp(results[i].timestamp, true),
+            likes: results[i].likes,
             color: "black"
         });
     }
@@ -466,8 +540,7 @@ MainAssistant.prototype.updateChatsList = function(results) {
             systemModel.PlayAlertSound(appModel.AppSettingsCurrent["AlertSound"]);
     } else if (listUpdated == 0) { //if there was just an update to an existing message
         if (this.pendingMessages.length == 0) {
-            Mojo.Log.info("Scrolling back to: " + JSON.stringify(scrollPos));
-            this.chatScroller.mojo.setState(scrollPos);
+            this.scrollToPosition(scrollPos);
         } else {
             this.scrollToBottom();
             this.pendingMessages = [];
@@ -492,8 +565,28 @@ MainAssistant.prototype.checkForMessageListChanges = function(newList, oldList) 
         if (oldList[l].color != newList[l].color) {
             return true;
         }
+        if (oldList[l].likes != newList[l].likes) {
+            return true;
+        }
     }
     return false;
+}
+
+/* Helper Functions */
+MainAssistant.prototype.getUsername = function() {
+    var stageController = Mojo.Controller.getAppController().getActiveStageController();
+    if (stageController) {
+        this.controller = stageController.activeScene();
+        this.controller.showDialog({
+            template: 'user/user-scene',
+            preventCancel: true,
+            assistant: new UserAssistant(this, function(val) {
+                    Mojo.Log.error("got value from dialog: " + val);
+                    //this.startPollingServer();
+                    //this.handleDialogDone(val);
+                }.bind(this)) //since this will be a dialog, not a scene, it must be defined in sources.json without a 'scenes' member
+        });
+    }
 }
 
 MainAssistant.prototype.scrollToBottom = function() {
@@ -501,7 +594,14 @@ MainAssistant.prototype.scrollToBottom = function() {
     setTimeout(function() {
         this.chatScroller.mojo.revealBottom();
     }.bind(this), 500);
-    //this.chatScroller.mojo.adjustBy(0, (this.controller.get('chatScroller').clientHeight) * -1);
+}
+
+MainAssistant.prototype.scrollToPosition = function(scrollPos) {
+    Mojo.Log.info("Scrolling back to: " + JSON.stringify(scrollPos));
+    this.chatScroller.mojo.setState(scrollPos);
+    setTimeout(function(scrollPos) {
+        this.chatScroller.mojo.setState(scrollPos);
+    }.bind(this), 500, scrollPos);
 }
 
 MainAssistant.prototype.convertTimeStamp = function(timeStamp, isUTC) {
