@@ -35,3 +35,7 @@
 textarea {
     margin-top: 0px !important;
 }
+
+.multiline-hint-text.oblique {
+    color: darkgray;
+}

@@ -18,7 +18,7 @@ MainAssistant.prototype.setup = function() {
         'original': ''
     };
     this.messageFieldModel.attributes = {
-        //hintText: $L(" Enter a message..."),
+        hintText: $L(" Enter a message..."),
         enterSubmits: false,
         focus: true,
         multiline: true,
@@ -159,11 +159,13 @@ MainAssistant.prototype.activate = function(event) {
 
     //this.controller.window.removeEventListener('resize', this.orientationChanged);
     Mojo.Event.listen(this.controller.get("chatList"), Mojo.Event.listTap, this.handleListClick.bind(this));
+    Mojo.Event.listenForFocusChanges(this.controller.get("txtMessage"), this.handleTextFocus.bind(this));
 
     //systemModel.PreventDisplaySleep();
     this.pendingMessages = [];
     this.firstPoll = true;
     this.startPollingServer();
+    this.handleTextFocus();
 };
 
 MainAssistant.prototype.activateWindow = function(event) {
@@ -174,8 +176,20 @@ MainAssistant.prototype.deactivateWindow = function(event) {
     this.rememberMessageGuids();
 };
 
+MainAssistant.prototype.handleTextFocus = function(event) {
+    this.adustScrollerForKeyboard(this.lastOrientation);
+    /*
+    if (this.controller.document.activeElement.id == "palm_anon_element_0mojo-scene-maintxtMessage-write") {
+        Mojo.Log.info("textbox focused");
+
+    } else {
+        Mojo.Log.info("textbox blurred");
+        this.adustScrollerForKeyboard(this.lastOrientation, true);
+    }*/
+}
+
 //This is called by Mojo on phones, but has to be manually attached on TouchPad
-MainAssistant.prototype.orientationChanged = function(orientation) {
+MainAssistant.prototype.orientationChanged = function() {
     if (this.DeviceType != "TouchPad") {
         //For phones, it doesn't make sense to allow wide orientations
         //  But we need this for initial setup, so we'll force it to always be tall
@@ -192,33 +206,39 @@ MainAssistant.prototype.orientationChanged = function(orientation) {
 
 MainAssistant.prototype.scaleScroller = function(orientation) {
     if (!this.lastOrientation || orientation != this.lastOrientation) {
-        this.controller.get('txtMessage').mojo.blur();
-        this.chatScroller = this.controller.get("chatScroller");
-        this.scalingFactor = this.controller.window.zoomFactor || 1;
-
-        var bottomBuffer;
-        if (this.DeviceType == "TouchPad")
-            bottomBuffer = 590;
-        else
-            bottomBuffer = 250;
-
-        if (orientation == "tall")
-            this.scaledHeight = Math.floor(Mojo.Environment.DeviceInfo.screenHeight / this.scalingFactor) - bottomBuffer;
-        else
-            this.scaledHeight = Math.floor(Mojo.Environment.DeviceInfo.screenWidth / this.scalingFactor) - bottomBuffer;
-
-        Mojo.Log.info(this.DeviceType + " orientation is " + orientation + " bottom buffer is: " + bottomBuffer + " scaled height: " + this.scaledHeight);
-        this.chatScroller.style.height = this.scaledHeight + "px";
-
-        this.scrollToBottom();
-        this.controller.get('txtMessage').mojo.focus();
+        this.adustScrollerForKeyboard(orientation);
         this.controller.get('palm_anon_element_0mojo-scene-maintxtMessage-write').rows = "2";
         this.controller.get('palm_anon_element_0mojo-scene-maintxtMessage-write').setAttribute("x-palm-enable-emoticons", true);
-        setTimeout(fixScroll = function() {
-            this.controller.getSceneScroller().mojo.revealTop(true);
-        }.bind(this), 100);
     }
     this.lastOrientation = orientation;
+}
+
+MainAssistant.prototype.adustScrollerForKeyboard = function(orientation) {
+    //Handle virtual keyboard on Touchpad
+    var bottomBuffer;
+    this.chatScroller = this.controller.get("chatScroller");
+    this.scalingFactor = this.controller.window.zoomFactor || 1;
+
+    if (this.DeviceType == "TouchPad") {
+        if (this.controller.document.activeElement.id == "palm_anon_element_0mojo-scene-maintxtMessage-write")
+            bottomBuffer = 600;
+        else
+            bottomBuffer = 260;
+    } else
+        bottomBuffer = 250;
+
+    if (orientation == "tall")
+        this.scaledHeight = Math.floor(Mojo.Environment.DeviceInfo.screenHeight / this.scalingFactor) - bottomBuffer;
+    else
+        this.scaledHeight = Math.floor(Mojo.Environment.DeviceInfo.screenWidth / this.scalingFactor) - bottomBuffer;
+
+    Mojo.Log.info(this.DeviceType + " orientation is " + orientation + " bottom buffer is: " + bottomBuffer + " scaled height: " + this.scaledHeight);
+    this.chatScroller.style.height = this.scaledHeight + "px";
+    this.scrollToBottom();
+
+    setTimeout(fixScroll = function() {
+        this.controller.getSceneScroller().mojo.revealTop(true);
+    }.bind(this), 100);
 }
 
 MainAssistant.prototype.startPollingServer = function() {
@@ -239,22 +259,22 @@ MainAssistant.prototype.pausePollingServer = function() {
 MainAssistant.prototype.handleListClick = function(event) {
     appModel.LastMessageSelected = event.item;
     var posTarget = event.originalEvent.target;
-    Mojo.Log.info(event.item.links)
 
+    //Decide what items to put in pop-up menu
     var popupMenuItems = [
         { label: 'Copy', command: 'do-copy' }
     ];
-    if (event.item.links != null)
-        popupMenuItems.push({ label: 'Follow Link', command: 'do-followlink' });
     var isMine = false;
-    Mojo.Log.info("Checking myMessages for: " + appModel.LastMessageSelected.uid);
+    //Mojo.Log.info("Checking myMessages for: " + appModel.LastMessageSelected.uid);
     for (var m = 0; m < this.myMessages.length; m++) {
-        Mojo.Log.info("? " + this.myMessages[m].uid);
         if (this.myMessages[m].uid == appModel.LastMessageSelected.uid)
             isMine = true;
     }
     if (isMine)
         popupMenuItems.push({ label: 'Edit message', command: 'do-editMessage' });
+    //Mojo.Log.info(event.item.links)
+    if (event.item.links != null)
+        popupMenuItems.push({ label: 'Follow Link', command: 'do-followlink' });
     this.controller.popupSubmenu({
         onChoose: this.handlePopupChoose.bind(this, event.item),
         placeNear: posTarget,
@@ -264,11 +284,9 @@ MainAssistant.prototype.handleListClick = function(event) {
 }
 
 MainAssistant.prototype.handlePopupChoose = function(task, command) {
-    Mojo.Log.info("Perform: ", command, " on ", task.uid);
+    //Mojo.Log.info("Perform: ", command, " on ", task.uid);
     switch (command) {
         case "do-copy":
-            //TODO: Switch to Mojo method: Mojo.Controller.StageController.setClipboard(escapeHTML:, escapeHTML) 
-            //  http://sdk.webosarchive.com/docs/docs.html#reference/mojo/classes/mojo-controller-stagecontroller.html
             var stageController = Mojo.Controller.getAppController().getActiveStageController();
             stageController.setClipboard(appModel.LastMessageSelected.message);
             Mojo.Controller.getAppController().showBanner("Content copied!", { source: 'notification' });
