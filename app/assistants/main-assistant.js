@@ -108,10 +108,7 @@ MainAssistant.prototype.setup = function() {
 
 MainAssistant.prototype.handleUpdateResponse = function(responseObj) {
     if (responseObj && responseObj.updateFound) {
-        updaterModel.PromptUserForUpdate(function(response) {
-            if (response)
-                updaterModel.InstallUpdate();
-        }.bind(this));
+        Mojo.Additions.ShowDialogBox("Update Available", "An update is available, but this version of the app cannot be automatically updated. Please uninstall this app, and install the latest from App Museum II to get all the exciting new features!");
     }
 }
 
