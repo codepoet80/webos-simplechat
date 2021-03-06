@@ -1,6 +1,6 @@
 {
     "id": "com.jonandnic.simplechat",
-    "version": "0.6.0",
+    "version": "0.6.1",
     "vendor": "Jon Wise",
     "type": "web",
     "main": "index.html",
