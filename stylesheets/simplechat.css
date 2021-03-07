@@ -48,3 +48,7 @@ textarea {
     background-position-x: 0;
     padding-left: 14px;
 }
+
+#emo-table td {
+    text-align: center;
+}

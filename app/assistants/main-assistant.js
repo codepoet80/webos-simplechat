@@ -8,7 +8,6 @@ function MainAssistant() {
        additional parameters (after the scene name) that were passed to pushScene. The reference
        to the scene controller (this.controller) has not be established yet, so any initialization
        that needs the scene controller should be done in the setup function below. */
-    this.myMessages = [];
     this.doingMessageEdit = false;
 }
 
@@ -87,7 +86,9 @@ MainAssistant.prototype.setup = function() {
     this.cmdMenuModel = {
         visible: true,
         items: [{
-                items: []
+                items: [
+                    { label: 'Emoticon', iconPath: 'assets/emoticon.png', command: 'do-Emoticon' }
+                ]
             },
             {
                 items: [
@@ -133,6 +134,11 @@ MainAssistant.prototype.activate = function(event) {
     if (!appModel.AppSettingsCurrent["AlertSound"] || appModel.AppSettingsCurrent["AlertSound"] == "") {
         appModel.AppSettingsCurrent["AlertSound"] = "Subtle (short)";
     }
+    //Init Message memory
+    if (!appModel.AppSettingsCurrent["MyMessages"]) {
+        appModel.AppSettingsCurrent["MyMessages"] = [];
+    }
+    appModel.SaveSettings();
 
     //Figure out if this is our first time
     if (appModel.AppSettingsCurrent["FirstRun"] || (appModel.AppSettingsCurrent["SenderName"] && appModel.AppSettingsCurrent["SenderName"].toLowerCase() == "webos user")) {
@@ -186,11 +192,9 @@ MainAssistant.prototype.handleTextFocus = function(event) {
 }
 
 MainAssistant.prototype.handleItemRendered = function(listWidget, itemModel, itemNode) {
-    Mojo.Log.info("was" + itemNode.innerHTML);
     var newHTML = itemNode.innerHTML;
     newHTML = newHTML.replace(/&gt;/g, ">");
     newHTML = newHTML.replace(/&lt;/g, "<");
-    Mojo.Log.info("is " + newHTML);
     itemNode.innerHTML = newHTML;
 }
 
@@ -271,8 +275,8 @@ MainAssistant.prototype.handleListClick = function(event) {
     var popupMenuItems = [];
     var isMine = false;
     //Mojo.Log.info("Checking myMessages for: " + appModel.LastMessageSelected.uid);
-    for (var m = 0; m < this.myMessages.length; m++) {
-        if (this.myMessages[m].uid == appModel.LastMessageSelected.uid)
+    for (var m = 0; m < appModel.AppSettingsCurrent["MyMessages"].length; m++) {
+        if (appModel.AppSettingsCurrent["MyMessages"][m].uid == appModel.LastMessageSelected.uid)
             isMine = true;
     }
     if (isMine)
@@ -325,6 +329,14 @@ MainAssistant.prototype.handlePopupChoose = function(message, command) {
 MainAssistant.prototype.handleCommand = function(event) {
     if (event.type == Mojo.Event.command) {
         switch (event.command) {
+            case 'do-Emoticon':
+                var controller = this.controller;
+                var onselect = function onEmoticonSelect(emoticon) {
+                    controller.document.execCommand("insertText", true, emoticon);
+                };
+                var emoticonPicker = new EmoticonPickerDialogAssistant(this, onselect);
+                emoticonPicker.show();
+                break;
             case 'do-Send':
                 this.handleSendMessage();
                 break;
@@ -383,6 +395,7 @@ MainAssistant.prototype.handleSendMessage = function(event) {
 }
 
 MainAssistant.prototype.postMessageToService = function(newMessage) {
+    //Mojo.Log.info("Sending message:" + newMessage);
     serviceModel.postChat(appModel.AppSettingsCurrent["SenderName"], newMessage, this.serviceEndpointBase, this.clientId, function(response) {
         this.controller.get('txtMessage').mojo.setValue("");
         this.enableUI();
@@ -392,25 +405,30 @@ MainAssistant.prototype.postMessageToService = function(newMessage) {
                 //Handle error
                 Mojo.Log.error("Server error returned: " + responseObj.error);
             } else {
-                Mojo.Log.info("Message accepted by server: " + responseObj.posted);
-                if (responseObj.posted && responseObj.posted != "") {
+                Mojo.Log.info("Message accepted by server: " + responseObj.posted); //{ "posted": "604529e19fb7f", "senderKey": "604529e19fb99" }
+                if (responseObj.posted) {
+                    Mojo.Log.info("responseObj: " + JSON.stringify(responseObj));
                     var newMsg = {
                         uid: responseObj.posted,
                         sender: appModel.AppSettingsCurrent["SenderName"],
                         message: newMessage,
-                        formattedMessage: Mojo.Format.runTextIndexer(results[i].message),
+                        formattedMessage: Mojo.Format.runTextIndexer(newMessage),
                         timestamp: this.convertTimeStamp(new Date(), false),
                         color: "gray"
                     };
                     if (responseObj.senderKey) {
-                        this.myMessages.push({ uid: responseObj.posted, senderKey: responseObj.senderKey })
+                        appModel.AppSettingsCurrent["MyMessages"].push({ uid: responseObj.posted, senderKey: responseObj.senderKey })
                     }
                     this.pendingMessages.push(responseObj.posted);
-                    Mojo.Log.info("message:" + JSON.stringify(newMsg));
+
+                    Mojo.Log.info("MyMessages now: " + JSON.stringify(appModel.AppSettingsCurrent["MyMessages"]));
+
                     var thisWidgetSetup = this.controller.getWidgetSetup("chatList");
                     thisWidgetSetup.model.items.push(newMsg);
                     this.controller.modelChanged(thisWidgetSetup.model);
                     this.scrollToBottom();
+                } else {
+                    Mojo.Log.warn("Did not understand server reponse to post!");
                 }
             }
         } catch (error) {
@@ -421,9 +439,9 @@ MainAssistant.prototype.postMessageToService = function(newMessage) {
 
 MainAssistant.prototype.editMessageToService = function(newMessage) {
     var editKey;
-    for (var m = 0; m < this.myMessages.length; m++) {
-        if (this.myMessages[m].uid == appModel.LastMessageSelected.uid)
-            editKey = this.myMessages[m].senderKey;
+    for (var m = 0; m < appModel.AppSettingsCurrent["MyMessages"].length; m++) {
+        if (appModel.AppSettingsCurrent["MyMessages"][m].uid == appModel.LastMessageSelected.uid)
+            editKey = appModel.AppSettingsCurrent["MyMessages"][m].senderKey;
     }
     serviceModel.editChat(appModel.AppSettingsCurrent["SenderName"], newMessage, appModel.LastMessageSelected.uid, editKey, this.serviceEndpointBase, this.clientId, function(response) {
 
@@ -597,8 +615,6 @@ MainAssistant.prototype.getUsername = function() {
             preventCancel: true,
             assistant: new UserAssistant(this, function(val) {
                     Mojo.Log.error("got value from dialog: " + val);
-                    //this.startPollingServer();
-                    //this.handleDialogDone(val);
                 }.bind(this)) //since this will be a dialog, not a scene, it must be defined in sources.json without a 'scenes' member
         });
     }

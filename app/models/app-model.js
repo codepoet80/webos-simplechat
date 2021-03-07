@@ -30,7 +30,8 @@ var AppModel = function() {
         EndpointURL: "",
         SenderName: "webOS User",
         FirstRun: true,
-        LastKnownMessages: ""
+        MyMessages: [],
+        LastKnownMessages: [],
     };
 }
 
