@@ -27,7 +27,7 @@ DashboardAssistant.prototype.setup = function() {
                 appController.closeAllStages();
             } else {
                 if (responseObj.messages && responseObj.messages.length > 0) {
-                    var newMessageCount = this.findNewMessageCount(appModel.AppSettingsCurrent["LastKnownMessages"], responseObj.messages);
+                    var newMessageCount = this.findNewMessageCount(appModel.AppSettingsCurrent["LastKnownMessage"], responseObj.messages);
                     if (newMessageCount > 0) {
                         Mojo.Log.info("Found new chat on server during background check!");
                         this.displayDashboard("SimpleChat", "New messages in the chat!", newMessageCount);
@@ -56,11 +56,16 @@ DashboardAssistant.prototype.setup = function() {
     Mojo.Event.listen(this.controller.get("dashboardinfo"), Mojo.Event.tap, this.handleTap.bind(this));
 }
 
-DashboardAssistant.prototype.findNewMessageCount = function(oldMessageGuids, newMessages) {
+DashboardAssistant.prototype.findNewMessageCount = function(LastKnownMessage, newMessages) {
     var actuallyNewMessages = [];
+    var startCounting = false;
     for (var j = 0; j < newMessages.length; j++) {
-        if (oldMessageGuids.indexOf(newMessages[j].uid) == -1)
+        if (startCounting) {
             actuallyNewMessages.push(newMessages[j].uid);
+        }
+        if (newMessages[j].uid == LastKnownMessage) {
+            startCounting = true;
+        }
     }
     return actuallyNewMessages.length;
 }

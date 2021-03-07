@@ -105,20 +105,8 @@ MainAssistant.prototype.setup = function() {
     Mojo.Event.listen(this.controller.stageController.document, Mojo.Event.stageDeactivate, this.deactivateWindow.bind(this));
 
     //Check for updates
-    if (!appModel.UpdateCheckDone) {
-        appModel.UpdateCheckDone = true;
-        updaterModel.CheckForUpdate("webOS SimpleChat", this.handleUpdateResponse.bind(this));
-    }
+    this.checkForUpdates();
 };
-
-MainAssistant.prototype.handleUpdateResponse = function(responseObj) {
-    if (responseObj && responseObj.updateFound) {
-        updaterModel.PromptUserForUpdate(function(response) {
-            if (response)
-                updaterModel.InstallUpdate();
-        }.bind(this));
-    }
-}
 
 MainAssistant.prototype.activate = function(event) {
     //Figure out server info
@@ -138,7 +126,9 @@ MainAssistant.prototype.activate = function(event) {
     if (!appModel.AppSettingsCurrent["MyMessages"]) {
         appModel.AppSettingsCurrent["MyMessages"] = [];
     }
-    appModel.SaveSettings();
+    if (appModel.AppSettingsCurrent["LastKnownMessages"]) { //This was the old way, clean it up
+        appModel.AppSettingsCurrent["LastKnownMessages"] = null;
+    }
 
     //Figure out if this is our first time
     if (appModel.AppSettingsCurrent["FirstRun"] || (appModel.AppSettingsCurrent["SenderName"] && appModel.AppSettingsCurrent["SenderName"].toLowerCase() == "webos user")) {
@@ -178,24 +168,9 @@ MainAssistant.prototype.activate = function(event) {
     this.handleTextFocus();
 };
 
-MainAssistant.prototype.activateWindow = function(event) {
-    this.rememberMessageGuids();
-};
-
-MainAssistant.prototype.deactivateWindow = function(event) {
-    this.rememberMessageGuids();
-};
-
 /* Screen Adjustments */
 MainAssistant.prototype.handleTextFocus = function(event) {
     this.adustScrollerForKeyboard(this.lastOrientation);
-}
-
-MainAssistant.prototype.handleItemRendered = function(listWidget, itemModel, itemNode) {
-    var newHTML = itemNode.innerHTML;
-    newHTML = newHTML.replace(/&gt;/g, ">");
-    newHTML = newHTML.replace(/&lt;/g, "<");
-    itemNode.innerHTML = newHTML;
 }
 
 //This is called by Mojo on phones, but has to be manually attached on TouchPad
@@ -244,14 +219,14 @@ MainAssistant.prototype.adustScrollerForKeyboard = function(orientation) {
 
     Mojo.Log.info(this.DeviceType + " orientation is " + orientation + " bottom buffer is: " + bottomBuffer + " scaled height: " + this.scaledHeight);
     this.chatScroller.style.height = this.scaledHeight + "px";
-    this.scrollToBottom();
+    //this.scrollToBottom();
 
     setTimeout(fixScroll = function() {
         this.controller.getSceneScroller().mojo.revealTop(true);
     }.bind(this), 100);
 }
 
-/* Start and Stop updates */
+/* Start and Stop service polling */
 MainAssistant.prototype.startPollingServer = function() {
     this.getChats();
     var useInt = 10000;
@@ -269,27 +244,28 @@ MainAssistant.prototype.pausePollingServer = function() {
 /* UI Handlers */
 MainAssistant.prototype.handleListClick = function(event) {
     appModel.LastMessageSelected = event.item;
-    var posTarget = event.originalEvent.target;
+    this.listTarget = event.originalEvent.target;
 
     //Decide what items to put in pop-up menu
     var popupMenuItems = [];
     var isMine = false;
-    //Mojo.Log.info("Checking myMessages for: " + appModel.LastMessageSelected.uid);
     for (var m = 0; m < appModel.AppSettingsCurrent["MyMessages"].length; m++) {
         if (appModel.AppSettingsCurrent["MyMessages"][m].uid == appModel.LastMessageSelected.uid)
             isMine = true;
     }
     if (isMine)
-        popupMenuItems.push({ label: 'Edit', command: 'do-editMessage' });
+        popupMenuItems.push({ label: 'Edit Message', command: 'do-editMessage' });
     else {
-        popupMenuItems.push({ label: 'Copy', command: 'do-copy' });
+        if (event.item.links != null) {
+            popupMenuItems.push({ label: 'Copy Link', command: 'do-copyLink' });
+            popupMenuItems.push({ label: 'Follow Link', command: 'do-followLink' });
+        }
+        popupMenuItems.push({ label: 'Copy Message', command: 'do-copy' });
         popupMenuItems.push({ label: 'Like', command: 'do-like' });
     }
-    if (event.item.links != null)
-        popupMenuItems.push({ label: 'Follow Link', command: 'do-followlink' });
     this.controller.popupSubmenu({
         onChoose: this.handlePopupChoose.bind(this, event.item),
-        placeNear: posTarget,
+        placeNear: this.listTarget,
         items: popupMenuItems
     });
     return true;
@@ -301,9 +277,17 @@ MainAssistant.prototype.handlePopupChoose = function(message, command) {
         case "do-copy":
             var stageController = Mojo.Controller.getAppController().getActiveStageController();
             stageController.setClipboard(appModel.LastMessageSelected.message);
-            Mojo.Controller.getAppController().showBanner("Content copied!", { source: 'notification' });
+            Mojo.Controller.getAppController().showBanner("Message copied!", { source: 'notification' });
             break;
-        case "do-followlink":
+        case "do-copyLink":
+            var useLink = appModel.LastMessageSelected.links[0];
+            if (useLink.toLowerCase().indexOf("http://") == -1 && useLink.toLowerCase().indexOf("https://") == -1)
+                useLink = "http://" + appModel.LastMessageSelected.links[0];
+            var stageController = Mojo.Controller.getAppController().getActiveStageController();
+            stageController.setClipboard(useLink);
+            Mojo.Controller.getAppController().showBanner("Link copied!", { source: 'notification' });
+            break;
+        case "do-followLink":
             var useLink = appModel.LastMessageSelected.links[0];
             if (useLink.toLowerCase().indexOf("http://") == -1 && useLink.toLowerCase().indexOf("https://") == -1)
                 useLink = "http://" + appModel.LastMessageSelected.links[0];
@@ -363,20 +347,20 @@ MainAssistant.prototype.doEditMessage = function(message) {
 
 MainAssistant.prototype.doLikeMessage = function(message) {
     //post a like, update message, play a sound?
-    if (!message.likes || message.likes == "" || messages.likes == 0)
+    if (!message.likes || message.likes == "" || message.likes == 0)
         message.likes = 1;
     else
         message.likes++;
 
-    /* brute force way if above doesn't work
     var thisWidgetSetup = this.controller.getWidgetSetup("chatList");
     for (var i = 0; i < thisWidgetSetup.model.items.length; i++) {
         if (thisWidgetSetup.model.items[i].uid == appModel.LastMessageSelected.uid) {
-            thisWidgetSetup.model.items[i].likes = responseObj.likes;
+            thisWidgetSetup.model.items[i].likes = message.likes;
+            thisWidgetSetup.model.items[i].color = "gray";
+            this.controller.get('chatList').mojo.noticeUpdatedItems(i, [thisWidgetSetup.model.items[i]]);
         }
     }
-    this.controller.modelChanged(thisWidgetSetup.model);
-    */
+
     this.likeMessageToService();
 }
 
@@ -438,65 +422,68 @@ MainAssistant.prototype.postMessageToService = function(newMessage) {
 }
 
 MainAssistant.prototype.editMessageToService = function(newMessage) {
-    var editKey;
+
+    Mojo.Log.info("trying to edit: " + appModel.LastMessageSelected.uid);
+
+    //Set UI back to compose mode
+    this.controller.get('txtMessage').mojo.setValue("");
+    this.controller.get('spanCompose').innerHTML = "Compose";
+    this.doingMessageEdit = false;
+    this.enableUI();
+
+    var editKey; //Make sure we are allowed to edit this item
     for (var m = 0; m < appModel.AppSettingsCurrent["MyMessages"].length; m++) {
         if (appModel.AppSettingsCurrent["MyMessages"][m].uid == appModel.LastMessageSelected.uid)
             editKey = appModel.AppSettingsCurrent["MyMessages"][m].senderKey;
     }
-    serviceModel.editChat(appModel.AppSettingsCurrent["SenderName"], newMessage, appModel.LastMessageSelected.uid, editKey, this.serviceEndpointBase, this.clientId, function(response) {
+    if (editKey) {
+        //Force list item to update with new content (without informing Mojo, so the list doesn't bounce around. Mojo will get informed later)
 
-        this.controller.get('txtMessage').mojo.setValue("");
-        this.controller.get('spanCompose').innerHTML = "Compose";
-        this.doingMessageEdit = false;
-        this.enableUI();
+        var thisWidgetSetup = this.controller.getWidgetSetup("chatList");
+        for (var i = 0; i < thisWidgetSetup.model.items.length; i++) {
+            if (thisWidgetSetup.model.items[i].uid == appModel.LastMessageSelected.uid) {
+                thisWidgetSetup.model.items[i].message = newMessage;
+                thisWidgetSetup.model.items[i].formattedMessage = Mojo.Format.runTextIndexer(newMessage);
+                thisWidgetSetup.model.items[i].color = "gray";
+                this.controller.get('chatList').mojo.noticeUpdatedItems(i, [thisWidgetSetup.model.items[i]]);
+            }
+        }
 
-        try {
-            var responseObj = JSON.parse(response);
-            if (responseObj.error) {
-                //Handle error
-                Mojo.Log.error("Server error returned: " + responseObj.error);
-            } else {
-                Mojo.Log.info("Edit accepted by server: " + responseObj.edited);
-
-                var thisWidgetSetup = this.controller.getWidgetSetup("chatList");
-                for (var i = 0; i < thisWidgetSetup.model.items.length; i++) {
-                    if (thisWidgetSetup.model.items[i].uid == appModel.LastMessageSelected.uid) {
-                        thisWidgetSetup.model.items[i].color = "gray";
-                        thisWidgetSetup.model.items[i].message = newMessage;
-                        thisWidgetSetup.model.items[i].formattedMessage = Mojo.Format.runTextIndexer(newMessage);
+        //Tell server about the edit
+        serviceModel.editChat(appModel.AppSettingsCurrent["SenderName"], newMessage, appModel.LastMessageSelected.uid, editKey, this.serviceEndpointBase, this.clientId, function(response) {
+            try {
+                var responseObj = JSON.parse(response);
+                if (responseObj.error) {
+                    Mojo.Log.error("Server error returned: " + responseObj.error);
+                } else {
+                    if (responseObj.warning) {
+                        Mojo.Log.warn("Warning from server: " + responseObj.warning)
+                    } else {
+                        Mojo.Log.info("Edit accepted by server: " + responseObj.edited);
                     }
                 }
-                this.controller.modelChanged(thisWidgetSetup.model);
+            } catch (error) {
+                //TODO: Handle error
             }
-        } catch (error) {
-            //Handle error
-        }
-    }.bind(this));
+        }.bind(this));
+    }
 }
 
 MainAssistant.prototype.likeMessageToService = function() {
-    Mojo.Log.info("trying to like: " + JSON.stringify(appModel.LastMessageSelected.uid));
+    Mojo.Log.info("trying to like: " + appModel.LastMessageSelected.uid);
+
     serviceModel.likeChat(appModel.LastMessageSelected.uid, this.serviceEndpointBase, this.clientId, function(response) {
         this.enableUI();
         try {
             var responseObj = JSON.parse(response);
             Mojo.Log.info("like response from server: " + response);
             if (responseObj.error) {
-                //Handle error
                 Mojo.Log.error("Server error returned: " + responseObj.error);
             } else {
                 Mojo.Log.info("Like accepted by server: " + responseObj.liked);
-
-                var thisWidgetSetup = this.controller.getWidgetSetup("chatList");
-                for (var i = 0; i < thisWidgetSetup.model.items.length; i++) {
-                    if (thisWidgetSetup.model.items[i].uid == appModel.LastMessageSelected.uid) {
-                        thisWidgetSetup.model.items[i].likes = responseObj.likes;
-                    }
-                }
-                this.controller.modelChanged(thisWidgetSetup.model);
             }
         } catch (error) {
-            //Handle error
+            //TODO: Handle error
         }
     }.bind(this));
 }
@@ -529,11 +516,7 @@ MainAssistant.prototype.updateChatsList = function(results) {
 
     Mojo.Log.info("Proccessing " + results.length + " chat messages...");
     var thisWidgetSetup = this.controller.getWidgetSetup("chatList");
-    //figure out what messages we already have
-    var knownMessages = [];
-    for (var j = 0; j < thisWidgetSetup.model.items.length; j++) {
-        knownMessages.push(thisWidgetSetup.model.items[j].uid);
-    }
+
     //now make the new list
     var newMessages = [];
     for (var i = 0; i < results.length; i++) {
@@ -548,64 +531,135 @@ MainAssistant.prototype.updateChatsList = function(results) {
             color: "black"
         });
     }
-    var listUpdated = -1;
     var scrollPos = this.chatScroller.mojo.getState();
-    //compare the known list to the new list, only if something has changed...
-    if (this.checkForMessageListChanges(newMessages, thisWidgetSetup.model.items)) {
-        if (newMessages.length > 0)
-            var newLastMessage = newMessages[newMessages.length - 1].uid;
-        if (thisWidgetSetup.model.items.length > 0)
-            var oldLastMessage = thisWidgetSetup.model.items[thisWidgetSetup.model.items.length - 1].uid;
-        if (oldLastMessage != newLastMessage) {
-            Mojo.Log.info("New message in list!");
-            listUpdated = 1;
-        } else {
-            Mojo.Log.info("Existing message needs an update");
-            listUpdated = 0;
+
+    //Compare the known list to the new list to see if anything has changed...
+    //Delete old messages
+    var deleted = false;
+    for (var m = 0; m < thisWidgetSetup.model.items.length; m++) {
+        var found = false;
+        for (var n = 0; n < newMessages.length; n++) {
+            if (newMessages[n].uid == thisWidgetSetup.model.items[m].uid)
+                found = true;
         }
-        thisWidgetSetup.model.items = [];
-        thisWidgetSetup.model.items = newMessages;
-        this.controller.modelChanged(thisWidgetSetup.model);
+        if (!found) {
+            Mojo.Log.info("Removing deleted message from list at position " + m);
+            this.controller.get('chatList').mojo.noticeRemovedItems(m, 1);
+            thisWidgetSetup.model.items.splice(m, 1);
+            deleted = true;
+        }
     }
-    if (listUpdated == 1) { //if there was a new message
-        this.scrollToBottom();
-        if (!this.firstPoll)
-            systemModel.PlayAlertSound(appModel.AppSettingsCurrent["AlertSound"]);
-    } else if (listUpdated == 0) { //if there was just an update to an existing message
-        if (this.pendingMessages.length == 0) {
-            this.scrollToPosition(scrollPos);
-        } else {
-            this.scrollToBottom();
-            this.pendingMessages = [];
+    //Update existing messages (content or likes)
+    var updated = false;
+    for (var m = 0; m < thisWidgetSetup.model.items.length; m++) {
+        for (var n = 0; n < newMessages.length; n++) {
+            if (newMessages[n].uid == thisWidgetSetup.model.items[m].uid) {
+                var changed = false;
+                if (newMessages[n].message != thisWidgetSetup.model.items[m].message ||
+                    newMessages[n].likes != thisWidgetSetup.model.items[m].likes ||
+                    newMessages[n].color != thisWidgetSetup.model.items[m].color) {
+                    Mojo.Log.info("Updating message from list at position " + m);
+                    Mojo.Log.info("Old Message:          " + JSON.stringify(thisWidgetSetup.model.items[m]));
+                    thisWidgetSetup.model.items[m] = newMessages[n];
+                    this.controller.get('chatList').mojo.noticeUpdatedItems(m, [thisWidgetSetup.model.items[m]]);
+                    changed = true;
+                    Mojo.Log.info("New Message should be: " + JSON.stringify(newMessages[n]));
+                    Mojo.Log.info("New Message is       : " + JSON.stringify(thisWidgetSetup.model.items[m]));
+                }
+            }
+            if (changed)
+                updated = true;
+        }
+    }
+    //Insert new messages
+    var inserted = [];
+    if (thisWidgetSetup.model.items.length > 0) {
+        for (var n = 0; n < newMessages.length; n++) {
+            var found = false;
+            for (var m = 0; m < thisWidgetSetup.model.items.length; m++) {
+                if (thisWidgetSetup.model.items[m].uid == newMessages[n].uid) {
+                    found = true;
+                }
+            }
+            if (!found) {
+                inserted.push(newMessages[n]);
+                Mojo.Log.info("Found new message to add to the list: " + newMessages[n].uid);
+            }
         }
     } else {
-        Mojo.Log.info("Found no changes to apply.")
+        Mojo.Log.info("The message list was empty, pushing entire server payload to the list.");
+        inserted = newMessages;
+    }
+    //Handle UI due to changes
+    if (inserted.length > 0 || updated || deleted) {
+        if (inserted.length > 0) {
+            if (!this.firstPoll) {
+                systemModel.PlayAlertSound(appModel.AppSettingsCurrent["AlertSound"]);
+                var offset = thisWidgetSetup.model.items.length - 1;
+                for (var i = 0; i < inserted.length; i++) {
+                    thisWidgetSetup.model.items.push(inserted[i]);
+                }
+                this.controller.get('chatList').mojo.noticeAddedItems(offset, inserted);
+            } else {
+                thisWidgetSetup.model.items = inserted;
+
+            }
+            this.controller.modelChanged(thisWidgetSetup.model);
+            this.scrollToBottom();
+        }
+    } else {
+        Mojo.Log.info("No changes to apply to list.")
     }
     this.firstPoll = false;
-}
 
-//Determine if there's anything changed in the message list
-MainAssistant.prototype.checkForMessageListChanges = function(newList, oldList) {
-    if (newList.length != oldList.length)
-        return true;
-    for (var l = 0; l < oldList.length; l++) {
-        if (oldList[l].guid != newList[l].guid) {
-            return true;
+    //Also clean-up MyMessage history
+    for (var m = 0; m < appModel.AppSettingsCurrent["MyMessages"].length; m++) {
+        var found = false;
+        for (var n = 0; n < thisWidgetSetup.model.items.length; n++) {
+            if (thisWidgetSetup.model.items[n].uid == appModel.AppSettingsCurrent["MyMessages"][m].uid)
+                found = true;
         }
-        if (oldList[l].message != newList[l].message) {
-            return true;
-        }
-        if (oldList[l].color != newList[l].color) {
-            return true;
-        }
-        if (oldList[l].likes != newList[l].likes) {
-            return true;
+        if (!found) {
+            appModel.AppSettingsCurrent["MyMessages"].splice(m, 1);
         }
     }
-    return false;
+}
+
+//Called by Mojo once the list has been painted, gives us an opportunity to force HTML into the message 
+MainAssistant.prototype.handleItemRendered = function(listWidget, itemModel, itemNode) {
+    itemNode.innerHTML = this.unescapeEntities(itemNode.innerHTML);
 }
 
 /* Helper Functions */
+MainAssistant.prototype.checkForUpdates = function() {
+    if (!appModel.UpdateCheckDone) {
+        //First check for old version
+        var oldFound = false;
+        systemModel.GetInstalledApps(function(response) {
+            if (response && response.apps) {
+                for (var a = 0; a < response.apps.length; a++) {
+                    if (response.apps[a].id == "com.jonandnic.simplechat") {
+                        oldFound = true;
+                    }
+                }
+            }
+            if (oldFound) {
+                Mojo.Additions.ShowDialogBox("Deprecated App Found", "It looks like you have both the old and the new SimpleChat apps installed. This will cause problems with notifications. It is strongly recommended that you delete the old version of SimpleChat -- the old icon looks like this:<p align='center' style='margin:0px'><img src='assets/oldicon.png'></p>");
+            } else {
+                appModel.UpdateCheckDone = true;
+                updaterModel.CheckForUpdate("webOS SimpleChat", function(responseObj) {
+                    if (responseObj && responseObj.updateFound) {
+                        updaterModel.PromptUserForUpdate(function(response) {
+                            if (response)
+                                updaterModel.InstallUpdate();
+                        }.bind(this));
+                    }
+                }.bind(this));
+            }
+        }.bind(this))
+    }
+}
+
 MainAssistant.prototype.getUsername = function() {
     var stageController = Mojo.Controller.getAppController().getActiveStageController();
     if (stageController) {
@@ -625,14 +679,18 @@ MainAssistant.prototype.scrollToBottom = function() {
     setTimeout(function() {
         this.chatScroller.mojo.revealBottom();
     }.bind(this), 500);
+    //this.controller.get('txtMessage').mojo.focus();
 }
 
 MainAssistant.prototype.scrollToPosition = function(scrollPos) {
     Mojo.Log.info("Scrolling back to: " + JSON.stringify(scrollPos));
-    this.chatScroller.mojo.setState(scrollPos);
-    setTimeout(function(scrollPos) {
-        this.chatScroller.mojo.setState(scrollPos);
-    }.bind(this), 500, scrollPos);
+    this.chatScroller.mojo.setState(scrollPos, true);
+}
+
+MainAssistant.prototype.unescapeEntities = function(str) {
+    str = str.replace(/&gt;/g, ">");
+    str = str.replace(/&lt;/g, "<");
+    return str;
 }
 
 MainAssistant.prototype.convertTimeStamp = function(timeStamp, isUTC) {
@@ -667,17 +725,22 @@ MainAssistant.prototype.enableUI = function() {
     this.controller.get('txtMessage').mojo.focus();
 }
 
-MainAssistant.prototype.rememberMessageGuids = function() {
+MainAssistant.prototype.rememberLastMessage = function() {
     var thisWidgetSetup = this.controller.getWidgetSetup("chatList");
     if (thisWidgetSetup.model.items.length > 0) {
-        var knownMessages = [];
-        for (var i = 0; i < thisWidgetSetup.model.items.length; i++) {
-            knownMessages.push(thisWidgetSetup.model.items[i].uid);
-        }
-        appModel.AppSettingsCurrent["LastKnownMessages"] = knownMessages;
+        appModel.AppSettingsCurrent["LastKnownMessage"] = thisWidgetSetup.model.items[thisWidgetSetup.model.items.length - 1].uid;
         appModel.SaveSettings();
     }
 }
+
+/* Mojo Lifecycle Stuff */
+MainAssistant.prototype.activateWindow = function(event) {
+    this.rememberLastMessage();
+};
+
+MainAssistant.prototype.deactivateWindow = function(event) {
+    this.rememberLastMessage();
+};
 
 MainAssistant.prototype.deactivate = function(event) {
     /* remove any event handlers you added in activate and do any other cleanup that should happen before
@@ -686,14 +749,13 @@ MainAssistant.prototype.deactivate = function(event) {
 
     //Remember last known messages
     this.pausePollingServer();
-    this.rememberMessageGuids();
+    this.rememberLastMessage();
 
     //Detach UI
     Mojo.Event.stopListening(this.controller.get("chatList"), Mojo.Event.listTap, this.handleListClick);
     this.controller.window.removeEventListener('resize', this.orientationChanged);
     Mojo.Event.stopListening(this.controller.stageController.document, Mojo.Event.stageActivate, this.activateWindow);
     Mojo.Event.stopListening(this.controller.stageController.document, Mojo.Event.stageDeactivate, this.deactivateWindow);
-
 };
 
 MainAssistant.prototype.cleanup = function(event) {

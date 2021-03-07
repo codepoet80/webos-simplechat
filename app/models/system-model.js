@@ -1,11 +1,11 @@
 /*
 System Model
- Version 1.1
+ Version 1.2
  Created: 2021
  Author: Jonathan Wise
  License: MIT
  Description: A generic and re-usable model for accessing webOS system features more easily
-				Privileged functions can only be called if your App ID starts with com.palm.webos
+				Privileged functions can only be called if your App ID starts with com.palm
 */
 
 var SystemModel = function() {
@@ -218,11 +218,11 @@ doVibrate = function() {
 }
 
 //Privileged functions
-/*	These functions can only be called with apps that have com.palm.webos as the start of their App Id */
+/*	These functions can only be called with apps that have com.palm as the start of their App Id */
 
 //Set the System Volume to a given level
 SystemModel.prototype.SetSystemVolume = function(newVolume) {
-    if (Mojo.Controller.appInfo.id.indexOf("com.palm.webos") != -1) {
+    if (Mojo.Controller.appInfo.id.indexOf("com.palm") != -1) {
         this.service_identifier = 'palm://com.palm.audio/system';
         var request = new Mojo.Service.Request(this.service_identifier, {
             method: 'setVolume',
@@ -232,14 +232,14 @@ SystemModel.prototype.SetSystemVolume = function(newVolume) {
         });
         return request;
     } else {
-        Mojo.Log.error("Privileged system services can only be called by apps with an ID that starts with 'com.palm.webos'!");
+        Mojo.Log.error("Privileged system services can only be called by apps with an ID that starts with 'com.palm'!");
         throw ("Privileged system service call not allowed for this App ID!");
     }
 }
 
 //Get the current System Volume to a callback
 SystemModel.prototype.GetSystemVolume = function(callback) {
-    if (Mojo.Controller.appInfo.id.indexOf("com.palm.webos") != -1) {
+    if (Mojo.Controller.appInfo.id.indexOf("com.palm") != -1) {
         this.service_identifier = 'palm://com.palm.audio/system';
         var request = new Mojo.Service.Request(this.service_identifier, {
             method: 'getVolume',
@@ -248,14 +248,14 @@ SystemModel.prototype.GetSystemVolume = function(callback) {
         });
         return request;
     } else {
-        Mojo.Log.error("Privileged system services can only be called by apps with an ID that starts with 'com.palm.webos'!");
+        Mojo.Log.error("Privileged system services can only be called by apps with an ID that starts with 'com.palm'!");
         throw ("Privileged system service call not allowed for this App ID!");
     }
 }
 
 //Set the Ringtone Volume to a given level
 SystemModel.prototype.SetRingtoneVolume = function(newVolume) {
-    if (Mojo.Controller.appInfo.id.indexOf("com.palm.webos") != -1) {
+    if (Mojo.Controller.appInfo.id.indexOf("com.palm") != -1) {
         this.service_identifier = 'palm://com.palm.audio/ringtone';
         var request = new Mojo.Service.Request(this.service_identifier, {
             method: 'setVolume',
@@ -265,14 +265,14 @@ SystemModel.prototype.SetRingtoneVolume = function(newVolume) {
         });
         return request;
     } else {
-        Mojo.Log.error("Privileged system services can only be called by apps with an ID that starts with 'com.palm.webos'!");
+        Mojo.Log.error("Privileged system services can only be called by apps with an ID that starts with 'com.palm'!");
         throw ("Privileged system service call not allowed for this App ID!");
     }
 }
 
 //Get the current Ringtone Volume to a callback
 SystemModel.prototype.GetRingtoneVolume = function(callback) {
-    if (Mojo.Controller.appInfo.id.indexOf("com.palm.webos") != -1) {
+    if (Mojo.Controller.appInfo.id.indexOf("com.palm") != -1) {
         this.service_identifier = 'palm://com.palm.audio/ringtone';
         var request = new Mojo.Service.Request(this.service_identifier, {
             method: 'getVolume',
@@ -281,14 +281,14 @@ SystemModel.prototype.GetRingtoneVolume = function(callback) {
         });
         return request;
     } else {
-        Mojo.Log.error("Privileged system services can only be called by apps with an ID that starts with 'com.palm.webos'!");
+        Mojo.Log.error("Privileged system services can only be called by apps with an ID that starts with 'com.palm'!");
         throw ("Privileged system service call not allowed for this App ID!");
     }
 }
 
 //Set the System Brightness to a given level
 SystemModel.prototype.SetSystemBrightness = function(newBrightness) {
-    if (Mojo.Controller.appInfo.id.indexOf("com.palm.webos") != -1) {
+    if (Mojo.Controller.appInfo.id.indexOf("com.palm") != -1) {
         this.service_identifier = 'palm://com.palm.display/control';
         var request = new Mojo.Service.Request(this.service_identifier, {
             method: 'setProperty',
@@ -298,14 +298,14 @@ SystemModel.prototype.SetSystemBrightness = function(newBrightness) {
         });
         return request;
     } else {
-        Mojo.Log.error("Privileged system services can only be called by apps with an ID that starts with 'com.palm.webos'!");
+        Mojo.Log.error("Privileged system services can only be called by apps with an ID that starts with 'com.palm'!");
         throw ("Privileged system service call not allowed for this App ID!");
     }
 }
 
 //Get the System Brightness
 SystemModel.prototype.GetSystemBrightness = function(callback) {
-    if (Mojo.Controller.appInfo.id.indexOf("com.palm.webos") != -1) {
+    if (Mojo.Controller.appInfo.id.indexOf("com.palm") != -1) {
         Mojo.Log.info("Getting display state");
         new Mojo.Service.Request("palm://com.palm.display/control", {
             method: "getProperty",
@@ -314,14 +314,14 @@ SystemModel.prototype.GetSystemBrightness = function(callback) {
             onFailure: callback
         });
     } else {
-        Mojo.Log.error("Privileged system services can only be called by apps with an ID that starts with 'com.palm.webos'!");
+        Mojo.Log.error("Privileged system services can only be called by apps with an ID that starts with 'com.palm'!");
         throw ("Privileged system service call not allowed for this App ID!");
     }
 }
 
 //Get the state of the display ("undefined", "dimmed", "off" or "on") to a callback
 SystemModel.prototype.GetDisplayState = function(callBack) {
-    if (Mojo.Controller.appInfo.id.indexOf("com.palm.webos") != -1) {
+    if (Mojo.Controller.appInfo.id.indexOf("com.palm") != -1) {
         Mojo.Log.info("Getting display state");
         new Mojo.Service.Request("palm://com.palm.display/control", {
             method: "status",
@@ -330,14 +330,14 @@ SystemModel.prototype.GetDisplayState = function(callBack) {
             onFailure: callBack
         });
     } else {
-        Mojo.Log.error("Privileged system services can only be called by apps with an ID that starts with 'com.palm.webos'!");
+        Mojo.Log.error("Privileged system services can only be called by apps with an ID that starts with 'com.palm'!");
         throw ("Privileged system service call not allowed for this App ID!");
     }
 }
 
 //Set the state of the display ("unlocked", "dimmed", "off" or "on")
 SystemModel.prototype.SetDisplayState = function(state) {
-    if (Mojo.Controller.appInfo.id.indexOf("com.palm.webos") != -1) {
+    if (Mojo.Controller.appInfo.id.indexOf("com.palm") != -1) {
         Mojo.Log.info("Setting display state to " + state);
         new Mojo.Service.Request("palm://com.palm.display/control", {
             method: "setState",
@@ -350,14 +350,14 @@ SystemModel.prototype.SetDisplayState = function(state) {
             }
         });
     } else {
-        Mojo.Log.error("Privileged system services can only be called by apps with an ID that starts with 'com.palm.webos'!");
+        Mojo.Log.error("Privileged system services can only be called by apps with an ID that starts with 'com.palm'!");
         throw ("Privileged system service call not allowed for this App ID!");
     }
 }
 
 //Set the Notifications-When-Locked state
 SystemModel.prototype.setShowNotificationsWhenLocked = function(value) {
-    if (Mojo.Controller.appInfo.id.indexOf("com.palm.webos") != -1) {
+    if (Mojo.Controller.appInfo.id.indexOf("com.palm") != -1) {
         Mojo.Log.info("Setting Notifications When Locked to " + value);
         this.service_identifier = 'palm://com.palm.systemservice';
         var request = new Mojo.Service.Request(this.service_identifier, {
@@ -366,14 +366,14 @@ SystemModel.prototype.setShowNotificationsWhenLocked = function(value) {
         });
         return request;
     } else {
-        Mojo.Log.error("Privileged system services can only be called by apps with an ID that starts with 'com.palm.webos'!");
+        Mojo.Log.error("Privileged system services can only be called by apps with an ID that starts with 'com.palm'!");
         throw ("Privileged system service call not allowed for this App ID!");
     }
 }
 
 //Set the LED Notification state
 SystemModel.prototype.setLEDLightNotifications = function(value) {
-    if (Mojo.Controller.appInfo.id.indexOf("com.palm.webos") != -1) {
+    if (Mojo.Controller.appInfo.id.indexOf("com.palm") != -1) {
         Mojo.Log.info("Setting LED Notifications to " + value);
         this.service_identifier = 'palm://com.palm.systemservice';
         var request = new Mojo.Service.Request(this.service_identifier, {
@@ -382,15 +382,15 @@ SystemModel.prototype.setLEDLightNotifications = function(value) {
         });
         return request;
     } else {
-        Mojo.Log.error("Privileged system services can only be called by apps with an ID that starts with 'com.palm.webos'!");
+        Mojo.Log.error("Privileged system services can only be called by apps with an ID that starts with 'com.palm'!");
         throw ("Privileged system service call not allowed for this App ID!");
     }
 }
 
 //Get Internet Connection State
 SystemModel.prototype.GetInternetConnectionState = function(callback) {
-    if (Mojo.Controller.appInfo.id.indexOf("com.palm.webos") == -1) {
-        Mojo.Log.error("Privileged system services can only be called by apps with an ID that starts with 'com.palm.webos'!");
+    if (Mojo.Controller.appInfo.id.indexOf("com.palm") == -1) {
+        Mojo.Log.error("Privileged system services can only be called by apps with an ID that starts with 'com.palm'!");
         throw ("Privileged system service call not allowed for this App ID!");
     }
     Mojo.Log.info("Requesting Internet connection state from Connection Manager");
@@ -407,7 +407,7 @@ SystemModel.prototype.GetInternetConnectionState = function(callback) {
 //Set the WAN state
 SystemModel.prototype.setWANEnabled = function(value) {
     var state = value ? 'off' : 'on';
-    if (Mojo.Controller.appInfo.id.indexOf("com.palm.webos") != -1) {
+    if (Mojo.Controller.appInfo.id.indexOf("com.palm") != -1) {
         Mojo.Log.info("Setting WAN State to " + value);
         this.service_identifier = 'palm://com.palm.wan/';
         var request = new Mojo.Service.Request(this.service_identifier, {
@@ -418,7 +418,7 @@ SystemModel.prototype.setWANEnabled = function(value) {
         });
         return request;
     } else {
-        Mojo.Log.error("Privileged system services can only be called by apps with an ID that starts with 'com.palm.webos'!");
+        Mojo.Log.error("Privileged system services can only be called by apps with an ID that starts with 'com.palm'!");
         throw ("Privileged system service call not allowed for this App ID!");
     }
 }
@@ -426,7 +426,7 @@ SystemModel.prototype.setWANEnabled = function(value) {
 //Set the WIFI state
 SystemModel.prototype.setWifiEnabled = function(value) {
     var state = value ? 'enabled' : 'disabled';
-    if (Mojo.Controller.appInfo.id.indexOf("com.palm.webos") != -1) {
+    if (Mojo.Controller.appInfo.id.indexOf("com.palm") != -1) {
         Mojo.Log.info("Setting WIFI State to " + state);
         this.service_identifier = 'palm://com.palm.wifi';
         var request = new Mojo.Service.Request(this.service_identifier, {
@@ -437,7 +437,7 @@ SystemModel.prototype.setWifiEnabled = function(value) {
         });
         return request;
     } else {
-        Mojo.Log.error("Privileged system services can only be called by apps with an ID that starts with 'com.palm.webos'!");
+        Mojo.Log.error("Privileged system services can only be called by apps with an ID that starts with 'com.palm'!");
         throw ("Privileged system service call not allowed for this App ID!");
     }
 }
@@ -445,14 +445,14 @@ SystemModel.prototype.setWifiEnabled = function(value) {
 //Set the Bluetooth radio state
 SystemModel.prototype.SetBluetoothEnabled = function(value) {
     //var state  = value ? 'enabled':'disabled';
-    if (Mojo.Controller.appInfo.id.indexOf("com.palm.webos") != -1) {
+    if (Mojo.Controller.appInfo.id.indexOf("com.palm") != -1) {
         Mojo.Log.info("Setting Bluetooth State to " + value);
         if (value == true)
             this.bluetoothControlService("palm://com.palm.btmonitor/monitor/radioon", { visible: true, connectable: true }, null);
         else
             this.bluetoothControlService("palm://com.palm.btmonitor/monitor/radiooff", null, null);
     } else {
-        Mojo.Log.error("Privileged system services can only be called by apps with an ID that starts with 'com.palm.webos'!");
+        Mojo.Log.error("Privileged system services can only be called by apps with an ID that starts with 'com.palm'!");
         throw ("Privileged system service call not allowed for this App ID!");
     }
 }
@@ -463,10 +463,25 @@ SystemModel.prototype.bluetoothControlService = function(url, params, cb) {
         onFailure: cb,
         parameters: params,
     });
-};
+}
+
+SystemModel.prototype.GetInstalledApps = function(callBack) {
+    if (Mojo.Controller.appInfo.id.indexOf("com.palm") != -1) {
+        Mojo.Log.info("Getting list of running apps.");
+        this.appRequest = new Mojo.Service.Request("palm://com.palm.applicationManager/listApps", {
+            method: "",
+            parameters: {},
+            onSuccess: callBack,
+            onFailure: callBack
+        });
+    } else {
+        Mojo.Log.error("Privileged system services can only be called by apps with an ID that starts with 'com.palm'!");
+        throw ("Privileged system service call not allowed for this App ID!");
+    }
+}
 
 SystemModel.prototype.GetRunningApps = function(callBack) {
-    if (Mojo.Controller.appInfo.id.indexOf("com.palm.webos") != -1) {
+    if (Mojo.Controller.appInfo.id.indexOf("com.palm") != -1) {
         Mojo.Log.info("Getting list of running apps.");
         this.appRequest = new Mojo.Service.Request("palm://com.palm.applicationManager/running", {
             method: "",
@@ -475,13 +490,13 @@ SystemModel.prototype.GetRunningApps = function(callBack) {
             onFailure: callBack
         });
     } else {
-        Mojo.Log.error("Privileged system services can only be called by apps with an ID that starts with 'com.palm.webos'!");
+        Mojo.Log.error("Privileged system services can only be called by apps with an ID that starts with 'com.palm'!");
         throw ("Privileged system service call not allowed for this App ID!");
     }
 }
 
 SystemModel.prototype.KillApp = function(appId) {
-    if (Mojo.Controller.appInfo.id.indexOf("com.palm.webos") != -1) {
+    if (Mojo.Controller.appInfo.id.indexOf("com.palm") != -1) {
         Mojo.Log.info("Killing app id: " + appId);
         this.appRequest = new Mojo.Service.Request("palm://com.palm.applicationManager", {
             method: "close",
@@ -490,7 +505,7 @@ SystemModel.prototype.KillApp = function(appId) {
             onFailure: function(response) { Mojo.Log.warn("App was not killed!", JSON.stringify(response)); }
         });
     } else {
-        Mojo.Log.error("Privileged system services can only be called by apps with an ID that starts with 'com.palm.webos'!");
+        Mojo.Log.error("Privileged system services can only be called by apps with an ID that starts with 'com.palm'!");
         throw ("Privileged system service call not allowed for this App ID!");
     }
 }
