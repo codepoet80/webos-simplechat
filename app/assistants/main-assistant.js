@@ -47,7 +47,7 @@ MainAssistant.prototype.setup = function() {
     //Chat Log List (starts empty)
     this.listElement = this.controller.get('chatList');
     this.listInfoModel = {
-        items: [] //{ uid: "-1", sender: "none", message: "" }
+        items: [] //{ uid: "-1", sender: "none", message: "", formattedMessage: "" }
     };
     //Chat Log List templates (loads other HTML)
     this.template = {
@@ -291,8 +291,8 @@ MainAssistant.prototype.handleListClick = function(event) {
     return true;
 }
 
-MainAssistant.prototype.handlePopupChoose = function(task, command) {
-    //Mojo.Log.info("Perform: ", command, " on ", task.uid);
+MainAssistant.prototype.handlePopupChoose = function(message, command) {
+    //Mojo.Log.info("Perform: ", command, " on ", message.uid);
     switch (command) {
         case "do-copy":
             var stageController = Mojo.Controller.getAppController().getActiveStageController();
@@ -314,10 +314,10 @@ MainAssistant.prototype.handlePopupChoose = function(task, command) {
             systemModel.LaunchApp("com.palm.app.browser", parameters);
             break;
         case "do-editMessage":
-            this.doEditMessage();
+            this.doEditMessage(message);
             break;
         case "do-like":
-            this.doLikeMessage();
+            this.doLikeMessage(message);
             break;
     }
 }
@@ -343,14 +343,28 @@ MainAssistant.prototype.handleCommand = function(event) {
     }
 };
 
-MainAssistant.prototype.doEditMessage = function(event) {
+MainAssistant.prototype.doEditMessage = function(message) {
     this.controller.get('txtMessage').mojo.setValue(appModel.LastMessageSelected.message);
     this.controller.get('spanCompose').innerHTML = "Edit";
     this.doingMessageEdit = true;
 }
 
-MainAssistant.prototype.doLikeMessage = function(event) {
-    //play a sound, post a like, update message
+MainAssistant.prototype.doLikeMessage = function(message) {
+    //post a like, update message, play a sound?
+    if (!message.likes || message.likes == "" || messages.likes == 0)
+        message.likes = 1;
+    else
+        message.likes++;
+
+    /* brute force way if above doesn't work
+    var thisWidgetSetup = this.controller.getWidgetSetup("chatList");
+    for (var i = 0; i < thisWidgetSetup.model.items.length; i++) {
+        if (thisWidgetSetup.model.items[i].uid == appModel.LastMessageSelected.uid) {
+            thisWidgetSetup.model.items[i].likes = responseObj.likes;
+        }
+    }
+    this.controller.modelChanged(thisWidgetSetup.model);
+    */
     this.likeMessageToService();
 }
 
@@ -384,6 +398,7 @@ MainAssistant.prototype.postMessageToService = function(newMessage) {
                         uid: responseObj.posted,
                         sender: appModel.AppSettingsCurrent["SenderName"],
                         message: newMessage,
+                        formattedMessage: Mojo.Format.runTextIndexer(results[i].message),
                         timestamp: this.convertTimeStamp(new Date(), false),
                         color: "gray"
                     };
@@ -429,7 +444,8 @@ MainAssistant.prototype.editMessageToService = function(newMessage) {
                 for (var i = 0; i < thisWidgetSetup.model.items.length; i++) {
                     if (thisWidgetSetup.model.items[i].uid == appModel.LastMessageSelected.uid) {
                         thisWidgetSetup.model.items[i].color = "gray";
-                        thisWidgetSetup.model.items[i].formattedMessage = newMessage;
+                        thisWidgetSetup.model.items[i].message = newMessage;
+                        thisWidgetSetup.model.items[i].formattedMessage = Mojo.Format.runTextIndexer(newMessage);
                     }
                 }
                 this.controller.modelChanged(thisWidgetSetup.model);
@@ -503,7 +519,6 @@ MainAssistant.prototype.updateChatsList = function(results) {
     //now make the new list
     var newMessages = [];
     for (var i = 0; i < results.length; i++) {
-        Mojo.Log.info("transformed message: " + Mojo.Format.runTextIndexer(results[i].message));
         newMessages.push({
             uid: results[i].uid,
             sender: results[i].sender,

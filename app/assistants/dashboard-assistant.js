@@ -70,7 +70,7 @@ DashboardAssistant.prototype.handleTap = function(event) {
     var appController = Mojo.Controller.getAppController();
     var mainStage = appController.getStageProxy("main");
     if (!mainStage) {
-        systemModel.LaunchApp("com.jonandnic.simplechat");
+        systemModel.LaunchApp(Mojo.Controller.appInfo.id);
         appController.closeAllStages();
     } else {
         mainStage.activate();
