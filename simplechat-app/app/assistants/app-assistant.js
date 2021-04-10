@@ -70,15 +70,64 @@ AppAssistant.prototype.handleLaunch = function(params) {
             return;
         } else //If parameters were passed, this is a launch from a system alarm
         {
-            Mojo.Log.info("This is an alarm launch: " + JSON.stringify(params));
-            var stageArguments = { name: MainStageName, lightweight: true };
-            this.controller.createStageWithCallback(stageArguments, function(stageController) {
-                Mojo.Controller.appController.closeStage("main");
 
-            }.bind(this));
-            systemModel.ShowNotificationStage("dashboard", "dashboard/dashboard-scene", 60, false, false);
-            return;
+            Mojo.Log.info("This is an alarm launch: " + JSON.stringify(params));
+            /*
+
+            return;*/
+
+            var pushClass0AlertScene = function(stageController) {
+                stageController.pushScene('dashboard', "dashboard/dashboard-scene");
+            }.bind(this);
+
+            Mojo.Controller.getAppController().showBanner("New messages in the chat!", { source: 'notification' });
+            //var stageArguments = { name: MainStageName, lightweight: true };
+            //this.controller.createStageWithCallback(stageArguments, function(stageController) {
+            //   Mojo.Controller.appController.closeStage("main");
+
+            //}.bind(this));
+
+            this.controller.createStageWithCallback({
+                name: 'dashboard',
+                lightweight: true,
+                height: 100,
+                soundclass: "assets/silent.mp3"
+            }, pushClass0AlertScene, 'popupalert');
+
+            //systemModel.ShowNotificationStage("dashboard", "dashboard/dashboard-scene", 60, false, false);
         }
     }
-
 };
+
+/*
+SystemModel.prototype.ShowNotificationStage = function(stageName, sceneName, heightToUse, sound, vibrate) {
+    Mojo.Log.info("Showing notification stage.");
+    //Determine what sound to use
+    var soundToUse;
+    if (!sound)
+        soundToUse = "assets/silent.mp3";
+    else if (sound == true || sound == "")
+        soundToUse = "/media/internal/ringtones/Dulcimer (short).mp3"
+    else
+        soundToUse = sound;
+    if (vibrate)
+        this.Vibrate(vibrate);
+
+    var stageCallBack = function(stageController) {
+        stageController.pushScene({ name: stageName, sceneTemplate: sceneName });
+    }.bind(this);
+    var appController = Mojo.Controller.getAppController();
+    var stageController = appController.getStageController(stageName);
+    if (stageController) {
+        stageCallBack(stageController);
+    } else {
+        Mojo.Controller.getAppController().createStageWithCallback({
+            name: stageName,
+            lightweight: true,
+            height: heightToUse,
+            sound: soundToUse,
+            clickableWhenLocked: true
+        }, stageCallBack, 'dashboard');
+    }
+}
+*/

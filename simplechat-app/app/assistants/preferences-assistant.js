@@ -194,6 +194,13 @@ PreferencesAssistant.prototype.handleValueChange = function(event) {
             if (event.value)
                 this.controller.get('txtEndpointURL').mojo.focus();
             break;
+        case "txtEndpointURL":
+            var lastChar = event.value[event.value.length - 1]
+            if (lastChar != "/") {
+                event.value = event.value + "/";
+                Mojo.Log.warn("Custom end point URL was missing trailing slash, it has been added. Value is now: " + event.value);
+            }
+            break;
     }
 
     //We stashed the preference name in the title of the HTML element, so we don't have to use a case statement

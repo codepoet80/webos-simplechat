@@ -56,7 +56,9 @@ EmoticonPickerDialogAssistant.prototype.setup = function(widget) {
 
 EmoticonPickerDialogAssistant.prototype.insertCell = function(row, emoticon) {
     var cell = row.insertCell(0);
-    cell.innerHTML = Mojo.Format.runTextIndexer(emoticon.escapeHTML());
+    var MojoHTML = Mojo.Format.runTextIndexer(emoticon.escapeHTML());
+    MojoHTML = MojoHTML.replace("file:///usr/palm/", "");
+    cell.innerHTML = MojoHTML;
     cell.setAttribute("emo", emoticon);
     cell.style.height = "40px";
 };

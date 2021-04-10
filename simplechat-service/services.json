@@ -1,0 +1,14 @@
+{
+    "id": "com.jonandnic.simplechat.service",
+    "description": "SimpleChat Background Service",
+    "activityTimeout": 30,
+    "services": [{
+        "name": "com.jonandnic.simplechat.service",
+        "description": "helloworld example",
+        "commands": [{
+            "name": "alarm",
+            "assistant": "AlarmAssistant",
+            "public": true
+        }]
+    }]
+}

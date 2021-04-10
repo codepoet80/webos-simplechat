@@ -4,6 +4,7 @@ var ServiceModel = function() {
 
 ServiceModel.prototype.getChats = function(serviceBase, callback) {
     serviceURL = serviceBase + "get-chat.php";
+    Mojo.Log.info("Trying to get chats from: " + serviceURL);
     this.retVal = "";
     if (callback)
         callback = callback.bind(this);

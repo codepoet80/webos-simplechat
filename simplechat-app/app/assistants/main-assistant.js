@@ -421,11 +421,14 @@ MainAssistant.prototype.postMessageToService = function(newMessage) {
                 Mojo.Log.info("Message accepted by server: " + responseObj.posted); //{ "posted": "604529e19fb7f", "senderKey": "604529e19fb99" }
                 if (responseObj.posted) {
                     Mojo.Log.info("responseObj: " + JSON.stringify(responseObj));
+                    var MojoHTML = Mojo.Format.runTextIndexer(newMessage);
+                    MojoHTML = MojoHTML.replace("file:///usr/palm/", "");
+
                     var newMsg = {
                         uid: responseObj.posted,
                         sender: appModel.AppSettingsCurrent["SenderName"],
                         message: newMessage,
-                        formattedMessage: Mojo.Format.runTextIndexer(newMessage),
+                        formattedMessage: MojoHTML,
                         timestamp: this.convertTimeStamp(new Date(), false),
                         color: "gray"
                     };
@@ -472,7 +475,11 @@ MainAssistant.prototype.editMessageToService = function(newMessage) {
         for (var i = 0; i < thisWidgetSetup.model.items.length; i++) {
             if (thisWidgetSetup.model.items[i].uid == appModel.LastMessageSelected.uid) {
                 thisWidgetSetup.model.items[i].message = newMessage;
-                thisWidgetSetup.model.items[i].formattedMessage = Mojo.Format.runTextIndexer(newMessage);
+
+                var MojoHTML = Mojo.Format.runTextIndexer(newMessage);
+                MojoHTML = MojoHTML.replace("file:///usr/palm/", "");
+
+                thisWidgetSetup.model.items[i].formattedMessage = MojoHTML;
                 thisWidgetSetup.model.items[i].color = "gray";
                 this.controller.get('chatList').mojo.noticeUpdatedItems(i, [thisWidgetSetup.model.items[i]]);
             }
@@ -521,6 +528,7 @@ MainAssistant.prototype.likeMessageToService = function() {
 MainAssistant.prototype.getChats = function() {
     if (this.serverRetries <= this.serverGiveUp) {
         serviceModel.getChats(this.serviceEndpointBase, function(response) {
+            //Mojo.Log.info("getChat response: " + response);
             if (response != null && response != "") {
                 var responseObj = JSON.parse(response);
                 if (responseObj.status == "error") {
@@ -555,11 +563,14 @@ MainAssistant.prototype.updateChatsList = function(results) {
     //now make the new list
     var newMessages = [];
     for (var i = 0; i < results.length; i++) {
+        var MojoHTML = Mojo.Format.runTextIndexer(results[i].message);
+        MojoHTML = MojoHTML.replace("file:///usr/palm/", "");
+
         newMessages.push({
             uid: results[i].uid,
             sender: results[i].sender,
             message: results[i].message,
-            formattedMessage: Mojo.Format.runTextIndexer(results[i].message),
+            formattedMessage: MojoHTML,
             postedFrom: results[i].postedFrom,
             links: this.detectURLs(results[i].message),
             timestamp: this.convertTimeStamp(results[i].timestamp, true),
@@ -699,30 +710,15 @@ MainAssistant.prototype.toggleCommandMenu = function(show) {
 /* Helper Functions */
 MainAssistant.prototype.checkForUpdates = function() {
     if (!appModel.UpdateCheckDone) {
-        //First check for old version
-        var oldFound = false;
-        systemModel.GetInstalledApps(function(response) {
-            if (response && response.apps) {
-                for (var a = 0; a < response.apps.length; a++) {
-                    if (response.apps[a].id == "com.jonandnic.simplechat") {
-                        oldFound = true;
-                    }
-                }
-            }
-            if (oldFound) {
-                Mojo.Additions.ShowDialogBox("Deprecated App Found", "It looks like you have both the old and the new SimpleChat apps installed. This will cause problems with notifications. It is strongly recommended that you delete the old version of SimpleChat -- the old icon looks like this:<p align='center' style='margin:0px'><img src='assets/oldicon.png'></p>");
-            } else {
-                appModel.UpdateCheckDone = true;
-                updaterModel.CheckForUpdate("webOS SimpleChat", function(responseObj) {
-                    if (responseObj && responseObj.updateFound) {
-                        updaterModel.PromptUserForUpdate(function(response) {
-                            if (response)
-                                updaterModel.InstallUpdate();
-                        }.bind(this));
-                    }
+        appModel.UpdateCheckDone = true;
+        updaterModel.CheckForUpdate("webOS SimpleChat", function(responseObj) {
+            if (responseObj && responseObj.updateFound) {
+                updaterModel.PromptUserForUpdate(function(response) {
+                    if (response)
+                        updaterModel.InstallUpdate();
                 }.bind(this));
             }
-        }.bind(this))
+        }.bind(this));
     }
 }
 
@@ -734,7 +730,7 @@ MainAssistant.prototype.getUsername = function() {
             template: 'user/user-scene',
             preventCancel: true,
             assistant: new UserAssistant(this, function(val) {
-                    Mojo.Log.error("got value from dialog: " + val);
+                    Mojo.Log.info("got value from dialog: " + val);
                 }.bind(this)) //since this will be a dialog, not a scene, it must be defined in sources.json without a 'scenes' member
         });
     }

@@ -1,0 +1,10 @@
+[{
+        "library": {
+            "name": "foundations",
+            "version": "1.0"
+        }
+    },
+    {
+        "source": "AlarmAssistant.js"
+    }
+]
