@@ -1,0 +1,66 @@
+/* TODO: put your application-specific CSS here */
+
+.palm-page-header .header-icon.preferences {
+    background: url(../icon.png) no-repeat;
+    background-size: 32px 32px;
+}
+
+.explanation-text {
+    margin-top: -5px;
+    padding: 14px;
+    font-size: 14px;
+    color: #000;
+}
+
+.chat-log {
+    margin-top: 8px;
+}
+
+.sender {
+    font-weight: bold;
+}
+
+.sender.discord {
+    color: #6473b9;
+}
+
+.sender.discord::before {
+    content: url('../assets/discord.png');
+}
+
+.chat-time {
+    margin-top: 6px;
+    font-size: 12px;
+    font-style: italic;
+    color: dimgray;
+    padding-bottom: 14px;
+}
+
+.textFieldClass input {
+    padding: 1px;
+}
+
+.dashboard-icon-chat {
+    background: url(../icon-48.png);
+}
+
+textarea {
+    margin-top: 0px !important;
+}
+
+.multiline-hint-text.oblique {
+    color: darkgray;
+}
+
+.likes:not(:empty) {
+    background: url('../assets/heart.png');
+    background-size: 12px 12px;
+    background-repeat: no-repeat;
+    background-position: 8px;
+    background-position-x: 0;
+    padding-left: 14px;
+}
+
+#emo-table td {
+    text-align: center;
+}

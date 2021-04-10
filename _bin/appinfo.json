@@ -1,0 +1,12 @@
+{
+    "id": "com.palm.app.jonandnic.simplechat",
+    "version": "1.1.2",
+    "vendor": "Jon Wise",
+    "type": "web",
+    "main": "index.html",
+    "noWindow": true,
+    "title": "SimpleChat",
+    "icon": "icon.png",
+    "uiRevision": "2",
+    "theme": "light"
+}

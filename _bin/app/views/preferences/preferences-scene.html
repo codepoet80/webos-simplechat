@@ -1,0 +1,79 @@
+<div class="palm-hasheader" style="margin-bottom:60px">
+    <div id="watchViewTitle" class="palm-header center" onclick="Mojo.Controller.stageController.popScene();">
+        Preferences
+    </div>
+</div>
+
+<div class="palm-group">
+    <div class="palm-group-title">
+        <span x-mojo-loc=''>Basic</span>
+    </div>
+
+    <div class="palm-list" id="divTest">
+        <div class="palm-row first">
+            <div class="palm-row-wrapper">
+                <div id="listForegroundUpdate" x-mojo-element="ListSelector" title="ForegroundUpdate" class="right"></div>
+            </div>
+        </div>
+
+        <div class="palm-row">
+            <div class="palm-row-wrapper">
+                <div id="listBackgroundUpdate" x-mojo-element="ListSelector" title="BackgroundUpdate" class="right"></div>
+            </div>
+        </div>
+
+        <div class="palm-row">
+            <div class="palm-row-wrapper">
+                <div x-mojo-element="ToggleButton" id="toggleEmojis" title="ShowEmojis"></div>
+                <div class="title" style="margin-left: -4px; float:left;"><span class="label">Discord Emojis</span></div>
+            </div>
+        </div>
+
+        <div class="palm-row last">
+            <div class="palm-row-wrapper">
+                <span x-mojo-loc="" id="SoundOptionLabel" width="100%" class="label truncating-text" style="float:left; min-width:120px; margin-left: 14px; margin-top: 14px;">Alert Sound</span>
+                <div x-mojo-element="ListSelector" id="listAlertSound" class="listselectorClass" style="float:right" name="listAlertSound"></div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="palm-group">
+    <div class="palm-group-title">
+        <span x-mojo-loc=''>Self Hosting</span>
+    </div>
+
+    <div class="palm-list">
+
+        <div class="palm-row first">
+            <div class="palm-row-wrapper">
+                <div x-mojo-element="ToggleButton" id="toggleClientAPI" title="UseClientAPIKey"></div>
+                <div class="title" style="margin-left: -4px; float:left;"><span class="label">Custom Client Id</span></div>
+            </div>
+        </div>
+
+        <div class="palm-row">
+            <div class="palm-row-wrapper" style="margin:14px 22px 4px 12px">
+                <div id="txtClientAPI" name="txtClientAPI" x-mojo-element="TextField" title="ClientAPIKey"></div>
+            </div>
+        </div>
+
+        <div class="palm-row first">
+            <div class="palm-row-wrapper">
+                <div x-mojo-element="ToggleButton" id="toggleCustomEndPoint" title="UseCustomEndpoint"></div>
+                <div class="title" style="margin-left: -4px; float:left;"><span class="label">Custom Endpoint URL</span></div>
+            </div>
+        </div>
+
+        <div class="palm-row last">
+            <div class="palm-row-wrapper" style="margin:14px 22px 4px 12px">
+                <div id="txtEndpointURL" name="txtEndpointURL" x-mojo-element="TextField" title="EndpointURL"></div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+<div class="explanation-text">For more information on self-hosting, please visit <a href="https://github.com/codepoet80/simplechat-service">https://github.com/codepoet80/simplechat-service</a></div>
+<div x-mojo-element="Button" id="btnOK" name="btnOK"></div>
