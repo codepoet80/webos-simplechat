@@ -521,6 +521,7 @@ MainAssistant.prototype.likeMessageToService = function() {
 MainAssistant.prototype.getChats = function() {
     if (this.serverRetries <= this.serverGiveUp) {
         serviceModel.getChats(this.serviceEndpointBase, function(response) {
+            //Mojo.Log.info("getChat response: " + response);
             if (response != null && response != "") {
                 var responseObj = JSON.parse(response);
                 if (responseObj.status == "error") {

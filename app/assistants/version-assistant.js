@@ -6,6 +6,11 @@ function VersionAssistant(startup) {
 
     //New Features
     this.changelog = [{
+        version: "Version 1.1.3",
+        detail: [
+            "Bug fixes and general maintenance"
+        ]
+    }, {
         version: "Version 1.1.2",
         detail: [
             "Show/Hide the Command menu buttons by tapping the Compose area title bar",

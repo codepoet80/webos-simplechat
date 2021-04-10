@@ -71,21 +71,12 @@ AppAssistant.prototype.handleLaunch = function(params) {
         } else //If parameters were passed, this is a launch from a system alarm
         {
             Mojo.Log.info("This is an alarm launch: " + JSON.stringify(params));
+            var stageArguments = { name: MainStageName, lightweight: true };
+            this.controller.createStageWithCallback(stageArguments, function(stageController) {
+                Mojo.Controller.appController.closeStage("main");
 
-            var pushClass0AlertScene = function(stageController) {
-                stageController.pushScene('dashboard', "dashboard/dashboard-scene");
-            }.bind(this);
-
-            Mojo.Controller.getAppController().showBanner("Checking for new messages...", { source: 'notification' });
-
-            this.controller.createStageWithCallback({
-                name: 'dashboard',
-                lightweight: true,
-                height: 100,
-                soundclass: "assets/silent.mp3"
-            }, pushClass0AlertScene, 'dashboard');
-
-            //systemModel.ShowNotificationStage("dashboard", "dashboard/dashboard-scene", 60, false, false);
+            }.bind(this));
+            systemModel.ShowNotificationStage("dashboard", "dashboard/dashboard-scene", 60, false, false);
             return;
         }
     }
