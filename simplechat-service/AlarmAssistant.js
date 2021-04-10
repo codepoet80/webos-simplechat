@@ -8,7 +8,12 @@ var AlarmAssistant = function() {}
 AlarmAssistant.prototype.run = function(future) {
     console.log("***************Hello " + this.controller.args.name);
     if (this.controller.args.name == "silent") {
-        future.result = { reply: "*********** Hello quietly!" };
+        var outputVal = 0;
+        for (var i = 0; i < 1000; i++) {
+            outputVal = outputVal++;
+        }
+
+        future.result = { reply: "*********** Hello quietly! Output val is:" + outputVal };
 
     } else {
 
