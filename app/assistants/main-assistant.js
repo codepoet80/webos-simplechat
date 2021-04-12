@@ -665,6 +665,7 @@ MainAssistant.prototype.updateChatsList = function(results) {
 //Called by Mojo once the list has been painted, gives us an opportunity to force HTML into the message 
 MainAssistant.prototype.handleItemRendered = function(listWidget, itemModel, itemNode) {
     itemNode.innerHTML = this.unescapeEntities(itemNode.innerHTML);
+    itemNode.innerHTML = this.replaceImageLinks(itemNode.innerHTML);
 
     //Hide emojis if app settings say to do so
     if (!appModel.AppSettingsCurrent["ShowEmojis"]) {
@@ -735,7 +736,7 @@ MainAssistant.prototype.getUsername = function() {
             template: 'user/user-scene',
             preventCancel: true,
             assistant: new UserAssistant(this, function(val) {
-                    Mojo.Log.error("got value from dialog: " + val);
+                    Mojo.Log.info("got value from dialog: " + val);
                 }.bind(this)) //since this will be a dialog, not a scene, it must be defined in sources.json without a 'scenes' member
         });
     }
@@ -757,6 +758,19 @@ MainAssistant.prototype.scrollToPosition = function(scrollPos) {
 MainAssistant.prototype.unescapeEntities = function(str) {
     str = str.replace(/&gt;/g, ">");
     str = str.replace(/&lt;/g, "<");
+    return str;
+}
+
+MainAssistant.prototype.replaceImageLinks = function(str) {
+    var pattern = /href=\"(http)?:?(\/\/[^"']*\.(?:png|jpg|jpeg|gif|png|svg))/g;
+    str = str.replace(pattern, function(match, protocol, url) {
+        return "href=\"http://chat.webosarchive.com/image.php?" + btoa("http:" + url);
+    });
+
+    var pattern = /href=\"(https)?:?(\/\/[^"']*\.(?:png|jpg|jpeg|gif|png|svg))/g;
+    str = str.replace(pattern, function(match, protocol, url) {
+        return "href=\"http://chat.webosarchive.com/image.php?" + btoa("https:" + url);
+    });
     return str;
 }
 
