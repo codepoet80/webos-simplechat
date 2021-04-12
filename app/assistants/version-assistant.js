@@ -6,25 +6,33 @@ function VersionAssistant(startup) {
 
     //New Features
     this.changelog = [{
-        version: "Version 1.1.3",
-        detail: [
-            "Bug fixes and general maintenance"
-        ]
-    }, {
-        version: "Version 1.1.2",
-        detail: [
-            "Show/Hide the Command menu buttons by tapping the Compose area title bar",
-            "Enable/Disable Discord Emojis in Preferences",
-        ]
-    }, {
-        version: "Version 1.1.1",
-        detail: [
-            "Improved Discord integration, including showing Emojis!<span class='emoji-outer emoji-sizer'><span class='emoji-inner emoji1f388'></span></span>",
-            "Now with a smaller emoji file!",
-            "Improved timeout logic.",
-            "Trying different background sync logic."
-        ]
-    }];
+            version: "Version 1.1.4",
+            detail: [
+                "Converts image links to an image proxy so they can be viewed and scaled properly on tiny devices",
+                "Improved background update, using a notification launch, no longer interupts Exhibition, video playback or One Night Stand"
+            ]
+        },
+        {
+            version: "Version 1.1.3",
+            detail: [
+                "Bug fixes and general maintenance"
+            ]
+        }, {
+            version: "Version 1.1.2",
+            detail: [
+                "Show/Hide the Command menu buttons by tapping the Compose area title bar",
+                "Enable/Disable Discord Emojis in Preferences",
+            ]
+        }, {
+            version: "Version 1.1.1",
+            detail: [
+                "Improved Discord integration, including showing Emojis!<span class='emoji-outer emoji-sizer'><span class='emoji-inner emoji1f388'></span></span>",
+                "Now with a smaller emoji file!",
+                "Improved timeout logic.",
+                "Trying different background sync logic."
+            ]
+        }
+    ];
 
     // setup command menu
     this.cmdMenuModel = {
