@@ -158,8 +158,7 @@ MainAssistant.prototype.activate = function(event) {
             Mojo.Log.warn("Device detected as Pixi or Veer");
         }
     }
-
-    //systemModel.PreventDisplaySleep();
+    //Set some variables
     this.maximized = true;
     this.serverRetries = 0;
     this.pendingMessages = [];
@@ -170,8 +169,10 @@ MainAssistant.prototype.activate = function(event) {
     this.startPollingServer();
     systemModel.ClearSystemAlarm("SimpleChat");
 
+    //Get ready for input
     this.handleTextFocus();
 
+    //Determine if we should show any startup messages
     var currVersion = Mojo.Controller.appInfo.version;
     if (!welcomed && (!appModel.AppSettingsCurrent["LastVersionRun"] || appModel.AppSettingsCurrent["LastVersionRun"] != currVersion)) {
         this.pausePollingServer();

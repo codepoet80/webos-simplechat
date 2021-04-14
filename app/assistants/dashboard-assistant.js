@@ -9,7 +9,7 @@ function DashboardAssistant(argFromPusher) {
 }
 
 DashboardAssistant.prototype.setup = function() {
-    Mojo.Log.info("Notification stage setup at " + new Date());
+    Mojo.Log.info("Dashboard notification stage setup at " + new Date());
     this.displayDashboard("SimpleChat", "Checking for new messages...");
 
     this.serviceEndpointBase = appModel.ServiceEndpointBase;
@@ -25,29 +25,28 @@ DashboardAssistant.prototype.setup = function() {
 }
 
 DashboardAssistant.prototype.activate = function(event) {
-    Mojo.Log.info("dashboard activate called!");
+    Mojo.Log.info("Dashboard activating!");
     this.checkForMessages();
 }
 
 DashboardAssistant.prototype.checkForMessages = function() {
-    Mojo.Log.info("checking for new messages...");
+    Mojo.Log.info("Checking for new messages in Dashboard...");
     serviceModel.getChats(this.serviceEndpointBase, function(response) {
         var appController = Mojo.Controller.getAppController();
         if (response != null && response != "") {
             var responseObj = JSON.parse(response);
             if (responseObj.status == "error") {
-                Mojo.Log.error("Error message from server during background check: " + responseObj.msg);
-                appController.closeAllStages();
+                Mojo.Log.error("Error message from server during Dashboard message check: " + responseObj.msg);
+                appController.closeStage("dashboard");
             } else {
                 if (responseObj.messages && responseObj.messages.length > 0) {
                     var newMessageCount = this.findNewMessageCount(appModel.AppSettingsCurrent["LastKnownMessage"], responseObj.messages);
                     if (newMessageCount > 0) {
-                        Mojo.Log.info("Found new chat on server during background check!");
+                        Mojo.Log.info("Found new chat on server during Dashboard message check!");
 
-                        //If the main app window is open, it will play a sound. If not, play a sound here.
                         var appController = Mojo.Controller.getAppController();
                         var mainStage = appController.getStageController("main");
-                        if (!mainStage) {
+                        if (!mainStage) { //If the main app window is open,
                             if (newMessageCount > this.lastMessageCount) {
                                 systemModel.PlayAlertSound(appModel.AppSettingsCurrent["AlertSound"]);
                                 this.lastMessageCount = newMessageCount;
@@ -57,16 +56,16 @@ DashboardAssistant.prototype.checkForMessages = function() {
                             this.displayDashboard("SimpleChat", "New messages in the chat!");
                         }
                     } else {
-                        Mojo.Log.info("No new chats on server during background check.");
+                        Mojo.Log.info("No new chats on server during Dashboard message check.");
                         appController.closeStage("dashboard");
                     }
                 } else {
-                    Mojo.Log.warn("Chat results were empty during scheduled background check. This is unlikely; server, API or connectivity problem possible");
+                    Mojo.Log.warn("Chat results were empty during scheduled Dashboard message check. This is unlikely; server, API or connectivity problem possible");
                     appController.closeStage("dashboard");
                 }
             }
         } else {
-            Mojo.Log.error("No usable response from server during background check: " + response);
+            Mojo.Log.error("No usable response from server during Dashboard message check: " + response);
             appController.closeStage("dashboard");
         }
     }.bind(this));
@@ -112,8 +111,6 @@ DashboardAssistant.prototype.handleDragEnd = function(event) {
 }
 
 DashboardAssistant.prototype.displayDashboard = function(title, message, count) {
-    if (count)
-        Mojo.Log.warn("New message count now: " + count);
     var infoElement = this.controller.get("dashboardinfo");
     var info = { title: title, message: message };
     if (count) {
@@ -121,7 +118,6 @@ DashboardAssistant.prototype.displayDashboard = function(title, message, count) 
         info.showCount = "inline";
     } else {
         info.showCount = "none";
-        Mojo.Log.warn("no message count for dashboard");
     }
     var renderedInfo = Mojo.View.render({ object: info, template: "dashboard/item-info" });
     infoElement.innerHTML = renderedInfo;
@@ -134,5 +130,5 @@ DashboardAssistant.prototype.deactivate = function(event) {
 
 // Cleanup anything we did in setup function
 DashboardAssistant.prototype.cleanup = function() {
-    Mojo.Log.info("notification stage closing at " + new Date());
+    Mojo.Log.info("Dashboard notification stage closing at " + new Date());
 }

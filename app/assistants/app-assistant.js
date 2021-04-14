@@ -17,6 +17,8 @@ function AppAssistant() {
 
 //This function will handle relaunching the app when an alarm goes off(see the device/alarm scene)
 AppAssistant.prototype.handleLaunch = function(params) {
+    Mojo.Log.info("SimpleChat is Launching! Launch params: " + JSON.stringify(params));
+
     //Load preferences
     appModel.LoadSettings();
     Mojo.Log.info("settings now: " + JSON.stringify(appModel.AppSettingsCurrent));
@@ -25,25 +27,16 @@ AppAssistant.prototype.handleLaunch = function(params) {
         appModel.SaveSettings();
     }
 
-    //get the proxy for the stage in the event it already exists (eg: app is currently open)
-    var mainStage = this.controller.getStageProxy("main");
-    Mojo.Log.info("SimpleChat is Launching! Launch params: " + JSON.stringify(params));
-
     //Reset alarms
     systemModel.ClearSystemAlarm("SimpleChat");
     if (appModel.AppSettingsCurrent["BackgroundUpdate"] && appModel.AppSettingsCurrent["BackgroundUpdate"] != "" && appModel.AppSettingsCurrent["BackgroundUpdate"] != -1)
         systemModel.SetSystemAlarmRelative("SimpleChat", appModel.AppSettingsCurrent["BackgroundUpdate"]);
 
-    var AppRunning = false;
-    if (mainStage) {
-        Mojo.Log.info("Found existing main stage, app was already running");
-        AppRunning = true;
-    } else {
-        Mojo.Log.info("Did not find existing main stage, app is not running");
-    }
-
-    if (AppRunning) //If the stage exists, use it
+    var mainStage = this.controller.getStageProxy("main"); //get the proxy for the stage if it already exists (eg: app is currently open)
+    if (mainStage) //If the stage exists, use it
     {
+        Mojo.Log.info("Found existing main stage, app was already running");
+
         var stageController = this.controller.getStageController("main");
         if (!params || params["action"] == undefined) //If no parameters were passed, this is a normal launch
         {
@@ -58,6 +51,8 @@ AppAssistant.prototype.handleLaunch = function(params) {
         }
     } else //If not, determine if we should make one
     {
+        Mojo.Log.info("Did not find existing main stage, app is not running");
+
         if (!params || params["action"] == undefined) //If no parameters were passed, this is a normal launch
         {
             var currVersion = Mojo.Controller.appInfo.version;
@@ -72,9 +67,7 @@ AppAssistant.prototype.handleLaunch = function(params) {
         } else //If parameters were passed, this is a launch from a system alarm
         {
             Mojo.Log.info("This is an alarm launch: " + JSON.stringify(params));
-            //Mojo.Controller.getAppController().showBanner("Checking for new messages...", { source: 'notification' });
             appModel.ShowNotificationStage();
-            //systemModel.ShowNotificationStage("dashboard", "dashboard/dashboard-scene", 60, false, false);
             return;
         }
     }
