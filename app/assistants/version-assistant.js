@@ -6,6 +6,11 @@ function VersionAssistant(startup) {
 
     //New Features
     this.changelog = [{
+            version: "Version 1.3.0",
+            detail: [
+                "Drastically improved background update and notifications."
+            ]
+        }, {
             version: "Version 1.2.0",
             detail: [
                 "Converts image links to an image proxy so they can be viewed and scaled properly on tiny devices",
