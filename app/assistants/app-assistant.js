@@ -36,10 +36,10 @@ AppAssistant.prototype.handleLaunch = function(params) {
 
     var AppRunning = false;
     if (mainStage) {
-        Mojo.Log.info("Found existing stage, app was already running");
+        Mojo.Log.info("Found existing main stage, app was already running");
         AppRunning = true;
     } else {
-        Mojo.Log.info("Did not find existing stage, this is a new app launch!");
+        Mojo.Log.info("Did not find existing main stage, app is not running");
     }
 
     if (AppRunning) //If the stage exists, use it
@@ -52,7 +52,7 @@ AppAssistant.prototype.handleLaunch = function(params) {
             return;
         } else //If parameters were passed, this is a launch from a system alarm
         {
-            Mojo.Log.info("This is a re-launch with parameters: " + JSON.stringify(params) + ". Safe to ignore, since app is already running.");
+            Mojo.Log.warn("This is a re-launch with parameters: " + JSON.stringify(params) + ". Safe to ignore, since app is already running.");
             systemModel.ShowNotificationStage("dashboard", "dashboard/dashboard-scene", 60, false, false);
             return;
         }
@@ -67,24 +67,13 @@ AppAssistant.prototype.handleLaunch = function(params) {
             this.controller.createStageWithCallback(stageArguments, function(stageController) {
                 stageController.pushScene(MainStageName);
             }.bind(this));
+
             return;
         } else //If parameters were passed, this is a launch from a system alarm
         {
             Mojo.Log.info("This is an alarm launch: " + JSON.stringify(params));
-
-            var pushClass0AlertScene = function(stageController) {
-                stageController.pushScene('dashboard', "dashboard/dashboard-scene");
-            }.bind(this);
-
-            Mojo.Controller.getAppController().showBanner("Checking for new messages...", { source: 'notification' });
-
-            this.controller.createStageWithCallback({
-                name: 'dashboard',
-                lightweight: true,
-                height: 100,
-                soundclass: "assets/silent.mp3"
-            }, pushClass0AlertScene, 'dashboard');
-
+            //Mojo.Controller.getAppController().showBanner("Checking for new messages...", { source: 'notification' });
+            appModel.ShowNotificationStage();
             //systemModel.ShowNotificationStage("dashboard", "dashboard/dashboard-scene", 60, false, false);
             return;
         }

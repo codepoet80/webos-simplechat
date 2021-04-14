@@ -11,6 +11,7 @@ function MainAssistant() {
     this.doingMessageEdit = false;
     this.serverRetries = 0;
     this.serverGiveUp = 4;
+    this.maximized = false;
 }
 
 MainAssistant.prototype.setup = function() {
@@ -159,10 +160,16 @@ MainAssistant.prototype.activate = function(event) {
     }
 
     //systemModel.PreventDisplaySleep();
+    this.maximized = true;
     this.serverRetries = 0;
     this.pendingMessages = [];
     this.firstPoll = true;
+
+    //Disable background sync
+    Mojo.Log.info("Switching to foreground sync")
     this.startPollingServer();
+    systemModel.ClearSystemAlarm("SimpleChat");
+
     this.handleTextFocus();
 
     var currVersion = Mojo.Controller.appInfo.version;
@@ -241,9 +248,8 @@ MainAssistant.prototype.adustScrollerForKeyboard = function(orientation) {
     else
         this.scaledHeight = Math.floor(Mojo.Environment.DeviceInfo.screenWidth / this.scalingFactor) - bottomBuffer;
 
-    Mojo.Log.info(this.DeviceType + " orientation is " + orientation + " bottom buffer is: " + bottomBuffer + " scaled height: " + this.scaledHeight);
+    //Mojo.Log.info(this.DeviceType + " orientation is " + orientation + " bottom buffer is: " + bottomBuffer + " scaled height: " + this.scaledHeight);
     this.chatScroller.style.height = this.scaledHeight + "px";
-    //this.scrollToBottom();
 
     setTimeout(fixScroll = function() {
         this.controller.getSceneScroller().mojo.revealTop(true);
@@ -631,7 +637,7 @@ MainAssistant.prototype.updateChatsList = function(results) {
     if (inserted.length > 0 || updated || deleted) {
         if (inserted.length > 0) {
             if (!this.firstPoll) {
-                systemModel.PlayAlertSound(appModel.AppSettingsCurrent["AlertSound"]);
+                this.doNotification();
                 var offset = thisWidgetSetup.model.items.length - 1;
                 for (var i = 0; i < inserted.length; i++) {
                     thisWidgetSetup.model.items.push(inserted[i]);
@@ -639,7 +645,6 @@ MainAssistant.prototype.updateChatsList = function(results) {
                 this.controller.get('chatList').mojo.noticeAddedItems(offset, inserted);
             } else {
                 thisWidgetSetup.model.items = inserted;
-
             }
             this.controller.modelChanged(thisWidgetSetup.model);
             this.scrollToBottom();
@@ -662,7 +667,7 @@ MainAssistant.prototype.updateChatsList = function(results) {
     }
 }
 
-//Called by Mojo once the list has been painted, gives us an opportunity to force HTML into the message 
+//Called by Mojo once the list has been painted, gives us an opportunity to force HTML changes in the message 
 MainAssistant.prototype.handleItemRendered = function(listWidget, itemModel, itemNode) {
     itemNode.innerHTML = this.unescapeEntities(itemNode.innerHTML);
     itemNode.innerHTML = this.replaceImageLinks(itemNode.innerHTML);
@@ -699,6 +704,13 @@ MainAssistant.prototype.toggleCommandMenu = function(show) {
 }
 
 /* Helper Functions */
+MainAssistant.prototype.doNotification = function() {
+    systemModel.PlayAlertSound(appModel.AppSettingsCurrent["AlertSound"]);
+    if (!this.maximized)
+        appModel.ShowNotificationStage();
+    else {}
+}
+
 MainAssistant.prototype.checkForUpdates = function() {
     if (!appModel.UpdateCheckDone) {
         //First check for old version
@@ -816,23 +828,32 @@ MainAssistant.prototype.rememberLastMessage = function() {
 
 /* Mojo Lifecycle Stuff */
 MainAssistant.prototype.activateWindow = function(event) {
+    Mojo.Log.warn("SimpleChat being maximized!");
+    this.maximized = true;
     this.rememberLastMessage();
 };
 
 MainAssistant.prototype.deactivateWindow = function(event) {
+    Mojo.Log.warn("SimpleChat being minimized!");
+    this.maximized = false;
     this.rememberLastMessage();
 };
 
 MainAssistant.prototype.deactivate = function(event) {
     /* remove any event handlers you added in activate and do any other cleanup that should happen before
        this scene is popped or another scene is pushed on top */
-    Mojo.Log.info("Main scene deactivated " + Mojo.Controller.appInfo.id);
+    Mojo.Log.info("Main scene deactivating " + Mojo.Controller.appInfo.id);
+    this.maximized = false;
 
-    //Remember last known messages
+    //Get ready for background sync
+    Mojo.Log.info("Switching to background sync");
     this.pausePollingServer();
     this.rememberLastMessage();
+    systemModel.ClearSystemAlarm("SimpleChat");
+    if (appModel.AppSettingsCurrent["BackgroundUpdate"] && appModel.AppSettingsCurrent["BackgroundUpdate"] != "" && appModel.AppSettingsCurrent["BackgroundUpdate"] != -1)
+        systemModel.SetSystemAlarmRelative("SimpleChat", appModel.AppSettingsCurrent["BackgroundUpdate"]);
 
-    //Detach UI
+    //Detach UI handlers
     Mojo.Event.stopListening(this.controller.get("chatList"), Mojo.Event.listTap, this.handleListClick);
     this.controller.window.removeEventListener('resize', this.orientationChanged);
     this.controller.document.getElementById("divComposeTitle").removeEventListener("click", this.toggleCommandMenu.bind(this));

@@ -5,6 +5,7 @@ chance of successfully changing the settings. We can then close this window. All
  */
 function DashboardAssistant(argFromPusher) {
     this.passedArguments = argFromPusher;
+    this.lastMessageCount = 0;
 }
 
 DashboardAssistant.prototype.setup = function() {
@@ -18,6 +19,18 @@ DashboardAssistant.prototype.setup = function() {
     if (!appModel.AppSettingsCurrent["AlertSound"] || appModel.AppSettingsCurrent["AlertSound"] == "") {
         appModel.AppSettingsCurrent["AlertSound"] = "Subtle (short)";
     }
+
+    //Event handlers
+    Mojo.Event.listen(this.controller.get("dashboardinfo"), Mojo.Event.tap, this.handleTap.bind(this));
+}
+
+DashboardAssistant.prototype.activate = function(event) {
+    Mojo.Log.info("dashboard activate called!");
+    this.checkForMessages();
+}
+
+DashboardAssistant.prototype.checkForMessages = function() {
+    Mojo.Log.info("checking for new messages...");
     serviceModel.getChats(this.serviceEndpointBase, function(response) {
         var appController = Mojo.Controller.getAppController();
         if (response != null && response != "") {
@@ -30,12 +43,18 @@ DashboardAssistant.prototype.setup = function() {
                     var newMessageCount = this.findNewMessageCount(appModel.AppSettingsCurrent["LastKnownMessage"], responseObj.messages);
                     if (newMessageCount > 0) {
                         Mojo.Log.info("Found new chat on server during background check!");
-                        this.displayDashboard("SimpleChat", "New messages in the chat!", newMessageCount);
+
                         //If the main app window is open, it will play a sound. If not, play a sound here.
                         var appController = Mojo.Controller.getAppController();
                         var mainStage = appController.getStageController("main");
                         if (!mainStage) {
-                            systemModel.PlayAlertSound(appModel.AppSettingsCurrent["AlertSound"]);
+                            if (newMessageCount > this.lastMessageCount) {
+                                systemModel.PlayAlertSound(appModel.AppSettingsCurrent["AlertSound"]);
+                                this.lastMessageCount = newMessageCount;
+                            }
+                            this.displayDashboard("SimpleChat", "New messages in the chat!", newMessageCount);
+                        } else {
+                            this.displayDashboard("SimpleChat", "New messages in the chat!");
                         }
                     } else {
                         Mojo.Log.info("No new chats on server during background check.");
@@ -51,9 +70,6 @@ DashboardAssistant.prototype.setup = function() {
             appController.closeStage("dashboard");
         }
     }.bind(this));
-
-    //Event handlers
-    Mojo.Event.listen(this.controller.get("dashboardinfo"), Mojo.Event.tap, this.handleTap.bind(this));
 }
 
 DashboardAssistant.prototype.findNewMessageCount = function(LastKnownMessage, newMessages) {
@@ -96,9 +112,17 @@ DashboardAssistant.prototype.handleDragEnd = function(event) {
 }
 
 DashboardAssistant.prototype.displayDashboard = function(title, message, count) {
+    if (count)
+        Mojo.Log.warn("New message count now: " + count);
     var infoElement = this.controller.get("dashboardinfo");
-
-    var info = { title: title, message: message, count: count };
+    var info = { title: title, message: message };
+    if (count) {
+        info.count = count;
+        info.showCount = "inline";
+    } else {
+        info.showCount = "none";
+        Mojo.Log.warn("no message count for dashboard");
+    }
     var renderedInfo = Mojo.View.render({ object: info, template: "dashboard/item-info" });
     infoElement.innerHTML = renderedInfo;
     this.controller.getSceneScroller().mojo.revealTop(true);

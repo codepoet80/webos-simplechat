@@ -37,6 +37,43 @@ var AppModel = function() {
     };
 }
 
+AppModel.prototype.ShowNotificationStage = function() {
+    this.controller = Mojo.Controller.getAppController();
+    var dashboardStage = this.controller.getStageProxy("dashboard");
+    var pushDashScene = function(stageController) {
+        stageController.pushScene('dashboard', "dashboard/dashboard-scene");
+    }.bind(this);
+
+    if (!dashboardStage) {
+        Mojo.Log.info("Dashboard stage not open, creating it...");
+        this.controller.createStageWithCallback({
+            name: 'dashboard',
+            lightweight: true,
+            height: 100,
+            soundclass: "assets/silent.mp3"
+        }, pushDashScene, 'dashboard');
+    } else {
+        Mojo.Log.info("Dashboard stage already open, activating it...");
+        var dashboardStageController = this.controller.getStageController("dashboard");
+        if (dashboardStageController) {
+            dashboardStageController.activate();
+            dashboardStageController.delegateToSceneAssistant("activate");
+        }
+    }
+}
+
+AppModel.prototype.CloseNotificationStage = function() {
+    this.controller = Mojo.Controller.getAppController();
+    var dashboardStage = this.controller.getStageProxy("dashboard");
+
+    if (!dashboardStage) {
+        Mojo.Log.info("Dashboard stage not open, nothing to do");
+    } else {
+        Mojo.Log.info("Dashboard stage open, closing it...");
+        this.controller.closeStage("dashboard");
+    }
+}
+
 //You probably don't need to change the below functions since they all work against the Cookie defaults you defined above.
 //  LoadSettings: call when your app starts, or you want to load previously persisted options.
 //  SaveSettings: call any time you want to persist an option.
