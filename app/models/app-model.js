@@ -14,7 +14,7 @@ var AppModel = function() {
     //Define your app-wide, non-persisted settings here
     this.UpdateCheckDone = false;
     this.LaunchQuery = "";
-    this.ServiceEndpointBase = "http://chat.webosarchive.com/";
+    this.ServiceEndpointBase = Mojo.Controller.appInfo.serviceURL;
     this.ClientId = secrets.clientid;
     this.LastMessageSelected = null;
 
