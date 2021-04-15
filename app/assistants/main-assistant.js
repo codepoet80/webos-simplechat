@@ -110,6 +110,10 @@ MainAssistant.prototype.setup = function() {
     Mojo.Event.listen(this.controller.stageController.document, Mojo.Event.stageActivate, this.activateWindow.bind(this));
     Mojo.Event.listen(this.controller.stageController.document, Mojo.Event.stageDeactivate, this.deactivateWindow.bind(this));
 
+    // Non-Mojo handlers
+    this.keyupHandler = this.handleKeyUp.bindAsEventListener(this);
+    this.controller.document.addEventListener("keyup", this.keyupHandler, true);
+
     //Check for updates
     this.checkForUpdates();
 };
@@ -204,6 +208,15 @@ MainAssistant.prototype.activate = function(event) {
 MainAssistant.prototype.handleTextFocus = function(event) {
     this.adustScrollerForKeyboard(this.lastOrientation);
 }
+
+//Handles the enter key
+MainAssistant.prototype.handleKeyUp = function(event) {
+    if (event && Mojo.Char.isEnterKey(event.keyCode)) {
+        if (event.srcElement.parentElement.id == "txtMessage" && !this.menuOn) {
+            this.handleSendMessage();
+        }
+    }
+};
 
 //This is called by Mojo on phones, but has to be manually attached on TouchPad
 MainAssistant.prototype.orientationChanged = function() {
