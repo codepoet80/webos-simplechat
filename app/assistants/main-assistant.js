@@ -845,6 +845,7 @@ MainAssistant.prototype.activateWindow = function(event) {
     Mojo.Log.warn("SimpleChat being maximized!");
     this.maximized = true;
     this.rememberLastMessage();
+    appModel.CloseNotificationStage();
 };
 
 MainAssistant.prototype.deactivateWindow = function(event) {
