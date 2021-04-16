@@ -159,8 +159,26 @@ SystemModel.prototype.PlayAlertSound = function(sound) {
     }
     if (sound != "off") {
         var soundPath = "/media/internal/ringtones/" + sound + ".mp3";
-        Mojo.Log.info("trying to play: " + soundPath);
-        Mojo.Controller.getAppController().playSoundNotification("media", soundPath, 2500);
+        if (sound.indexOf("/") != -1)
+            soundPath = sound;
+
+        var audioPlayer = document.getElementById("audioPlayer");
+        if (audioPlayer) {
+            Mojo.Log.info("Playing notification sound " + soundPath + " using audioPlayer element");
+            if (soundPath) {
+                Mojo.Log.info("trying to play audio: " + soundPath);
+                audioPlayer.src = soundPath;
+                audioPlayer.load();
+            }
+            audioPlayer.play();
+        } else {
+            Mojo.Log.warn("No audio element named audioPlayer, using notification sound to play " + soundPath);
+            if (!sound || sound == "") {
+                sound = "Subtle (short)";
+            }
+            Mojo.Log.info("trying to play: " + soundPath);
+            Mojo.Controller.getAppController().playSoundNotification("media", soundPath, 2500);
+        }
     }
 }
 
