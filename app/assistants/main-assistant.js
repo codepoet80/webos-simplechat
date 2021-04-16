@@ -742,7 +742,7 @@ MainAssistant.prototype.checkForUpdates = function() {
                 Mojo.Additions.ShowDialogBox("Deprecated App Found", "It looks like you have both the old and the new SimpleChat apps installed. This will cause problems with notifications. It is strongly recommended that you delete the old version of SimpleChat -- the old icon looks like this:<p align='center' style='margin:0px'><img src='assets/oldicon.png'></p>");
             } else {
                 appModel.UpdateCheckDone = true;
-                updaterModel.CheckForUpdate("webOS SimpleChat", function(responseObj) {
+                updaterModel.CheckForUpdate(Mojo.Controller.appInfo.appMuseumTitle, function(responseObj) {
                     if (responseObj && responseObj.updateFound) {
                         updaterModel.PromptUserForUpdate(function(response) {
                             if (response)
