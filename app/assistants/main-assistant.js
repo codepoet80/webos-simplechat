@@ -77,7 +77,7 @@ MainAssistant.prototype.setup = function() {
         label: "Settings",
         items: [
             Mojo.Menu.editItem,
-            { label: "SimpleChat Info", command: 'do-Info' },
+            { label: Mojo.Controller.appInfo.title + " Info", command: 'do-Info' },
             { label: "Change Username", command: 'do-Username' },
             { label: "Preferences", command: 'do-Preferences' },
             { label: "About", command: 'do-myAbout' }
@@ -383,7 +383,7 @@ MainAssistant.prototype.handleCommand = function(event) {
                 stageController.pushScene({ name: "version", disableSceneScroller: false });
                 break;
             case 'do-myAbout':
-                Mojo.Additions.ShowDialogBox("SimpleChat - " + Mojo.Controller.appInfo.version, "SimpleChat client for webOS. Copyright 2021, Jon Wise. Distributed under an MIT License.<br>Source code available at: https://github.com/codepoet80/webos-simplechat");
+                Mojo.Additions.ShowDialogBox(Mojo.Controller.appInfo.title + " - " + Mojo.Controller.appInfo.version, "SimpleChat client for webOS. Copyright 2021, Jon Wise. Distributed under an MIT License.<br>Source code available at: https://github.com/codepoet80/webos-simplechat");
                 break;
         }
     }

@@ -2,7 +2,7 @@ function VersionAssistant(startup) {
     this.isStartup = startup;
 
     // on first start, this message is displayed, along with the current version message from below
-    this.startupMessage = $L("<img src='icon.png' style='float:left; margin-right:8px'>Welcome to SimpleChat! We're so excited you're here chatting with us 10 years after this platform was supposed to have died!<br>You can also join this chat from Discord: <a href='discord.gg/7NrrT8exrn'>discord.gg/7NrrT8exrn</a> or view the log on the web: <a href='http://chat.webosarchive.com'>chat.webosarchive.com</a>");
+    this.startupMessage = Mojo.Controller.appInfo.startupMessage;
 
     //New Features
     this.changelog = [{
