@@ -7,6 +7,7 @@
     "noWindow": true,
     "title": "SimpleChat",
     "icon": "icon.png",
+    "pageTitle": "webOS SimpleChat",
     "serviceURL": "http://chat.webosarchive.com/",
     "splashicon": "icon-256x256.png",
     "uiRevision": "2",

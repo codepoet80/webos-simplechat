@@ -15,7 +15,8 @@ function MainAssistant() {
 }
 
 MainAssistant.prototype.setup = function() {
-
+    // title
+    this.controller.get('spnTitle').innerHTML = Mojo.Controller.appInfo.pageTitle;
     // setup message field
     this.messageFieldModel = {
         'original': ''
