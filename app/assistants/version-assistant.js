@@ -6,6 +6,18 @@ function VersionAssistant(startup) {
 
     //New Features
     this.changelog = [{
+            version: "Version 1.3.2",
+            detail: [
+                "More sync timing options.",
+                "Refactored some code to make forking easier."
+            ]
+        }, {
+            version: "Version 1.3.1",
+            detail: [
+                "Enter key now sends message when Command menu buttons are hidden."
+            ]
+        },
+        {
             version: "Version 1.3.0",
             detail: [
                 "Drastically improved background update and notifications."

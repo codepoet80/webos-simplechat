@@ -15,6 +15,7 @@ PreferencesAssistant.prototype.setup = function() {
             choices: [
                 { label: "5 seconds", value: 5000 },
                 { label: "10 seconds", value: 10000 },
+                { label: "20 seconds", value: 10000 },
                 { label: "30 second", value: 30000 },
                 { label: "1 minute", value: 60000 },
                 { label: "2 minutes", value: 120000 },
@@ -37,10 +38,13 @@ PreferencesAssistant.prototype.setup = function() {
             choices: [
                 { label: "Off", value: -1 },
                 { label: "5 minutes", value: "00:05:00" },
+                { label: "10 minutes", value: "00:10:00" },
                 { label: "15 minutes", value: "00:15:00" },
                 { label: "30 minutes", value: "00:30:00" },
+                { label: "45 minutes", value: "00:45:00" },
                 { label: "1 Hour", value: "01:00:00" },
                 { label: "2 Hours", value: "02:00:00" },
+                { label: "3 Hours", value: "02:00:00" },
                 { label: "5 Hours", value: "05:00:00" },
             ]
         },
