@@ -541,7 +541,7 @@ MainAssistant.prototype.likeMessageToService = function() {
 //Send a request to Service to get chat messages
 MainAssistant.prototype.getChats = function() {
     if (this.serverRetries <= this.serverGiveUp) {
-        serviceModel.getChats(this.serviceEndpointBase, function(response) {
+        serviceModel.getChats(this.serviceEndpointBase, this.clientId, function(response) {
             //Mojo.Log.info("getChat response: " + response);
             if (response != null && response != "") {
                 var responseObj = JSON.parse(response);

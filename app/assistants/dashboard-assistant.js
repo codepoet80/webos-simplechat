@@ -26,12 +26,16 @@ DashboardAssistant.prototype.setup = function() {
 
 DashboardAssistant.prototype.activate = function(event) {
     Mojo.Log.info("Dashboard activating!");
+    this.clientId = appModel.ClientId;
+    if (appModel.AppSettingsCurrent["UseClientAPIKey"] && appModel.AppSettingsCurrent["ClientAPIKey"]) {
+        this.clientId = appModel.AppSettingsCurrent["ClientAPIKey"];
+    }
     this.checkForMessages();
 }
 
 DashboardAssistant.prototype.checkForMessages = function() {
     Mojo.Log.info("Checking for new messages in Dashboard...");
-    serviceModel.getChats(this.serviceEndpointBase, function(response) {
+    serviceModel.getChats(this.serviceEndpointBase, this.clientId, function(response) {
         var appController = Mojo.Controller.getAppController();
         if (response != null && response != "") {
             var responseObj = JSON.parse(response);
