@@ -11,6 +11,7 @@ ServiceModel.prototype.getChats = function(serviceBase, callback) {
 
     var xmlhttp = new XMLHttpRequest();
     xmlhttp.open("GET", serviceURL);
+    xmlhttp.setRequestHeader("Client-Id", clientId);
     xmlhttp.send();
     xmlhttp.onreadystatechange = function() {
         if (xmlhttp.readyState == XMLHttpRequest.DONE) {
