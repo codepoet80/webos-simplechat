@@ -10,7 +10,7 @@ function DashboardAssistant(argFromPusher) {
 
 DashboardAssistant.prototype.setup = function() {
     Mojo.Log.info("Dashboard notification stage setup at " + new Date());
-    this.displayDashboard("SimpleChat", "Checking for new messages...");
+    this.displayDashboard(Mojo.Controller.appInfo.title, "Checking for new messages...");
 
     this.serviceEndpointBase = appModel.ServiceEndpointBase;
     if (appModel.AppSettingsCurrent["UseCustomEndpoint"] && appModel.AppSettingsCurrent["EndpointURL"]) {
@@ -51,9 +51,9 @@ DashboardAssistant.prototype.checkForMessages = function() {
                                 systemModel.PlayAlertSound(appModel.AppSettingsCurrent["AlertSound"]);
                                 this.lastMessageCount = newMessageCount;
                             }
-                            this.displayDashboard("SimpleChat", "New messages in the chat!", newMessageCount);
+                            this.displayDashboard(Mojo.Controller.appInfo.title, "New messages have arrived!", newMessageCount);
                         } else {
-                            this.displayDashboard("SimpleChat", "New messages in the chat!");
+                            this.displayDashboard(Mojo.Controller.appInfo.title, "New messages have arrived!");
                         }
                     } else {
                         Mojo.Log.info("No new chats on server during Dashboard message check.");
