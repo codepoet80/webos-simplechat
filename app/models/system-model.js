@@ -412,7 +412,7 @@ SystemModel.prototype.GetInternetConnectionState = function(callback) {
         throw ("Privileged system service call not allowed for this App ID!");
     }
     Mojo.Log.info("Requesting Internet connection state from Connection Manager");
-    this.connectedRequest = new Mojo.Service.Request("palm://com.palm.connectionamanager", {
+    this.connectedRequest = new Mojo.Service.Request("palm://com.palm.connectionmanager", {
         method: "getStatus",
         parameters: {
             subscribe: false

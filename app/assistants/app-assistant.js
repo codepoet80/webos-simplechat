@@ -46,7 +46,7 @@ AppAssistant.prototype.handleLaunch = function(params) {
         } else //If parameters were passed, this is a launch from a system alarm
         {
             Mojo.Log.warn("This is a re-launch with parameters: " + JSON.stringify(params) + ". Safe to ignore, since app is already running.");
-            systemModel.ShowNotificationStage("dashboard", "dashboard/dashboard-scene", 60, false, false);
+            appModel.ShowNotificationStage();
             return;
         }
     } else //If not, determine if we should make one

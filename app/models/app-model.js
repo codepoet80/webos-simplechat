@@ -38,6 +38,52 @@ var AppModel = function() {
 }
 
 AppModel.prototype.ShowNotificationStage = function() {
+    Mojo.Log.info("App Model checking if we need to show Dashboard stage...");
+    this.serviceEndpointBase = appModel.ServiceEndpointBase;
+    if (appModel.AppSettingsCurrent["UseCustomEndpoint"] && appModel.AppSettingsCurrent["EndpointURL"]) {
+        this.serviceEndpointBase = appModel.AppSettingsCurrent["EndpointURL"];
+    }
+    //Check for connectivity, then check for messages
+    systemModel.GetInternetConnectionState(this.checkForMessages.bind(this));
+}
+
+AppModel.prototype.checkForMessages = function(connMgrResponse) {
+    Mojo.Log.info("App Model got response from connection manager: " + JSON.stringify(connMgrResponse));
+    if (connMgrResponse && connMgrResponse.isInternetConnectionAvailable) {
+        Mojo.Log.info("Checking for new messages in App Model...");
+        serviceModel.getChats(this.serviceEndpointBase, this.ClientId, function(response) {
+            Mojo.Log.info("App Model got response from getChats: " + response);
+            if (response != null && response != "") {
+                var responseObj = JSON.parse(response);
+                if (responseObj.status != "error") {
+                    if (responseObj.messages && responseObj.messages.length > 0) {
+                        var newMessageCount = this.findNewMessageCount(appModel.AppSettingsCurrent["LastKnownMessage"], responseObj.messages);
+                        if (newMessageCount > 0) {
+                            Mojo.Log.info("Found new chat on server during App Model message check!");
+                            this.actuallyShowNotificationStage();
+                        }
+                    }
+                }
+            }
+        }.bind(this));
+    }
+}
+
+AppModel.prototype.findNewMessageCount = function(LastKnownMessage, newMessages) {
+    var actuallyNewMessages = [];
+    var startCounting = false;
+    for (var j = 0; j < newMessages.length; j++) {
+        if (startCounting) {
+            actuallyNewMessages.push(newMessages[j].uid);
+        }
+        if (newMessages[j].uid == LastKnownMessage) {
+            startCounting = true;
+        }
+    }
+    return actuallyNewMessages.length;
+}
+
+AppModel.prototype.actuallyShowNotificationStage = function() {
     this.controller = Mojo.Controller.getAppController();
     var dashboardStage = this.controller.getStageProxy("dashboard");
     var pushDashScene = function(stageController) {
@@ -73,6 +119,8 @@ AppModel.prototype.CloseNotificationStage = function() {
         this.controller.closeStage("dashboard");
     }
 }
+
+//#region Inherited from common App Model
 
 //You probably don't need to change the below functions since they all work against the Cookie defaults you defined above.
 //  LoadSettings: call when your app starts, or you want to load previously persisted options.
@@ -151,3 +199,5 @@ AppModel.prototype.ResetSettings = function() {
     stageController.pushScene(this.DefaultScene);
     Mojo.Log.info("re-opened default scene");
 }
+
+//#endregion
