@@ -82,6 +82,7 @@ DashboardAssistant.prototype.findNewMessageCount = function(LastKnownMessage, ne
         if (startCounting) {
             actuallyNewMessages.push(newMessages[j].uid);
             appModel.AppSettingsCurrent["LastKnownMessage"] = newMessages[j].uid;
+            Mojo.Log.info("Dashboard counting: " + newMessages[j].uid);
         }
         if (newMessages[j].uid == LastKnownMessage) {
             startCounting = true;
@@ -135,4 +136,5 @@ DashboardAssistant.prototype.deactivate = function(event) {
 // Cleanup anything we did in setup function
 DashboardAssistant.prototype.cleanup = function() {
     Mojo.Log.info("Dashboard notification stage closing at " + new Date());
+    appModel.SaveSettings();
 }
