@@ -193,7 +193,9 @@ MainAssistant.prototype.activate = function(event) {
         //Add event handlers
         Mojo.Event.listen(this.controller.get("chatList"), Mojo.Event.listTap, this.handleListClick.bind(this));
         Mojo.Event.listenForFocusChanges(this.controller.get("txtMessage"), this.handleTextFocus.bind(this));
-        this.controller.document.getElementById("divComposeTitle").addEventListener("click", this.toggleCommandMenu.bind(this));
+        //this.controller.document.getElementById("divComposeTitle").addEventListener("click", this.toggleCommandMenu.bind(this));
+        this.controller.document.getElementById("spanCompose").addEventListener("click", this.toggleCommandMenu.bind(this));
+        this.controller.document.getElementById("imgTwisty").addEventListener("click", this.toggleCommandMenu.bind(this));
 
         //Figure out if this is our first time
         if (appModel.AppSettingsCurrent["FirstRun"] || !appModel.AppSettingsCurrent["SenderName"] || (appModel.AppSettingsCurrent["SenderName"] && appModel.AppSettingsCurrent["SenderName"].toLowerCase() == "webos user")) {
@@ -290,29 +292,30 @@ MainAssistant.prototype.pausePollingServer = function() {
 MainAssistant.prototype.handleListClick = function(event) {
     appModel.LastMessageSelected = event.item;
     this.listTarget = event.originalEvent.target;
-
-    //Decide what items to put in pop-up menu
-    var popupMenuItems = [];
-    var isMine = false;
-    for (var m = 0; m < appModel.AppSettingsCurrent["MyMessages"].length; m++) {
-        if (appModel.AppSettingsCurrent["MyMessages"][m].uid == appModel.LastMessageSelected.uid)
-            isMine = true;
-    }
-    if (isMine)
-        popupMenuItems.push({ label: 'Edit Message', command: 'do-editMessage' });
-    else {
-        if (event.item.links != null) {
-            popupMenuItems.push({ label: 'Copy Link', command: 'do-copyLink' });
-            popupMenuItems.push({ label: 'Follow Link', command: 'do-followLink' });
+    if (this.listTarget.tagName != "A") { //don't pop-up menu if they tapped a hyperlink
+        //Decide what items to put in pop-up menu
+        var popupMenuItems = [];
+        var isMine = false;
+        for (var m = 0; m < appModel.AppSettingsCurrent["MyMessages"].length; m++) {
+            if (appModel.AppSettingsCurrent["MyMessages"][m].uid == appModel.LastMessageSelected.uid)
+                isMine = true;
         }
-        popupMenuItems.push({ label: 'Copy Message', command: 'do-copy' });
-        popupMenuItems.push({ label: 'Like', command: 'do-like' });
+        if (isMine)
+            popupMenuItems.push({ label: 'Edit Message', command: 'do-editMessage' });
+        else {
+            if (event.item.links != null) {
+                popupMenuItems.push({ label: 'Copy Link', command: 'do-copyLink' });
+                popupMenuItems.push({ label: 'Follow Link', command: 'do-followLink' });
+            }
+            popupMenuItems.push({ label: 'Copy Message', command: 'do-copy' });
+            popupMenuItems.push({ label: 'Like', command: 'do-like' });
+        }
+        this.controller.popupSubmenu({
+            onChoose: this.handlePopupChoose.bind(this, event.item),
+            placeNear: this.listTarget,
+            items: popupMenuItems
+        });
     }
-    this.controller.popupSubmenu({
-        onChoose: this.handlePopupChoose.bind(this, event.item),
-        placeNear: this.listTarget,
-        items: popupMenuItems
-    });
     return true;
 }
 
@@ -577,11 +580,14 @@ MainAssistant.prototype.updateChatsList = function(results) {
     //now make the new list
     var newMessages = [];
     for (var i = 0; i < results.length; i++) {
+        var formattedMessage = Mojo.Format.runTextIndexer(results[i].message);
+        if (formattedMessage.length < 1)
+            formattedMessage = results[i].message;
         newMessages.push({
             uid: results[i].uid,
             sender: results[i].sender,
             message: results[i].message,
-            formattedMessage: Mojo.Format.runTextIndexer(results[i].message),
+            formattedMessage: formattedMessage,
             postedFrom: results[i].postedFrom,
             links: this.detectURLs(results[i].message),
             timestamp: this.convertTimeStamp(results[i].timestamp, true),
@@ -616,13 +622,13 @@ MainAssistant.prototype.updateChatsList = function(results) {
                 if (newMessages[n].message != thisWidgetSetup.model.items[m].message ||
                     newMessages[n].likes != thisWidgetSetup.model.items[m].likes ||
                     newMessages[n].color != thisWidgetSetup.model.items[m].color) {
-                    Mojo.Log.info("Updating message from list at position " + m);
-                    Mojo.Log.info("Old Message:          " + JSON.stringify(thisWidgetSetup.model.items[m]));
+                    //Mojo.Log.info("Updating message from list at position " + m);
+                    //Mojo.Log.info("Old Message:          " + JSON.stringify(thisWidgetSetup.model.items[m]));
                     thisWidgetSetup.model.items[m] = newMessages[n];
                     this.controller.get('chatList').mojo.noticeUpdatedItems(m, [thisWidgetSetup.model.items[m]]);
                     changed = true;
-                    Mojo.Log.info("New Message should be: " + JSON.stringify(newMessages[n]));
-                    Mojo.Log.info("New Message is       : " + JSON.stringify(thisWidgetSetup.model.items[m]));
+                    //Mojo.Log.info("New Message should be: " + JSON.stringify(newMessages[n]));
+                    //Mojo.Log.info("New Message is       : " + JSON.stringify(thisWidgetSetup.model.items[m]));
                 }
             }
             if (changed)
@@ -686,6 +692,10 @@ MainAssistant.prototype.updateChatsList = function(results) {
 MainAssistant.prototype.handleItemRendered = function(listWidget, itemModel, itemNode) {
     itemNode.innerHTML = this.unescapeEntities(itemNode.innerHTML);
     itemNode.innerHTML = this.replaceImageLinks(itemNode.innerHTML);
+    if (itemNode.innerHTML.indexOf("</span> </div>") != -1) {
+        itemNode.innerHTML = itemModel.message;
+        Mojo.Log.warn("**** EMPTY MESSAGE RENDERED! " + JSON.stringify(itemModel));
+    }
 
     //Hide emojis if app settings say to do so
     if (!appModel.AppSettingsCurrent["ShowEmojis"]) {
@@ -698,7 +708,7 @@ MainAssistant.prototype.handleItemRendered = function(listWidget, itemModel, ite
 
 //Used to show or hide command menu buttons
 MainAssistant.prototype.toggleCommandMenu = function(show) {
-    Mojo.Log.warn("Toggling command menu");
+    Mojo.Log.info("Toggling command menu");
     var stageController = Mojo.Controller.getAppController().getActiveStageController();
     if (stageController) {
         this.controller = stageController.activeScene();
@@ -872,7 +882,10 @@ MainAssistant.prototype.deactivate = function(event) {
     //Detach UI handlers
     Mojo.Event.stopListening(this.controller.get("chatList"), Mojo.Event.listTap, this.handleListClick);
     this.controller.window.removeEventListener('resize', this.orientationChanged);
-    this.controller.document.getElementById("divComposeTitle").removeEventListener("click", this.toggleCommandMenu.bind(this));
+    //this.controller.document.getElementById("divComposeTitle").removeEventListener("click", this.toggleCommandMenu.bind(this));
+    this.controller.document.getElementById("spanCompose").removeEventListener("click", this.toggleCommandMenu.bind(this));
+    this.controller.document.getElementById("imgTwisty").removeEventListener("click", this.toggleCommandMenu.bind(this));
+
 
     Mojo.Event.stopListening(this.controller.stageController.document, Mojo.Event.stageActivate, this.activateWindow);
     Mojo.Event.stopListening(this.controller.stageController.document, Mojo.Event.stageDeactivate, this.deactivateWindow);
