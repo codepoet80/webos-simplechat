@@ -6,6 +6,15 @@ function VersionAssistant(startup) {
 
     //New Features
     this.changelog = [{
+            version: "Version 1.4.0",
+            detail: [
+                "Enter key behavior as a Preference",
+                "Even more silent background sync, won't sync if offline",
+                "Swiping notifications resets missed message count",
+                "Adjust tap target for collapsing controls"
+            ]
+        },
+        {
             version: "Version 1.3.2",
             detail: [
                 "More sync timing options.",

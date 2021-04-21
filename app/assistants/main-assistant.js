@@ -110,10 +110,15 @@ MainAssistant.prototype.setup = function() {
     Mojo.Event.listen(this.controller.get("chatList"), Mojo.Event.listTap, this.handleListClick.bind(this));
     Mojo.Event.listen(this.controller.stageController.document, Mojo.Event.stageActivate, this.activateWindow.bind(this));
     Mojo.Event.listen(this.controller.stageController.document, Mojo.Event.stageDeactivate, this.deactivateWindow.bind(this));
+    Mojo.Event.listen(this.controller.get("chatList"), Mojo.Event.listTap, this.handleListClick.bind(this));
+    Mojo.Event.listenForFocusChanges(this.controller.get("txtMessage"), this.handleTextFocus.bind(this));
 
     // Non-Mojo handlers
     this.keyupHandler = this.handleKeyUp.bindAsEventListener(this);
     this.controller.document.addEventListener("keyup", this.keyupHandler, true);
+    //this.controller.document.getElementById("divComposeTitle").addEventListener("click", this.toggleCommandMenu.bind(this));
+    this.controller.document.getElementById("spanCompose").addEventListener("click", this.toggleCommandMenu.bind(this));
+    this.controller.document.getElementById("imgTwisty").addEventListener("click", this.toggleCommandMenu.bind(this));
 
     //Check for updates
     this.checkForUpdates();
@@ -129,23 +134,8 @@ MainAssistant.prototype.activate = function(event) {
     if (appModel.AppSettingsCurrent["UseClientAPIKey"] && appModel.AppSettingsCurrent["ClientAPIKey"]) {
         this.clientId = appModel.AppSettingsCurrent["ClientAPIKey"];
     }
-    //Set an alert sound
-    if (!appModel.AppSettingsCurrent["AlertSound"] || appModel.AppSettingsCurrent["AlertSound"] == "") {
-        appModel.AppSettingsCurrent["AlertSound"] = "Subtle (short)";
-    }
-    //Check for Emoji option
-    if (appModel.AppSettingsCurrent["ShowEmojis"] == null) {
-        Mojo.Log.info("Adding Emoji setting with default value!")
-        appModel.AppSettingsCurrent["ShowEmojis"] = appModel.AppSettingsDefaults["ShowEmojis"];
-        appModel.SaveSettings();
-    }
-    //Init Message memory
-    if (!appModel.AppSettingsCurrent["MyMessages"]) {
-        appModel.AppSettingsCurrent["MyMessages"] = [];
-    }
-    if (appModel.AppSettingsCurrent["LastKnownMessages"]) { //This was the old way, clean it up
-        appModel.AppSettingsCurrent["LastKnownMessages"] = null;
-    }
+    //Get settings or load defaults
+    this.initDefaultSettings();
 
     //Find out what kind of device this is
     if (Mojo.Environment.DeviceInfo.platformVersionMajor >= 3) {
@@ -190,13 +180,6 @@ MainAssistant.prototype.activate = function(event) {
         this.controller.window.addEventListener('resize', this.orientationChanged.bind(this)); //we have to do this for TouchPad because it does not get orientationChanged events
         this.orientationChanged();
 
-        //Add event handlers
-        Mojo.Event.listen(this.controller.get("chatList"), Mojo.Event.listTap, this.handleListClick.bind(this));
-        Mojo.Event.listenForFocusChanges(this.controller.get("txtMessage"), this.handleTextFocus.bind(this));
-        //this.controller.document.getElementById("divComposeTitle").addEventListener("click", this.toggleCommandMenu.bind(this));
-        this.controller.document.getElementById("spanCompose").addEventListener("click", this.toggleCommandMenu.bind(this));
-        this.controller.document.getElementById("imgTwisty").addEventListener("click", this.toggleCommandMenu.bind(this));
-
         //Figure out if this is our first time
         if (appModel.AppSettingsCurrent["FirstRun"] || !appModel.AppSettingsCurrent["SenderName"] || (appModel.AppSettingsCurrent["SenderName"] && appModel.AppSettingsCurrent["SenderName"].toLowerCase() == "webos user")) {
             appModel.AppSettingsCurrent["FirstRun"] = false;
@@ -212,15 +195,6 @@ MainAssistant.prototype.handleTextFocus = function(event) {
     this.adustScrollerForKeyboard(this.lastOrientation);
 }
 
-//Handles the enter key
-MainAssistant.prototype.handleKeyUp = function(event) {
-    if (event && Mojo.Char.isEnterKey(event.keyCode)) {
-        if (event.srcElement.parentElement.id == "txtMessage" && !this.menuOn) {
-            this.handleSendMessage();
-        }
-    }
-};
-
 //This is called by Mojo on phones, but has to be manually attached on TouchPad
 MainAssistant.prototype.orientationChanged = function() {
     if (this.DeviceType != "TouchPad") {
@@ -235,7 +209,7 @@ MainAssistant.prototype.orientationChanged = function() {
             this.scaleScroller("wide");
         }
     }
-};
+}
 
 MainAssistant.prototype.scaleScroller = function(orientation) {
     if (!this.lastOrientation || orientation != this.lastOrientation) {
@@ -289,6 +263,22 @@ MainAssistant.prototype.pausePollingServer = function() {
 }
 
 /* UI Handlers */
+
+//Handles the enter key
+MainAssistant.prototype.handleKeyUp = function(event) {
+    if (event && Mojo.Char.isEnterKey(event.keyCode)) {
+        if (event.srcElement.parentElement.id == "txtMessage") {
+            if (appModel.AppSettingsCurrent["EnterSubmits"] == "always") {
+                Mojo.Log.info("Doing submit on enter because Preference is always");
+                this.handleSendMessage();
+            } else if (!this.menuOn && appModel.AppSettingsCurrent["EnterSubmits"] == "collapsed") {
+                Mojo.Log.info("Doing submit on enter because collapsed and Preference is collapsed");
+                this.handleSendMessage();
+            }
+        }
+    }
+}
+
 MainAssistant.prototype.handleListClick = function(event) {
     appModel.LastMessageSelected = event.item;
     this.listTarget = event.originalEvent.target;
@@ -390,7 +380,7 @@ MainAssistant.prototype.handleCommand = function(event) {
                 break;
         }
     }
-};
+}
 
 MainAssistant.prototype.doEditMessage = function(message) {
     this.controller.get('txtMessage').mojo.setValue(appModel.LastMessageSelected.message);
@@ -841,6 +831,32 @@ MainAssistant.prototype.enableUI = function() {
     this.spinnerModel.spinning = false;
     this.controller.modelChanged(this.spinnerModel);
     this.controller.get('txtMessage').mojo.focus();
+}
+
+MainAssistant.prototype.initDefaultSettings = function() {
+    //Set an alert sound
+    if (!appModel.AppSettingsCurrent["AlertSound"] || appModel.AppSettingsCurrent["AlertSound"] == "") {
+        appModel.AppSettingsCurrent["AlertSound"] = "Subtle (short)";
+    }
+    //Check for Enter option
+    if (appModel.AppSettingsCurrent["EnterSubmits"] == null) {
+        Mojo.Log.info("Adding EnterSubmits setting with default value!")
+        appModel.AppSettingsCurrent["EnterSubmits"] = appModel.AppSettingsDefaults["EnterSubmits"];
+        appModel.SaveSettings();
+    }
+    //Check for Emoji option
+    if (appModel.AppSettingsCurrent["ShowEmojis"] == null) {
+        Mojo.Log.info("Adding Emoji setting with default value!")
+        appModel.AppSettingsCurrent["ShowEmojis"] = appModel.AppSettingsDefaults["ShowEmojis"];
+        appModel.SaveSettings();
+    }
+    //Init Message memory
+    if (!appModel.AppSettingsCurrent["MyMessages"]) {
+        appModel.AppSettingsCurrent["MyMessages"] = [];
+    }
+    if (appModel.AppSettingsCurrent["LastKnownMessages"]) { //This was the old way, clean it up
+        appModel.AppSettingsCurrent["LastKnownMessages"] = null;
+    }
 }
 
 MainAssistant.prototype.rememberLastMessage = function() {

@@ -40,7 +40,6 @@ ServiceModel.prototype.postChat = function(useSender, useMessage, serviceBase, c
     xmlhttp.timeout = 2000;
     xmlhttp.send(JSON.stringify(msgToPost));
     xmlhttp.onreadystatechange = function() {
-        Mojo.Log.info("ready state: " + xmlhttp.readyState);
         if (xmlhttp.readyState == XMLHttpRequest.DONE) {
             if (callback)
                 callback(xmlhttp.responseText);
