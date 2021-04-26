@@ -40,7 +40,7 @@ UpdaterModel.prototype.CheckForUpdate = function(appName, callback) {
     xmlhttp.onreadystatechange = function() {
         if (xmlhttp.readyState == XMLHttpRequest.DONE) {
             Mojo.Log.info("Museum responded: " + xmlhttp.responseText);
-            if (xmlhttp.responseText != null && xmlhttp.responseText != "" && xmlhttp.responseText.indexOf("ERROR:") != 1) {
+            if (xmlhttp.responseText != null && xmlhttp.responseText != "" && xmlhttp.responseText.indexOf("ERROR:") != 0) {
                 var updateResponse = JSON.parse(xmlhttp.responseText);
                 if (updateResponse.version != null) {
                     var museumVersion = this.getVersionObject(updateResponse.version);
@@ -55,6 +55,7 @@ UpdaterModel.prototype.CheckForUpdate = function(appName, callback) {
                 }
                 this.lastUpdateResponse = updateResponse;
             } else {
+                updateResponse = null;
                 Mojo.Log.info("UpdaterModel: No useable response from App Museum II update API");
             }
             //Mojo.Log.info("New update response object: " + JSON.stringify(updateResponse));
@@ -75,6 +76,10 @@ UpdaterModel.prototype.PromptUserForUpdate = function(callback, message) {
         if (!message)
             message = "An update for " + Mojo.Controller.appInfo.title + " was found in App Museum II: <br>" + this.lastUpdateResponse.versionNote + "<br>Do you want to update now?";
 
+        // set scope for xmlhttp anonymous function callback
+        if (callback)
+            callBack = callback.bind(this);
+
         var stageController = Mojo.Controller.getAppController().getActiveStageController();
         if (stageController) {
             this.controller = stageController.activeScene();
@@ -87,7 +92,7 @@ UpdaterModel.prototype.PromptUserForUpdate = function(callback, message) {
                         Mojo.Log.info("User deferred update.");
                     }
                     if (callback)
-                        callback(value);
+                        callBack(value);
                 },
                 allowHTMLMessage: true,
                 title: $L("Update Available!"),

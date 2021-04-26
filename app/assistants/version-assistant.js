@@ -6,6 +6,12 @@ function VersionAssistant(startup) {
 
     //New Features
     this.changelog = [{
+            version: "Version 1.4.1",
+            detail: [
+                "Add support for some basic markdown",
+            ]
+        },
+        {
             version: "Version 1.4.0",
             detail: [
                 "Enter key behavior as a Preference",
