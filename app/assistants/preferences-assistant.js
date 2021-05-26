@@ -59,7 +59,7 @@ PreferencesAssistant.prototype.setup = function() {
     //Text fields
     this.controller.setupWidget("txtCustomClientId",
         this.attributes = {
-            hintText: $L("Your Share Service API Key"),
+            hintText: $L("Your Service API Key"),
             multiline: false,
             enterSubmits: false,
             autoReplace: false,
@@ -68,6 +68,19 @@ PreferencesAssistant.prototype.setup = function() {
         this.model = {
             value: appModel.AppSettingsCurrent["CustomClientId"],
             disabled: !appModel.AppSettingsCurrent["CustomClientId"]
+        }
+    );
+    this.controller.setupWidget("txtCustomCreateKey",
+        this.attributes = {
+            hintText: $L("Your Service Create Key"),
+            multiline: false,
+            enterSubmits: false,
+            autoReplace: false,
+            textCase: Mojo.Widget.steModeLowerCase
+        },
+        this.model = {
+            value: appModel.AppSettingsCurrent["CustomCreateKey"],
+            disabled: !appModel.AppSettingsCurrent["CustomCreateKey"]
         }
     );
     this.controller.setupWidget("txtEndpointURL",
@@ -139,6 +152,9 @@ PreferencesAssistant.prototype.handleValueChange = function(event) {
         case "toggleCustomClientId":
             {
                 var thisWidgetSetup = this.controller.getWidgetSetup("txtCustomClientId");
+                thisWidgetSetup.model.disabled = !event.value;
+                this.controller.modelChanged(thisWidgetSetup.model);
+                var thisWidgetSetup = this.controller.getWidgetSetup("txtCustomCreateKey");
                 thisWidgetSetup.model.disabled = !event.value;
                 this.controller.modelChanged(thisWidgetSetup.model);
                 if (event.value)

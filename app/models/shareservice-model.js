@@ -336,7 +336,8 @@ ShareServiceModel.prototype.DoNewUserRequest = function(username, sharephrase, p
     var request = {
         "username":username,
         "sharephrase":sharephrase,
-        "password":password
+        "password":password,
+        "createkey":this.getCurrentCreateKey()
     }
     xmlhttp.send(JSON.stringify(request));
     xmlhttp.onreadystatechange = function() {
@@ -388,7 +389,17 @@ ShareServiceModel.prototype.getCurrentClientKey = function() {
         retVal = this.CustomClientId;
         Mojo.Log.info("Using custom shareboard client key: " + retVal);
     }
-    Mojo.Log.info("Using shareboard client key: " + retVal);
+    //Mojo.Log.info("Using shareboard client key: " + retVal);
+    return retVal;
+}
+
+ShareServiceModel.prototype.getCurrentCreateKey = function() {
+    var retVal = atob(appKeys['shareBoardCreateKey']);
+    if (this.UseCustomEndpoint) {
+        retVal = this.CustomClientId;
+        Mojo.Log.info("Using custom shareboard create key: " + retVal);
+    }
+    //Mojo.Log.info("Using shareboard create key: " + retVal);
     return retVal;
 }
 

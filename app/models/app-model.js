@@ -30,6 +30,7 @@ var AppModel = function() {
         ShortURL: "",
         UseCustomClientId: false,
         CustomClientId: "",
+        CustomCreateKey: "",
         UseCustomDownloadPath: false,
         CustomDownloadPath: null,
         FirstRun: true
