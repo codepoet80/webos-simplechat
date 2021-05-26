@@ -203,10 +203,11 @@ ShareServiceModel.prototype.DoShareAddRequestImage = function (fullFilePath, use
                                 Mojo.Controller.getAppController().showBanner({ messageText: "Upload error: " + responseObj.error }, "", "");
                             }
                         } else {
-                            Mojo.Controller.getAppController().showBanner({ messageText: "Content uploaded!" }, "", "");
                             Mojo.Log.info("Upload response: " + response.responseString);
                             if (callback) {
                                 callback(response.responseStringj);
+                            } else {
+                                Mojo.Controller.getAppController().showBanner({ messageText: "Content uploaded!" }, "", "");
                             }
                         }
                     }

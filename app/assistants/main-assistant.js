@@ -335,14 +335,14 @@ MainAssistant.prototype.showNewShareOptions = function() {
     this.controller.showAlertDialog({
         onChoose: function(value) {
             Mojo.Log.info("Choice was: " + value);
-            if (value == "cancel") {
-                Mojo.Log.info("Cancelled new share");
-            } else if (value == "image") {
+            if (value == "image") {
                 this.invokeFilePicker();
-            } else {
+            } else if (value == "text/plain" || value == "application/json") {
                 appModel.LastShareSelected.contenttype = value;
                 Mojo.Log.info("LastShareSelected: " + JSON.stringify(appModel.LastShareSelected));
                 this.showNewShareScene();
+            } else {
+                Mojo.Log.info("Cancelled new share");
             }
         },
         title: "New Share",

@@ -140,7 +140,7 @@ DetailAssistant.prototype.handleCommand = function(event) {
         var stageController = Mojo.Controller.getAppController().getActiveStageController();
         switch (event.command) {
             case 'do-goBack':
-                stageController.swapScene({ transition: Mojo.Transition.crossFade, name: "main" });
+                stageController.popScene();
                 break;
             case 'do-copy':
                 stageController.setClipboard(appModel.LastShareSelected.content);
