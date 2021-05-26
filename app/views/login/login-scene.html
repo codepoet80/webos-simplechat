@@ -1,0 +1,38 @@
+<div class="palm-dialog-content">
+    <div id="login-title" class="palm-dialog-title">
+        Log In to a Share Space
+    </div>
+    <div class="palm-dialog-seperator"></div>
+
+    <div class="textfield-group" x-mojo-focus-highlight="true">
+        <div class="title">
+            <div id="txtUsername" name="txtUsername" x-mojo-element="TextField" title="Username"></div>
+        </div>
+    </div>
+
+    <div class="textfield-group" x-mojo-focus-highlight="true">
+        <div class="title">
+            <div id="txtCredential" name="txtCredential" x-mojo-element="TextField" title="Credential"></div>
+        </div>
+    </div>
+
+    <div class="palm-group" id="linkError" style="display:none" name="linkError">
+        <div class="palm-group-title"><span style="color:white">Error</span></div>
+        <div class="errorresponse">
+            There was no usable response from the Service before its timeout.
+        </div>
+    </div>
+
+    <div class="palm-group" id="addressError" style="display:none" name="addressError">
+        <div class="palm-group-title"><span style="color:white">Error</span></div>
+        <div class="errorresponse">
+            The Service end point is not reachable, not responding, or is not valid.
+        </div>
+    </div>
+
+    <div class="palm-dialog-buttons">
+        <div x-mojo-element="Button" id="goButton"></div>
+        <div x-mojo-element="Button" id="cancelButton"></div>
+    </div>
+
+</div>

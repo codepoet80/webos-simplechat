@@ -1,0 +1,70 @@
+<div class="palm-hasheader" style="margin-bottom:60px">
+    <div id="watchViewTitle" class="palm-header center" onclick="Mojo.Controller.stageController.popScene();">
+        Preferences
+    </div>
+</div>
+
+<div class="palm-group">
+    <div class="palm-group-title">
+        <span x-mojo-loc=''>Basic</span>
+    </div>
+    <div class="palm-list">
+        <div class="palm-row first">
+            <div class="palm-row-wrapper">
+                <div id="listRefresh" x-mojo-element="ListSelector" title="RefreshTimeout" class="right"></div>
+            </div>
+        </div>
+
+        <div class="palm-row last">
+            <div class="palm-row-wrapper">
+                <div x-mojo-element="ToggleButton" id="toggleForceHTTP" title="ForceHTTP"></div>
+                <div class="title" style="margin-left: -4px; float:left;"><span class="label">Always use HTTP</span></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="palm-group">
+    <div class="palm-group-title">
+        <span x-mojo-loc=''>Self Hosting</span>
+    </div>
+
+    <div class="palm-list">
+
+        <div class="palm-row first">
+            <div class="palm-row-wrapper">
+                <div x-mojo-element="ToggleButton" id="toggleCustomClientId" title="UseCustomClientId"></div>
+                <div class="title" style="margin-left: -4px; float:left;"><span class="label">Custom Client API Key</span></div>
+            </div>
+        </div>
+
+        <div class="palm-row">
+            <div class="palm-row-wrapper" style="margin:14px 22px 4px 12px">
+                <div id="txtCustomClientId" name="txtCustomClientId" x-mojo-element="TextField" title="CustomClientId"></div>
+            </div>
+        </div>
+
+        <div class="palm-row">
+            <div class="palm-row-wrapper">
+                <div x-mojo-element="ToggleButton" id="toggleCustomEndPoint" title="UseCustomEndpoint"></div>
+                <div class="title" style="margin-left: -4px; float:left;"><span class="label">Custom Endpoint URL</span></div>
+            </div>
+        </div>
+
+        <div class="palm-row">
+            <div class="palm-row-wrapper" style="margin:14px 22px 4px 12px">
+                <div id="txtEndpointURL" name="txtEndpointURL" x-mojo-element="TextField" title="EndpointURL"></div>
+            </div>
+        </div>
+
+        <div class="palm-row last">
+            <div class="palm-row-wrapper" style="margin:14px 22px 4px 12px">
+                <div id="txtShortURL" name="txtShortURL" x-mojo-element="TextField" title="ShortURL"></div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+<div class="explanation-text">For more information on self-hosting, please visit <a href="https://github.com/codepoet80/webos-sharespace">https://github.com/codepoet80/webos-sharespace</a></div>
+<div x-mojo-element="Button" id="btnOK" name="btnOK"></div>

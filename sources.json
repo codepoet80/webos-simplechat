@@ -1,0 +1,38 @@
+[
+    { "source": "app/assistants/app-assistant.js" },
+    { "source": "app/assistants/stage-assistant.js" },
+    {
+        "scenes": "main",
+        "source": "app/assistants/main-assistant.js"
+    },
+    {
+        "source": "app/assistants/login-assistant.js",
+        "comment": "since this will be a dialog, not a scene, we do not include the 'scenes' member (or we get errors)"
+    },
+    {
+        "scene": "newuser",
+        "source": "app/assistants/newuser-assistant.js"
+    },
+    {
+        "scene": "welcome",
+        "source": "app/assistants/welcome-assistant.js"
+    },
+    {
+        "scene": "detail",
+        "source": "app/assistants/detail-assistant.js"
+    },
+    {
+        "scene": "newshare",
+        "source": "app/assistants/newshare-assistant.js"
+    },
+    {
+        "scenes": "preferences",
+        "source": "app/assistants/preferences-assistant.js"
+    },
+    { "source": "app/models/shareservice-model.js" },
+    { "source": "app/models/updater-model.js" },
+    { "source": "app/models/app-model.js" },
+    { "source": "app/models/system-model.js" },
+    { "source": "secrets.js" }
+
+]

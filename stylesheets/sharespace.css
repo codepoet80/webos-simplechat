@@ -1,0 +1,80 @@
+/* TODO: put your application-specific CSS here */
+
+.palm-page-header .header-icon.sharespace {
+    background: url(../icon.png) no-repeat;
+    background-size: 32px 32px;
+}
+
+.task-title.new {
+    color: dimgray;
+    font-style: italic;
+}
+
+.task-row {
+    padding: 8px 0px 8px 8px;
+}
+
+.checkmark {
+    float: right;
+    visibility: visible;
+    opacity: 0.1;
+    margin-top: 3px;
+    width: 30px;
+}
+
+.checkmark.true {
+    opacity: 1;
+    visibility: visible;
+}
+
+.explanation-text {
+    margin-top: -5px;
+    padding: 14px;
+    font-size: 14px;
+    color: #000;
+}
+
+.palm-group-title.detail {
+    color: #000;
+    margin-left: -4px;
+}
+
+.palm-row-wrapper.detail {
+    padding: 3px;
+}
+
+.explainer {
+    font-style: italic;font-size: smaller; color:dimgray;
+}
+
+#welcome-data {
+    margin-left: 8px;
+    padding-left: 3px;
+    margin-right: 8px;
+    padding-right: 3px;
+    border-top: 1px solid lightgray;
+    border-right: 1px solid lightgray;
+    border-bottom: 1px solid lightgray;
+    border-left: 1px solid lightgray;
+    background-color: #efefef;
+}
+
+.welcome-text {
+    margin: 8px 12px 12px 12px
+}
+
+.welcome-text p {
+    padding: 0px; margin: 4px 0px;
+}
+
+.welcome-text b {
+    color: #1f75bf; font-variant: small-caps;
+}
+
+.welcome-text em {
+    font-weight: bold;
+}
+
+h3 {
+    margin: 8px 12px 12px 12px
+}

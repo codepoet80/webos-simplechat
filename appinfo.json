@@ -1,0 +1,25 @@
+{
+    "id": "com.palm.webos.sharespace",
+    "version": "1.0.0",
+    "vendor": "Jon Wise",
+    "type": "web",
+    "main": "index.html",
+    "title": "Share Space",
+    "icon": "icon.png",
+    "noWindow": true,
+    "splashicon": "icon-256.png",
+    "uiRevision": "2",
+    "theme": "light",
+    "serviceURL": "https://share.webosarchive.com/",
+    "shortURL": "https://wosa.link/",
+    "tapToShareSupported": true,
+    "universalSearch": {
+        "action": {
+            "displayName": "New Share",
+            "url": "com.jonandnic.sharespace",
+            "launchParam": {
+                "newshare": "#{searchTerms}"
+            }
+        }
+    }
+}

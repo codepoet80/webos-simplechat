@@ -1,0 +1,87 @@
+<div class="palm-page-header">
+    <div class="header-icon sharespace"></div>
+    <div class="header-text">
+        <span x-mojo-loc=''>Share Space - New User</span>
+    </div>
+</div>
+
+<div class="palm-group">
+    <div class="palm-group-title">
+        <span x-mojo-loc=''>Terms and Conditions (Scroll)</span>
+    </div>
+    <div x-mojo-element="Scroller" class="scrollerClass" id="scrollTnC" name="scrollTnC" style="height:200px;margin:-15px 10px 10px -15px;padding:0px;">
+        <div id="divTnC">
+            <ul>
+                <li>Loading Terms and Conditions...</li>
+            </ul>
+        </div>
+        <div x-mojo-element="Button" id="btnAgree" name="btnAgree" style="margin-left: 20%; margin-right:14%"></div>
+    </div>
+</div>
+
+<div class="palm-group" id="divCredentials" style="display:none">
+    <div class="palm-group-title">
+        <span x-mojo-loc=''>Credentials</span>
+    </div>
+
+    <div class="palm-list">
+
+        <div class="palm-row first">
+            <div class="palm-row-wrapper">
+                <div class="title" style="float:left; margin-left: 8px; margin-top: 14px;padding:0px;"><span class="label ">Username</span></div>
+            </div>
+        </div>
+
+        <div class="palm-row">
+            <div class="palm-row-wrapper" style="height: 12px">
+                <div class="textfield-group" x-mojo-focus-highlight="true">
+                    <div class="title">
+                        <div id="txtUsername" name="txtUsername" x-mojo-element="TextField" title="Username"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="palm-row">
+            <div class="palm-row-wrapper" style="height: 12px">
+                <div class="title" class="truncating-text" style="float:left; margin-left: 8px; margin-top: 14px;padding:0px"><span class="label ">Share phrase</span></div>
+                <img id="imgTryagain" src="images/tryagain.png" style="height:24px; width:24px; margin-top: 12px; margin-left: 12px;">
+            </div>
+        </div>
+
+        <div class="palm-row">
+            <div class="palm-row-wrapper">
+                <div id="divSharephrase" style="margin: 12px 14px;font-style: italic;">&nbsp;</div>
+                <div class="explainer" style="margin-left:10px; padding-bottom: 12px;">Anyone who knows this phrase can share with you.</div>
+            </div>
+        </div>
+
+        <div class="palm-row">
+            <div class="palm-row-wrapper" style="height: 12px">
+                <div class="title" class="truncating-text" style="float:left; margin-left: 8px; margin-top: 14px;padding:0px"><span class="label ">Admin Password</span></div>
+            </div>
+        </div>
+
+        <div class="palm-row">
+            <div class="palm-row-wrapper">
+                <div class="textfield-group" x-mojo-focus-highlight="true">
+                    <div class="title">
+                        <div id="txtPassword" name="txtPassword" x-mojo-element="TextField" title="Password"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="palm-row last">
+            <div class="palm-row-wrapper">
+                <div id="divPasswordInstructions" style="padding:6px 10px 12px 10px;line-height: 16px">
+                    <span class="explainer">Keep this one safe, you'll use it to delete shares or configure your space.</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+<div x-mojo-element="Button" id="btnOK" name="btnOK" style="display: none;"></div>
+<div x-mojo-element="Button" id="btnCancel" name="btnCancel"></div>

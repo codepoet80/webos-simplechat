@@ -1,0 +1,28 @@
+<div class="palm-hasheader" style="margin-bottom:60px">
+    <div id="divShareTitle" class="palm-header center" onclick="Mojo.Controller.stageController.swapScene({ transition: Mojo.Transition.crossFade, name: 'main' });">
+        Share Details
+    </div>
+</div>
+
+<div class="palm-group" id="divShareInfo">
+    <div class="palm-group-title">
+        <span x-mojo-loc=''>Share Links</span>
+    </div>
+
+    <div id="divShareLinks" name="divShareLinks">  
+    </div>
+
+    <div x-mojo-element="Spinner" class="spinnerClass" name="spinDownload" id="spinDownload" ></div>
+</div>
+
+<div class="palm-group" id="divTextDetail">
+    <div class="palm-group-title">
+        <span x-mojo-loc=''>Content</span>
+    </div>
+
+    <div id="divTextContent" name="divTextContent" style="background-color:white; border: 1px solid dimgray; margin: 0px;">
+        <div id="divImageContent" style="width:100%; margin:auto; align-content: center; text-align: center;margin-top: 6px !important;">
+            <img src="icon-256.png" style="width:128px;height:128px" /><br/>
+        </div>
+    </div>
+</div>
