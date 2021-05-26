@@ -154,9 +154,6 @@ PreferencesAssistant.prototype.handleValueChange = function(event) {
                 var thisWidgetSetup = this.controller.getWidgetSetup("txtCustomClientId");
                 thisWidgetSetup.model.disabled = !event.value;
                 this.controller.modelChanged(thisWidgetSetup.model);
-                var thisWidgetSetup = this.controller.getWidgetSetup("txtCustomCreateKey");
-                thisWidgetSetup.model.disabled = !event.value;
-                this.controller.modelChanged(thisWidgetSetup.model);
                 if (event.value)
                     this.controller.get('txtCustomClientId').mojo.focus();
                 break;
@@ -168,6 +165,9 @@ PreferencesAssistant.prototype.handleValueChange = function(event) {
                 thisWidgetSetup.model.disabled = !event.value;
                 this.controller.modelChanged(thisWidgetSetup.model);
                 var thisWidgetSetup = this.controller.getWidgetSetup("txtShortURL");
+                thisWidgetSetup.model.disabled = !event.value;
+                this.controller.modelChanged(thisWidgetSetup.model);
+                var thisWidgetSetup = this.controller.getWidgetSetup("txtCustomCreateKey");
                 thisWidgetSetup.model.disabled = !event.value;
                 this.controller.modelChanged(thisWidgetSetup.model);
                 if (event.value)
