@@ -42,14 +42,18 @@ ShareServiceModel.prototype.buildURL = function(username, actionType) {
 
 //HTTP request for list files
 ShareServiceModel.prototype.DoShareListRequest = function(username, credential, callback, errorhandler) {
-    this.retVal = "";
     if (callback)
         callback = callback.bind(this);
-
-    Mojo.Log.info("calling sharing service at " + this.buildURL(username, "get-shares") + " with key " + this.getCurrentClientKey());
+    if (!errorhandler) {
+        errorhandler = function(errorText) {
+            Mojo.Log.warn(errorText);
+        }
+    }
+    var useURL = this.buildURL(username, "get-shares");
+    Mojo.Log.info("calling sharing service at " + useURL + " with key " + this.getCurrentClientKey());
 
     var xmlhttp = new XMLHttpRequest();
-    xmlhttp.open("GET", this.buildURL(username, "get-shares"));
+    xmlhttp.open("GET", useURL);
     xmlhttp.setRequestHeader("client-id", this.getCurrentClientKey());
     xmlhttp.setRequestHeader("credential", credential);
     xmlhttp.send();
@@ -89,12 +93,15 @@ ShareServiceModel.prototype.DoShareListRequest = function(username, credential, 
 
 //HTTP request for add file
 ShareServiceModel.prototype.DoShareAddRequestText = function(content, username, credential, contenttype, callback, errorhandler) {
-
-    var useURL = this.buildURL(username, "share-text");
-    Mojo.Log.info("Adding text share: " + content + " of type " + contenttype + " from URL " + useURL);
-
     if (callback)
         callback = callback.bind(this);
+    if (!errorhandler) {
+        errorhandler = function(errorText) {
+            Mojo.Log.warn(errorText);
+        }
+    }
+    var useURL = this.buildURL(username, "share-text");
+    Mojo.Log.info("Adding text share: " + content + " of type " + contenttype + " from URL " + useURL);
 
     var xmlhttp = new XMLHttpRequest();
     xmlhttp.open("POST", useURL);
@@ -140,17 +147,15 @@ ShareServiceModel.prototype.DoShareAddRequestText = function(content, username, 
 
 //Upload a file
 ShareServiceModel.prototype.DoShareAddRequestImage = function (fullFilePath, username, credential, contenttype, callback, errorhandler) {
-
-    if (!fullFilePath){
-        Mojo.Log.error("Image file path not supplied");
-        return false;
-    }
-
-    var useURL = this.buildURL(username, "share-image");
-    Mojo.Log.info("Adding image share: " + fullFilePath + " of type " + contenttype + " from URL " + useURL);
-
     if (callback)
         callback = callback.bind(this);
+    if (!errorhandler) {
+        errorhandler = function(errorText) {
+            Mojo.Log.warn(errorText);
+        }
+    }
+    var useURL = this.buildURL(username, "share-image");
+    Mojo.Log.info("Adding image share: " + fullFilePath + " of type " + contenttype + " from URL " + useURL);
     
     this.uploadRequest = new Mojo.Service.Request('palm://com.palm.downloadmanager/', {
         method: 'upload',
@@ -201,14 +206,18 @@ ShareServiceModel.prototype.DoShareAddRequestImage = function (fullFilePath, use
 
 //HTTP request for list files
 ShareServiceModel.prototype.DoShareDeleteRequest = function(itemid, username, credential, callback, errorhandler) {
-    this.retVal = "";
     if (callback)
         callback = callback.bind(this);
-
-    Mojo.Log.info("calling sharing service at " + this.buildURL(username, "delete-share-item") + " for item " + itemid + " with key " + this.getCurrentClientKey());
+    if (!errorhandler) {
+        errorhandler = function(errorText) {
+            Mojo.Log.warn(errorText);
+        }
+    }
+    var useURL = this.buildURL(username, "delete-share-item");
+    Mojo.Log.info("calling sharing service at " + useURL + " for item " + itemid + " with key " + this.getCurrentClientKey());
 
     var xmlhttp = new XMLHttpRequest();
-    xmlhttp.open("GET", this.buildURL(username, "delete-share-item"));
+    xmlhttp.open("GET", useURL);
     xmlhttp.setRequestHeader("client-id", this.getCurrentClientKey());
     xmlhttp.setRequestHeader("credential", credential);
     xmlhttp.setRequestHeader("itemid", itemid);
@@ -247,52 +256,17 @@ ShareServiceModel.prototype.DoShareDeleteRequest = function(itemid, username, cr
     }.bind(this);
 }
 
-//HTTP request to get Terms and Conditions
-ShareServiceModel.prototype.GetTnC = function(callback) {
-    this.retVal = "";
-    if (callback)
-        callback = callback.bind(this);
-
-    var useURL = this.buildURL(null, "tandc");
-    Mojo.Log.info("Getting Terms and Conditions with query: " + useURL);
-    var xmlhttp = new XMLHttpRequest();
-    xmlhttp.open("GET", useURL);
-    xmlhttp.send();
-    xmlhttp.onreadystatechange = function() {
-        if (xmlhttp.readyState == XMLHttpRequest.DONE) {
-            if (callback)
-                callback(xmlhttp.responseText);
-        }
-    }.bind(this);
-}
-
-//HTTP request to get random share phrase
-ShareServiceModel.prototype.GetRandomWords = function(callback) {
-    this.retVal = "";
-    if (callback)
-        callback = callback.bind(this);
-
-    var theQuery = this.buildURL(null, "random-words");
-    Mojo.Log.info("Getting Random words query: " + theQuery);
-    var xmlhttp = new XMLHttpRequest();
-    xmlhttp.open("GET", theQuery);
-    xmlhttp.send();
-    xmlhttp.onreadystatechange = function() {
-        if (xmlhttp.readyState == XMLHttpRequest.DONE) {
-            if (callback)
-                callback(xmlhttp.responseText);
-        }
-    }.bind(this);
-}
-
 //HTTP request for new user
-ShareServiceModel.prototype.DoNewUserRequest = function(username, sharephrase, password, callback, errorhandler) {
-    
+ShareServiceModel.prototype.DoNewUserRequest = function(username, sharephrase, password, callback, errorhandler) {  
+    if (callback)
+        callback = callback.bind(this);
+    if (!errorhandler) {
+        errorhandler = function(errorText) {
+            Mojo.Log.warn(errorText);
+        }
+    }
     var useURL = this.buildURL(null, "new-user");
     Mojo.Log.info("Creating user: " + username + " with share-phrase " + sharephrase + " and password " + password + " from URL " + useURL);
-
-    if (callback)
-        callback = callback.bind(this);
 
     var xmlhttp = new XMLHttpRequest();
     xmlhttp.open("POST", useURL);
@@ -335,6 +309,43 @@ ShareServiceModel.prototype.DoNewUserRequest = function(username, sharephrase, p
                     return false;
                 }
             }
+        }
+    }.bind(this);
+}
+
+//HTTP request to get Terms and Conditions
+ShareServiceModel.prototype.GetTnC = function(callback) {
+    if (callback)
+        callback = callback.bind(this);
+
+    var useURL = this.buildURL(null, "tandc");
+    Mojo.Log.info("Getting Terms and Conditions with query: " + useURL);
+    var xmlhttp = new XMLHttpRequest();
+    xmlhttp.open("GET", useURL);
+    xmlhttp.send();
+    xmlhttp.onreadystatechange = function() {
+        if (xmlhttp.readyState == XMLHttpRequest.DONE) {
+            if (callback)
+                callback(xmlhttp.responseText);
+        }
+    }.bind(this);
+}
+
+//HTTP request to get random share phrase
+ShareServiceModel.prototype.GetRandomWords = function(callback) {
+    this.retVal = "";
+    if (callback)
+        callback = callback.bind(this);
+
+    var theQuery = this.buildURL(null, "random-words");
+    Mojo.Log.info("Getting Random words query: " + theQuery);
+    var xmlhttp = new XMLHttpRequest();
+    xmlhttp.open("GET", theQuery);
+    xmlhttp.send();
+    xmlhttp.onreadystatechange = function() {
+        if (xmlhttp.readyState == XMLHttpRequest.DONE) {
+            if (callback)
+                callback(xmlhttp.responseText);
         }
     }.bind(this);
 }
