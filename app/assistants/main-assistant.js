@@ -153,7 +153,11 @@ MainAssistant.prototype.activate = function(event) {
                     appModel.LastShareSelected = { guid: "new", contenttype: "text/plain", content: appModel.LaunchQuery };
                     this.showNewShareScene();
                 } else if (appModel.LaunchQuery.target && appModel.LaunchQuery.target != "") {
-                    Mojo.Log.warn("Handling URL launch of: " + appModel.LaunchQuery.target );
+                    Mojo.Log.warn("Handling URL launch of: " + appModel.LaunchQuery.target);
+                    var newURL = appModel.LaunchQuery.target;
+                    newURL = newURL.replace("image.php", "q.php");
+                    newURL = newURL.replace("t.php", "q.php");
+                    Mojo.Log.warn("Querying share item with URL: " + newURL);
                 } else {
                     Mojo.Log.warn("Unknown launch query received");
                 }

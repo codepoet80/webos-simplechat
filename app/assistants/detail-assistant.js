@@ -101,16 +101,6 @@ DetailAssistant.prototype.activate = function(event) {
         this.controller.get("divShareLinks").innerHTML += " &nbsp;(<a href='javascript:this.doCopy(\"" + link + "\")'>Copy Link</a>)<br>";
     }
 
-    //Spinner
-    this.controller.setupWidget("spinnerId",
-        this.attributes = {
-            spinnerSize: "small"
-        },
-        this.model = {
-            spinning: false
-        }
-    ); 
-
     //Show actual content
     if (appModel.LastShareSelected.contenttype == "application/json") {
         this.controller.get("divTextContent").innerHTML = "<pre>" + JSON.stringify(appModel.LastShareSelected.content, null, 1) + "</pre>"
@@ -150,9 +140,19 @@ DetailAssistant.prototype.handleCommand = function(event) {
                 Mojo.Controller.getAppController().showBanner("Content copied!", { source: 'notification' });
                 break;
             case 'do-share':
-                //TODO: Pop-up share menu
-                //if (appModel.LastShareSelected.contenttype.indexOf("image") == -1)
-                //    this.cmdMenuModel.items[2].items.push({ label: 'Copy', iconPath: 'images/copy.png', command: 'do-copy' });
+                var itemsToShow = [
+                    { label: 'Open in Browser', command: 'do-browserOpen' },
+                    { label: 'Email Link', command: 'do-emailLink' },
+                    { label: 'Copy Link', command: 'do-copyLink' }
+                ]
+                if (appModel.LastShareSelected.contenttype.indexOf("image") == -1) {
+                    itemsToShow.push({ label: 'Copy Content', command: 'do-copyContent' });
+                }
+                this.controller.popupSubmenu({
+                    onChoose: this.handlePopupChoose.bind(this, event.item),
+                    //placeNear: Mojo.Menu.commandMenu,
+                    items: itemsToShow
+                });
                 break;
             case 'do-save':
                 var usePath = "sharespace/" + appModel.AppSettingsCurrent["Username"];
@@ -163,6 +163,44 @@ DetailAssistant.prototype.handleCommand = function(event) {
         }
     }
 };
+
+DetailAssistant.prototype.handlePopupChoose = function(task, command) {
+    Mojo.Log.info("Perform: ", command);
+    var stageController = Mojo.Controller.getAppController().getActiveStageController();
+    switch (command) {
+        case "do-browserOpen":
+            this.controller.serviceRequest("palm://com.palm.applicationManager", {
+                method: "launch",
+                parameters: {
+                    id: 'com.palm.app.browser',
+                    params: {
+                        "target": appModel.CurrentShareURL
+                    }
+                }
+            });
+            break;
+        case "do-emailLink":
+            this.controller.serviceRequest("palm://com.palm.applicationManager", {
+                method: 'open',
+                parameters: {
+                    id: "com.palm.app.email",
+                    params: {
+                        summary: "Check out this link",
+                        text: this.downloadLink
+                    }
+                }
+            });
+            break;
+        case "do-copyLink":
+            stageController.setClipboard(this.downloadLink);
+            Mojo.Controller.getAppController().showBanner("Link copied!", { source: 'notification' });
+            break;
+        case "do-copyContent":
+            stageController.setClipboard(appModel.LastShareSelected.content);
+            Mojo.Controller.getAppController().showBanner("Content copied!", { source: 'notification' });
+            break;
+    }
+}
 
 DetailAssistant.prototype.deactivate = function(event) {
     /* remove any event handlers you added in activate and do any other cleanup that should happen before
