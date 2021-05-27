@@ -60,13 +60,16 @@ DetailAssistant.prototype.setup = function() {
             },
             {
                 items: [
+                    { label: 'Share', command: 'do-share' }
+                ]
+            },
+            {
+                items: [
                     { label: 'Save', icon: 'save', command: 'do-save' },
                 ]
             }
         ]
     };
-    if (appModel.LastShareSelected.contenttype.indexOf("image") == -1)
-        this.cmdMenuModel.items[1].items.push({ label: 'Copy', iconPath: 'images/copy.png', command: 'do-copy' });
 
     this.controller.setupWidget(Mojo.Menu.commandMenu, this.cmdMenuAttributes, this.cmdMenuModel);
 
@@ -145,6 +148,11 @@ DetailAssistant.prototype.handleCommand = function(event) {
             case 'do-copy':
                 stageController.setClipboard(appModel.LastShareSelected.content);
                 Mojo.Controller.getAppController().showBanner("Content copied!", { source: 'notification' });
+                break;
+            case 'do-share':
+                //TODO: Pop-up share menu
+                //if (appModel.LastShareSelected.contenttype.indexOf("image") == -1)
+                //    this.cmdMenuModel.items[2].items.push({ label: 'Copy', iconPath: 'images/copy.png', command: 'do-copy' });
                 break;
             case 'do-save':
                 var usePath = "sharespace/" + appModel.AppSettingsCurrent["Username"];
