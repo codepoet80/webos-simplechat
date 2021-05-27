@@ -15,8 +15,6 @@ var ShareServiceModel = function() {
 //Properties
 ShareServiceModel.prototype.ForceHTTP = false;
 ShareServiceModel.prototype.UseCustomShare = false;
-ShareServiceModel.prototype.CustomShareUser = "";
-ShareServiceModel.prototype.CustomSharePhrase = "";
 ShareServiceModel.prototype.UseCustomEndpoint = false;
 ShareServiceModel.prototype.CustomEndpointURL = "";
 ShareServiceModel.prototype.CustomShortURL = "";
@@ -53,7 +51,7 @@ ShareServiceModel.prototype.DoShareListRequest = function(username, credential, 
     var xmlhttp = new XMLHttpRequest();
     xmlhttp.open("GET", this.buildURL(username, "get-shares"));
     xmlhttp.setRequestHeader("client-id", this.getCurrentClientKey());
-    xmlhttp.setRequestHeader("share-phrase", credential);
+    xmlhttp.setRequestHeader("credential", credential);
     xmlhttp.send();
     xmlhttp.onreadystatechange = function() {
         if (xmlhttp.readyState == XMLHttpRequest.DONE) {
@@ -99,8 +97,6 @@ ShareServiceModel.prototype.DoShareListRequest = function(username, credential, 
 
 //HTTP request for add file
 ShareServiceModel.prototype.DoShareAddRequestText = function(content, username, credential, contenttype, callback) {
-    if (!credential)
-        credential = this.getCurrentSharePhrase();
 
     var useURL = this.buildURL(username, "share-text");
     Mojo.Log.info("Adding text share: " + content + " of type " + contenttype + " from URL " + useURL);
@@ -111,7 +107,7 @@ ShareServiceModel.prototype.DoShareAddRequestText = function(content, username, 
     var xmlhttp = new XMLHttpRequest();
     xmlhttp.open("POST", useURL);
     xmlhttp.setRequestHeader("client-id", this.getCurrentClientKey());
-    xmlhttp.setRequestHeader("share-phrase", credential);
+    xmlhttp.setRequestHeader("credential", credential);
     xmlhttp.setRequestHeader("content-type", contenttype);
     xmlhttp.send(content);
     xmlhttp.onreadystatechange = function() {
@@ -161,8 +157,6 @@ ShareServiceModel.prototype.DoShareAddRequestImage = function (fullFilePath, use
         Mojo.Log.error("Image file path not supplied");
         return false;
     }
-	if (!credential)
-        credential = this.getCurrentSharePhrase();
 
     var useURL = this.buildURL(username, "share-image");
     Mojo.Log.info("Adding image share: " + fullFilePath + " of type " + contenttype + " from URL " + useURL);
@@ -179,7 +173,7 @@ ShareServiceModel.prototype.DoShareAddRequestImage = function (fullFilePath, use
             contentType: contenttype,
             postParameters: [
                 {"key":"username", "data": username},
-                {"key":"sharephrase" , "data": credential},
+                {"key":"credential" , "data": credential},
             ],
             customHttpHeaders : [ 
                 'client-id: ' + this.getCurrentClientKey(),
@@ -237,7 +231,7 @@ ShareServiceModel.prototype.DoShareDeleteRequest = function(itemid, username, cr
     var xmlhttp = new XMLHttpRequest();
     xmlhttp.open("GET", this.buildURL(username, "delete-share-item"));
     xmlhttp.setRequestHeader("client-id", this.getCurrentClientKey());
-    xmlhttp.setRequestHeader("password", credential);
+    xmlhttp.setRequestHeader("credential", credential);
     xmlhttp.setRequestHeader("itemid", itemid);
     xmlhttp.send();
     xmlhttp.onreadystatechange = function() {
@@ -400,23 +394,5 @@ ShareServiceModel.prototype.getCurrentCreateKey = function() {
         Mojo.Log.info("Using custom shareboard create key: " + retVal);
     }
     //Mojo.Log.info("Using shareboard create key: " + retVal);
-    return retVal;
-}
-
-ShareServiceModel.prototype.getCurrentShareUser = function() {
-    var retVal = appKeys['shareBoardUser'];
-    if (this.UseCustomShare) {
-        retVal = this.CustomShareUser;
-        Mojo.Log.info("Using custom Share User: " + retVal);
-    }
-    return retVal;
-}
-
-ShareServiceModel.prototype.getCurrentSharePhrase = function() {
-    var retVal = atob(appKeys['sharePhrase']);
-    if (this.UseCustomShare) {
-        retVal = this.CustomSharePhrase;
-        Mojo.Log.info("Using custom Share Phrase: " + retVal);
-    }
     return retVal;
 }
