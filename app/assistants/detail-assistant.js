@@ -109,13 +109,15 @@ DetailAssistant.prototype.activate = function(event) {
     } else {
         this.controller.get("divImageContent").innerHTML = "<img src='" + appModel.LastShareSelected.content + "' style='max-width:90%;'>";
     }
+
+    Mojo.Controller.getAppController().showBanner({ messageText: 'Touch2Share Ready!', icon: 'images/notify.png' }, { source: 'notification' });
 };
 
 doCopy = function(link) {
     Mojo.Log.info("Copy tapped for link " + link);
     var stageController = Mojo.Controller.getAppController().getActiveStageController()
     stageController.setClipboard(link);
-    Mojo.Controller.getAppController().showBanner("Link copied!", { source: 'notification' });
+    Mojo.Controller.getAppController().showBanner({ messageText: 'Link copied!', icon: 'images/notify.png' }, { source: 'notification' });
 }
 
 DetailAssistant.prototype.makeShareURLs = function(thumbUrl, type) {
@@ -134,10 +136,6 @@ DetailAssistant.prototype.handleCommand = function(event) {
         switch (event.command) {
             case 'do-goBack':
                 stageController.popScene();
-                break;
-            case 'do-copy':
-                stageController.setClipboard(appModel.LastShareSelected.content);
-                Mojo.Controller.getAppController().showBanner("Content copied!", { source: 'notification' });
                 break;
             case 'do-share':
                 var itemsToShow = [
@@ -193,11 +191,11 @@ DetailAssistant.prototype.handlePopupChoose = function(task, command) {
             break;
         case "do-copyLink":
             stageController.setClipboard(this.downloadLink);
-            Mojo.Controller.getAppController().showBanner("Link copied!", { source: 'notification' });
+            Mojo.Controller.getAppController().showBanner({ messageText: 'Link copied!', icon: 'images/notify.png' }, { source: 'notification' });
             break;
         case "do-copyContent":
             stageController.setClipboard(appModel.LastShareSelected.content);
-            Mojo.Controller.getAppController().showBanner("Content copied!", { source: 'notification' });
+            Mojo.Controller.getAppController().showBanner({ messageText: 'Content copied!', icon: 'images/notify.png' }, { source: 'notification' });
             break;
     }
 }

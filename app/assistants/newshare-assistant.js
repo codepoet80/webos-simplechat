@@ -89,7 +89,7 @@ NewshareAssistant.prototype.handleOKPress = function(event) {
             try {
                 var testObj = JSON.parse(this.ShareContent);
             } catch (ex) {
-                Mojo.Controller.getAppController().showBanner({ messageText: "JSON content not be parsed" }, "", "");
+                Mojo.Controller.getAppController().showBanner({ messageText: 'JSON content not be parsed', icon: 'images/notify.png' }, { source: 'notification' });
                 this.controller.get('goButton').mojo.deactivate();
                 setTimeout(this.controller.get('txtShareContent').mojo.focus(), 500);
                 return false;
@@ -111,7 +111,8 @@ NewshareAssistant.prototype.tryAddShare = function() {
         }
         if (responseObj && responseObj.success && responseObj.success != "") {
             Mojo.Log.info("Add share success!");
-            Mojo.Controller.getAppController().showBanner({ messageText: "Content shared!" }, "", "");
+            Mojo.Controller.getAppController().showBanner({ messageText: 'Content shared!', icon: 'images/notify.png' }, { source: 'notification' });
+            
         } else {
             Mojo.Log.error("Add share failure: " + response);
         }

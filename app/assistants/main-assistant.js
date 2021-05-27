@@ -365,7 +365,7 @@ MainAssistant.prototype.invokeFilePicker = function() {
     var params = { kind: 'image', actionName: 'Share Photo',
         onSelect: function(file){
                 Mojo.Log.info("selected file was: " + JSON.stringify(file));
-                Mojo.Controller.getAppController().showBanner({ messageText: "Sharing image..." }, "", "");
+                Mojo.Controller.getAppController().showBanner({ messageText: 'Sharing image...', icon: 'images/notify.png' }, { source: 'notification' });
 
                 //Figure out what mimetype to use
                 var ext = file.fullPath.split(".");
