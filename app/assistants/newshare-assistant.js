@@ -91,7 +91,7 @@ NewshareAssistant.prototype.handleOKPress = function(event) {
             } catch (ex) {
                 Mojo.Controller.getAppController().showBanner({ messageText: 'JSON content not be parsed', icon: 'images/notify.png' }, { source: 'notification' });
                 this.controller.get('goButton').mojo.deactivate();
-                setTimeout(this.controller.get('txtShareContent').mojo.focus(), 500);
+                this.controller.window.setTimeout(this.controller.get('txtShareContent').mojo.focus(), 500);
                 return false;
             }
         }

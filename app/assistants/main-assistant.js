@@ -16,6 +16,7 @@ MainAssistant.prototype.setup = function() {
     //Load preferences
     appModel.LoadSettings();
     Mojo.Log.info("settings now: " + JSON.stringify(appModel.AppSettingsCurrent));
+    this.errorCount = 0;
     
     //Loading spinner - with global members for easy toggling later
     this.spinnerAttrs = {
@@ -167,6 +168,7 @@ MainAssistant.prototype.activate = function(event) {
             this.showWelcomePrompt();
         }
     }
+
     //Check if we're registered to handle URLs
     useShortLink = Mojo.Controller.appInfo.shortURL;
     if (appModel.AppSettingsCurrent["UseCustomEndpoint"] && appModel.AppSettingsCurrent["ShortURL"] && appModel.AppSettingsCurrent["ShortURL"] != "")
@@ -282,17 +284,30 @@ MainAssistant.prototype.handlePopupChoose = function(share, command) {
 
 /* Get Share Stuff */
 MainAssistant.prototype.fetchShares = function() {
-    serviceModel.DoShareListRequest(appModel.AppSettingsCurrent["Username"], appModel.AppSettingsCurrent["Credential"], this.handleServerResponse.bind(this));
+    serviceModel.DoShareListRequest(appModel.AppSettingsCurrent["Username"], appModel.AppSettingsCurrent["Credential"], this.handleServerResponse.bind(this), this.errorHandler.bind(this));
 }
 
-MainAssistant.prototype.handleServerResponse = function(response) {
-    Mojo.Log.info("ready to process share list: " + response);
+MainAssistant.prototype.errorHandler = function (errorText, callback) {
+    this.errorCount++;
+    Mojo.Log.error("error count: " + this.errorCount + ", " + errorText);
+    if (this.errorCount > 5) {
+        Mojo.Additions.ShowDialogBox("Sync Error", errorText);
+        clearInterval(this.refreshInt);
+        Mojo.Controller.getAppController().showBanner({ messageText: "Sync offline", icon: "images/notify.png" }, "", "");
+    }
+    if (callback) {
+        callback.bind(this);
+        callback({"error": errorText});
+    }
+}
+
+MainAssistant.prototype.handleServerResponse = function(responseObj) {
+    Mojo.Log.info("ready to process share list: " + JSON.stringify(responseObj));
     
-    if (response != null && response != "") {
-        var responseObj = JSON.parse(response);
+    if (responseObj != null) {
         if (responseObj.status == "error") {
             Mojo.Log.error("Error message from server while loading shares: " + responseObj.msg);
-            Mojo.Controller.errorDialog("The server responded to the share list request with: " + responseObj.msg.replace("ERROR: ", ""));
+            this.errorHandler("The server responded to the share list request with: " + responseObj.msg.replace("ERROR: ", ""));
         } else {
             if (responseObj.shares) {
                 //If we got a good looking response update the UI
@@ -303,12 +318,11 @@ MainAssistant.prototype.handleServerResponse = function(response) {
                 }
             } else {
                 Mojo.Log.warn("Share list was empty. Either there was no matching result, or there were server or connectivity problems.");
-                Mojo.Additions.ShowDialogBox("No shares", "The server did not report any shares for the specified username.");
             }
         }
     } else {
         Mojo.Log.error("No usable response from server while loading shares: " + response);
-        Mojo.Controller.errorDialog("The server did not answer with a usable response to the share list request. Check network connectivity, SSL and/or self-host settings.");
+        this.errorHandler("The server did not answer with a usable response to the share list request. Check network connectivity, SSL and/or self-host settings.");
     }
 }
 
@@ -331,6 +345,7 @@ MainAssistant.prototype.updateShareListWidget = function(username, results, acce
     Mojo.Log.info("Updating share list widget with " + results.length + " results!");
     this.controller.get("showShareList").style.display = "block";
     this.controller.modelChanged(thisShareList.model);
+    this.errorCount = 0;
 }
 
 /* New Share Stuff */
@@ -364,19 +379,19 @@ MainAssistant.prototype.invokeFilePicker = function() {
     var self = this; //Retain the reference for the callback
     var params = { kind: 'image', actionName: 'Share Photo',
         onSelect: function(file){
-                Mojo.Log.info("selected file was: " + JSON.stringify(file));
-                Mojo.Controller.getAppController().showBanner({ messageText: 'Sharing image...', icon: 'images/notify.png' }, { source: 'notification' });
+            Mojo.Log.info("selected file was: " + JSON.stringify(file));
+            Mojo.Controller.getAppController().showBanner({ messageText: 'Sharing image...', icon: 'images/notify.png' }, { source: 'notification' });
 
-                //Figure out what mimetype to use
-                var ext = file.fullPath.split(".");
-                ext = ext[ext.length - 1].toLowerCase();
-                if (ext == "jpg")
-                    mimetype = "image/jpeg";
-                else 
-                    mimetype = "image/" + ext;
-                    
-                serviceModel.DoShareAddRequestImage(file.fullPath, appModel.AppSettingsCurrent["Username"], appModel.AppSettingsCurrent["Credential"], mimetype);
-            }
+            //Figure out what mimetype to use
+            var ext = file.fullPath.split(".");
+            ext = ext[ext.length - 1].toLowerCase();
+            if (ext == "jpg")
+                mimetype = "image/jpeg";
+            else 
+                mimetype = "image/" + ext;
+                
+            serviceModel.DoShareAddRequestImage(file.fullPath, appModel.AppSettingsCurrent["Username"], appModel.AppSettingsCurrent["Credential"], mimetype);
+        }
     }
     Mojo.FilePicker.pickFile(params, this.controller.stageController);
 }
@@ -431,22 +446,19 @@ MainAssistant.prototype.showLogin = function() {
         this.controller = stageController.activeScene();
         this.controller.showDialog({
             template: 'login/login-scene',
-            assistant: new LoginAssistant(this, function(val) {
-                    Mojo.Log.info("got value from login dialog: " + val);
-                    this.handleLoginDialogDone(val);
-                }.bind(this)) //since this will be a dialog, not a scene, it must be defined in sources.json without a 'scenes' member
+            assistant: new LoginAssistant(this, function(dialogResponse) {
+                if (dialogResponse == true) {
+                    Mojo.Log.info("Re-painting scene after successful login!");
+                    //Re-paint scene
+                    var stageController = Mojo.Controller.getAppController().getActiveStageController();
+                    stageController.swapScene({ transition: Mojo.Transition.crossFade, name: "main", disableSceneScroller: false });
+                } else {
+                    var readableError = dialogResponse.error.replace("Share service error: ", "");
+                    readableError = readableError.charAt(0).toUpperCase() + readableError.slice(1);
+                    Mojo.Additions.ShowDialogBox("Share Service Error", readableError);
+                }
+            }.bind(this))
         });
-    }
-}
-
-MainAssistant.prototype.handleLoginDialogDone = function(val) {
-    if (val) {
-        Mojo.Log.info("Re-painting scene after successful login!");
-        //Re-paint scene
-        var stageController = Mojo.Controller.getAppController().getActiveStageController();
-        stageController.swapScene({ transition: Mojo.Transition.crossFade, name: "main", disableSceneScroller: false });
-    } else {
-        //multiple reasons we could have got a false
     }
 }
 

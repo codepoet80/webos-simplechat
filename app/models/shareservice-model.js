@@ -41,7 +41,7 @@ ShareServiceModel.prototype.buildURL = function(username, actionType) {
 }
 
 //HTTP request for list files
-ShareServiceModel.prototype.DoShareListRequest = function(username, credential, callback) {
+ShareServiceModel.prototype.DoShareListRequest = function(username, credential, callback, errorhandler) {
     this.retVal = "";
     if (callback)
         callback = callback.bind(this);
@@ -55,48 +55,40 @@ ShareServiceModel.prototype.DoShareListRequest = function(username, credential, 
     xmlhttp.send();
     xmlhttp.onreadystatechange = function() {
         if (xmlhttp.readyState == XMLHttpRequest.DONE) {
-            if (xmlhttp.status == 404) {
-                Mojo.Log.error("Share service returned 404 sharing content. If the service is online, there's probably a version mismatch between service and client.");
-                Mojo.Controller.getAppController().showBanner({ messageText: "Error sharing: 404 at endpoint" }, "", "");
-                if (callback) callback(false);
+            if (xmlhttp.status >= 400) {
+                errorhandler(xmlhttp.status + " Error getting share list: " + responseObj.error, callback);
                 return false;
             } else {
                 if (xmlhttp.responseText && xmlhttp.responseText != "") {
                     try {
                         var responseObj = JSON.parse(xmlhttp.responseText);
                         if (responseObj.error) {
-                            Mojo.Log.error("Share service returned error: " + responseObj.error);
-                            Mojo.Controller.getAppController().showBanner({ messageText: "Error getting shares: " + responseObj.error }, "", "");
-                            if (callback) {
-                                callback(xmlhttp.responseText);
-                                return false;
-                            }
+                            errorhandler("Share service error: " + responseObj.error, callback);
+                            return false;
                         } else {
                             //Mojo.Log.info("Share List success! " + xmlhttp.responseText);
                             if (callback) {
-                                callback(xmlhttp.responseText);
+                                callback(responseObj);
                             } else {
-                                Mojo.Controller.getAppController().showBanner({ messageText: "Content shared!" }, "", "");
+                                Mojo.Controller.getAppController().showBanner({ messageText: "Shares retreived!" }, "", "");
                             }
                             return true;
                         }
                     } catch (ex) {
-                        Mojo.Controller.getAppController().showBanner({ messageText: "Error getting shares: server response malformed" }, "", "");
-                        Mojo.Log.error("Share service response could not be parsed, error was: " + ex + ", response: " + xmlhttp.responseText);
+                        errorhandler("Error parsing Share list response: " + ex + ", response: " + xmlhttp.responseText, callback);
+                        return false;
                     }
                 } else {
-                    Mojo.Controller.getAppController().showBanner({ messageText: "Error getting shares: server response empty" }, "", "");
-                    Mojo.Log.error("Share service response was empty: " + xmlhttp.responseText);
+                    errorhandler("Share list response was empty", callback);
+                    return false;
                 }
-                if (callback) callback(false);
-                return false;
             }
         }
     }.bind(this);
 }
 
 //HTTP request for add file
-ShareServiceModel.prototype.DoShareAddRequestText = function(content, username, credential, contenttype, callback) {
+ShareServiceModel.prototype.DoShareAddRequestText = function(content, username, credential, contenttype, callback, errorhandler) {
 
     var useURL = this.buildURL(username, "share-text");
     Mojo.Log.info("Adding text share: " + content + " of type " + contenttype + " from URL " + useURL);
@@ -112,10 +104,8 @@ ShareServiceModel.prototype.DoShareAddRequestText = function(content, username, 
     xmlhttp.send(content);
     xmlhttp.onreadystatechange = function() {
         if (xmlhttp.readyState == XMLHttpRequest.DONE) {
-            if (xmlhttp.status == 404) {
-                Mojo.Log.error("Share service returned 404 sharing content. If the service is online, there's probably a version mismatch between service and client.");
-                Mojo.Controller.getAppController().showBanner({ messageText: "Error sharing: 404 at endpoint" }, "", "");
-                if (callback) callback(false);
+            if (xmlhttp.status >= 400) {
+                errorhandler(xmlhttp.status + " Error adding share text: " + responseObj.error);
                 return false;
             } else {
                 Mojo.Log.info("Share service sent response while sharing text: " + xmlhttp.responseText);
@@ -124,8 +114,8 @@ ShareServiceModel.prototype.DoShareAddRequestText = function(content, username, 
                     try {
                         var responseObj = JSON.parse(xmlhttp.responseText);
                         if (responseObj.error) {
-                            Mojo.Log.error("Share service returned error: " + responseObj.error);
-                            Mojo.Controller.getAppController().showBanner({ messageText: "Error sharing: " + responseObj.error }, "", "");
+                            errorhandler("Error sharing text: " + responseObj.error);
+                            return false;
                         } else {
                             Mojo.Log.info("Share success! " + xmlhttp.responseText);
                             if (callback) {
@@ -136,22 +126,20 @@ ShareServiceModel.prototype.DoShareAddRequestText = function(content, username, 
                             return true;
                         }
                     } catch (ex) {
-                        Mojo.Controller.getAppController().showBanner({ messageText: "Error sharing: server response malformed" }, "", "");
-                        Mojo.Log.error("Share service response could not be parsed, error was: " + ex + ", response: " + xmlhttp.responseText);
+                        errorhandler("Error parsing add Share response: " + ex);
+                        return false;
                     }
                 } else {
-                    Mojo.Controller.getAppController().showBanner({ messageText: "Error sharing: server response empty" }, "", "");
-                    Mojo.Log.error("Share service response was empty: " + xmlhttp.responseText);
+                    errorhandler("Add Share response was empty");
+                    return false;
                 }
-                if (callback) callback(false);
-                return false;
             }
         }
     }.bind(this);
 }
 
 //Upload a file
-ShareServiceModel.prototype.DoShareAddRequestImage = function (fullFilePath, username, credential, contenttype, callback) {
+ShareServiceModel.prototype.DoShareAddRequestImage = function (fullFilePath, username, credential, contenttype, callback, errorhandler) {
 
     if (!fullFilePath){
         Mojo.Log.error("Image file path not supplied");
@@ -190,12 +178,8 @@ ShareServiceModel.prototype.DoShareAddRequestImage = function (fullFilePath, use
                     if (response.responseString) {
                         var responseObj = JSON.parse(response.responseString);
                         if (responseObj.error) {
-                            Mojo.Log.error("Upload Error: ", responseObj.error);
-                            if (callback) {
-                                callback(responseObj.error);
-                            } else {
-                                Mojo.Controller.getAppController().showBanner({ messageText: "Upload error: " + responseObj.error }, "", "");
-                            }
+                            errorhandler("Error deleting share: " + responseObj.error);
+                            return false;
                         } else {
                             Mojo.Log.info("Upload response: " + response.responseString);
                             if (callback) {
@@ -209,19 +193,14 @@ ShareServiceModel.prototype.DoShareAddRequestImage = function (fullFilePath, use
             }
         },
         onFailure: function(response) {
-            Mojo.Log.error("Upload Failure: ", JSON.stringify(response));
-            if (callback) {
-                callback(response.responseString);
-                return false;
-            } else {
-                Mojo.Controller.getAppController().showBanner({ messageText: "Upload error:" + JSON.stringify(response.responseString.error) }, "", "");
-            }
+            errorhandler("Error uploading image share: " + response);
+            return false;
         }
     });
 }
 
 //HTTP request for list files
-ShareServiceModel.prototype.DoShareDeleteRequest = function(itemid, username, credential, callback) {
+ShareServiceModel.prototype.DoShareDeleteRequest = function(itemid, username, credential, callback, errorhandler) {
     this.retVal = "";
     if (callback)
         callback = callback.bind(this);
@@ -236,25 +215,18 @@ ShareServiceModel.prototype.DoShareDeleteRequest = function(itemid, username, cr
     xmlhttp.send();
     xmlhttp.onreadystatechange = function() {
         if (xmlhttp.readyState == XMLHttpRequest.DONE) {
-            if (xmlhttp.status == 404) {
-                Mojo.Log.error("Share service returned 404 deleting content. If the service is online, there's probably a version mismatch between service and client.");
-                Mojo.Controller.getAppController().showBanner({ messageText: "Error sharing: 404 at endpoint" }, "", "");
-                if (callback) callback(false);
+            if (xmlhttp.status >= 400) {
+                errorhandler(xmlhttp.status + " Error deleting share: " + responseObj.error);
                 return false;
             } else {
                 if (xmlhttp.responseText && xmlhttp.responseText != "") {
                     try {
                         var responseObj = JSON.parse(xmlhttp.responseText);
                         if (responseObj.error) {
-                            Mojo.Log.error("Share service returned error: " + responseObj.error);
-                            if (callback) {
-                                callback(xmlhttp.responseText);
-                                return false;
-                            } else {
-                                Mojo.Controller.getAppController().showBanner({ messageText: "Error deleting share: " + responseObj.error }, "", "");
-                            }
+                            errorhandler("Error deleting share: " + responseObj.error);
+                            return false;
                         } else {
-                            //Mojo.Log.info("Share List success! " + xmlhttp.responseText);
+                            //Mojo.Log.info("Share Delete success! " + xmlhttp.responseText);
                             if (callback) {
                                 callback(xmlhttp.responseText);
                             } else {
@@ -263,15 +235,13 @@ ShareServiceModel.prototype.DoShareDeleteRequest = function(itemid, username, cr
                             return true;
                         }
                     } catch (ex) {
-                        Mojo.Controller.getAppController().showBanner({ messageText: "Error deleting share: server response malformed" }, "", "");
-                        Mojo.Log.error("Share service response could not be parsed, error was: " + ex + ", response: " + xmlhttp.responseText);
+                        errorhandler("Error parsing Share delete response: " + ex);
+                        return false;
                     }
                 } else {
-                    Mojo.Controller.getAppController().showBanner({ messageText: "Error deleting share: server response empty" }, "", "");
-                    Mojo.Log.error("Share service delete response was empty: " + xmlhttp.responseText);
+                    errorhandler("Delete Share response was empty");
+                    return false;
                 }
-                if (callback) callback(false);
-                return false;
             }
         }
     }.bind(this);
@@ -316,7 +286,7 @@ ShareServiceModel.prototype.GetRandomWords = function(callback) {
 }
 
 //HTTP request for new user
-ShareServiceModel.prototype.DoNewUserRequest = function(username, sharephrase, password, callback) {
+ShareServiceModel.prototype.DoNewUserRequest = function(username, sharephrase, password, callback, errorhandler) {
     
     var useURL = this.buildURL(null, "new-user");
     Mojo.Log.info("Creating user: " + username + " with share-phrase " + sharephrase + " and password " + password + " from URL " + useURL);
@@ -336,10 +306,8 @@ ShareServiceModel.prototype.DoNewUserRequest = function(username, sharephrase, p
     xmlhttp.send(JSON.stringify(request));
     xmlhttp.onreadystatechange = function() {
         if (xmlhttp.readyState == XMLHttpRequest.DONE) {
-            if (xmlhttp.status == 404) {
-                Mojo.Log.error("Share service returned 404 creating user. If the service is online, there's probably a version mismatch between service and client.");
-                Mojo.Controller.getAppController().showBanner({ messageText: "Error sharing: 404 at endpoint" }, "", "");
-                if (callback) callback(false);
+            if (xmlhttp.status >= 400) {
+                errorhandler(xmlhttp.status + " Error creating user: " + responseObj.error);
                 return false;
             } else {
                 Mojo.Log.info("Share service sent response while creating user: " + xmlhttp.responseText);
@@ -347,12 +315,8 @@ ShareServiceModel.prototype.DoNewUserRequest = function(username, sharephrase, p
                     try {
                         var responseObj = JSON.parse(xmlhttp.responseText);
                         if (responseObj.error) {
-                            Mojo.Log.error("Share service returned error creating user: " + responseObj.error);
-                            if (callback) {
-                                callback(xmlhttp.responseText);
-                            } else {
-                                Mojo.Controller.getAppController().showBanner({ messageText: "Error creating user: " + responseObj.error }, "", "");
-                            }
+                            errorhandler("Error creating user: " + responseObj.error);
+                            return false;
                         } else {
                             Mojo.Log.info("New user success! " + xmlhttp.responseText);
                             if (callback) {
@@ -363,15 +327,13 @@ ShareServiceModel.prototype.DoNewUserRequest = function(username, sharephrase, p
                             return true;
                         }
                     } catch (ex) {
-                        Mojo.Controller.getAppController().showBanner({ messageText: "Error creating user: server response malformed" }, "", "");
-                        Mojo.Log.error("Share service response could not be parsed, error was: " + ex + ", response: " + xmlhttp.responseText);
+                        errorhandler("Error parsing create user response: " + ex);
+                        return false;
                     }
                 } else {
-                    Mojo.Controller.getAppController().showBanner({ messageText: "Error sharing: server response empty" }, "", "");
-                    Mojo.Log.error("Share service response was empty: " + xmlhttp.responseText);
+                    errorhandler("Create user response was empty");
+                    return false;
                 }
-                if (callback) callback(false);
-                return false;
             }
         }
     }.bind(this);

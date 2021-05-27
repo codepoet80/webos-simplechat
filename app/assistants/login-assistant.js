@@ -75,16 +75,7 @@ LoginAssistant.prototype.activate = function(event) {
 };
 
 LoginAssistant.prototype.handleValueChange = function(event) {
-    //Mojo.Log.info(event.srcElement.title + " now: " + event.value);
-    /*if (event.srcElement.title == "Username" && event.value.toLowerCase() == "jjj" && devModeChessMove && devModeGrandmaster) {
-        Mojo.Controller.getAppController().showBanner("Dev mode enabled!", { source: 'notification' });
-        Mojo.Log.warn("Switching to Developer Mode! " + devModeChessMove);
-        appModel.AppSettingsCurrent["Username"] = devModeChessMove;
-        appModel.AppSettingsCurrent["Credential"] = devModeGrandmaster;
-    } else {*/
-        //We stashed the preference name in the title of the HTML element, so we don't have to use a case statement
-        appModel.AppSettingsCurrent[event.srcElement.title] = event.value;
-    //}
+    appModel.AppSettingsCurrent[event.srcElement.title] = event.value;
 }
 
 LoginAssistant.prototype.handleCancelPress = function(event) {
@@ -94,45 +85,35 @@ LoginAssistant.prototype.handleCancelPress = function(event) {
 
 LoginAssistant.prototype.handleGoPress = function(event) {
 
+    if (this.sceneAssistant.controller.get("txtUsername").mojo.getValue() == "") {
+        this.sceneAssistant.controller.get("txtUsername").mojo.focus();
+        this.sceneAssistant.controller.get("goButton").mojo.deactivate();
+        return;
+    }
+    if (this.sceneAssistant.controller.get("txtCredential").mojo.getValue() == "") {
+        this.sceneAssistant.controller.get("txtCredential").mojo.focus();
+        this.sceneAssistant.controller.get("goButton").mojo.deactivate();
+        return;
+    }
     //Update UI for this state
-    this.sceneAssistant.controller.get("addressError").style.display = "none";
-    this.sceneAssistant.controller.get("linkError").style.display = "none";
-
-    this.tryServiceLogin(this.handleLoginResponse.bind(this));
+    this.tryServiceLogin();
 }
 
-LoginAssistant.prototype.tryServiceLogin = function(callback) {
-    serviceModel.DoShareListRequest(appModel.AppSettingsCurrent["Username"], appModel.AppSettingsCurrent["Credential"], callback);
-}
-
-LoginAssistant.prototype.handleLoginResponse = function(response) {
-    Mojo.Log.info("login response was: " + response);
-    try {
-        var responseObj = JSON.parse(response);
-    } catch (ex) {
-        Mojo.Log.error("Could not parse login response: " + response);
-        //Show error message
-        Mojo.Controller.errorDialog("The server response to the log in request was malformed. Login failed.");
-        //Dismiss this dialog
-        this.doneCallBack(false);
-        this.widget.mojo.close();
-    }
-    if (responseObj && responseObj.shares && responseObj.shares != "") {
-        Mojo.Log.info("Login success!");
-        //appModel.AppSettingsCurrent["Username"] = responseObj.notation;
-        appModel.SaveSettings();
-        //Dismiss this dialog
-        this.doneCallBack(true);
-        this.widget.mojo.close();
-    } else {
-        Mojo.Log.warn("Login failure: " + response);
-        //Show error message
-        Mojo.Controller.errorDialog("Login failure. Check connectivity and your credentials. If you haven't logged in for a long time, create a new account.");
-        //Dismiss this dialog
-        this.doneCallBack(false);
-        this.widget.mojo.close();
-    }
-
+LoginAssistant.prototype.tryServiceLogin = function() {
+    serviceModel.DoShareListRequest(appModel.AppSettingsCurrent["Username"], appModel.AppSettingsCurrent["Credential"], function(response) {
+        if (response.error) {
+            this.doneCallBack(response);
+        } else {
+            if (response && response.shares && response.shares != "") {
+                Mojo.Log.info("Login success!");
+                appModel.SaveSettings();
+                this.doneCallBack(true);
+            } else {
+                this.doneCallBack({"error": "Login failure. Check connectivity and your credentials. If you haven't logged in for a long time, create a new account."});
+            }
+        }
+        this.widget.mojo.close();  //Dismiss this dialog
+    }.bind(this), this.errorHandler.bind(this));
 }
 
 LoginAssistant.prototype.deactivate = function(event) {
@@ -150,3 +131,13 @@ LoginAssistant.prototype.cleanup = function(event) {
     /* this function should do any cleanup needed before the scene is destroyed as 
        a result of being popped off the scene stack */
 };
+
+LoginAssistant.prototype.errorHandler = function (errorText, callback) {
+    Mojo.Log.error(errorText);
+    if (callback) {
+        callback.bind(this);
+        callback({"error": errorText});
+    } else {
+        Mojo.Controller.getAppController().showBanner({ messageText: errorText, icon: "images/notify.png" }, "", "");
+    }
+}
