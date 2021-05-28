@@ -117,7 +117,22 @@ NewuserAssistant.prototype.okClick = function(event) {
                 Mojo.Additions.ShowDialogBox("Invalid password", "Your password must be one word, alpha-numeric characters only, and cannot contain any reserved words for Unix or Windows operating systems.");
                 this.controller.get('btnOK').mojo.deactivate();
             } else {
-                serviceModel.DoNewUserRequest(this.username, this.sharephrase, this.password, this.handleServerResponse.bind(this));
+                serviceModel.DoNewUserRequest(this.username, this.sharephrase, this.password, function(responseObj) {
+                    if (responseObj != null) {
+                        appModel.AppSettingsCurrent["Username"] = this.username;
+                        appModel.AppSettingsCurrent["Credential"] = this.password;
+                        appModel.AppSettingsCurrent["SharePhrase"] = this.sharephrase;
+                        appModel.SaveSettings();
+                        Mojo.Log.info("Successfully created account ", appModel.AppSettingsCurrent["Username"], appModel.AppSettingsCurrent["Credential"], appModel.AppSettingsCurrent["SharePhrase"]);
+        
+                        var stageController = Mojo.Controller.getAppController().getActiveStageController();
+                        stageController.swapScene({ transition: Mojo.Transition.zoomFade, name: "welcome" });
+                    } else {
+                        Mojo.Log.error("No usable response from server while uploading share");
+                        Mojo.Controller.getAppController().showBanner({ messageText: "Bad response uploading image", icon: "images/notify.png" }, "", "");
+                    }
+                    this.controller.get('btnOK').mojo.deactivate();
+                }.bind(this), this.errorHandler.bind(this));
             }
         } else {
             Mojo.Additions.ShowDialogBox("Missing Share Phrase", "The share phrase is provided by the server, but appears to be missing. This likely means the server is unreachable, down, or improperly configured.");
@@ -126,33 +141,17 @@ NewuserAssistant.prototype.okClick = function(event) {
     }
 }
 
-NewuserAssistant.prototype.handleServerResponse = function(response) {
-    if (response && response != "") {
-        try {
-            var responseObj = JSON.parse(response);
-            if (responseObj.error) {
-                var errText = responseObj.error.charAt(0).toUpperCase() + responseObj.error.slice(1)
-                Mojo.Additions.ShowDialogBox("Server Error", errText);
-            } else {
-                appModel.AppSettingsCurrent["Username"] = this.username;
-                appModel.AppSettingsCurrent["Credential"] = this.password;
-                appModel.AppSettingsCurrent["SharePhrase"] = this.sharephrase;
-                appModel.SaveSettings();
-                Mojo.Log.info("Successfully created account ", appModel.AppSettingsCurrent["Username"], appModel.AppSettingsCurrent["Credential"], appModel.AppSettingsCurrent["SharePhrase"]);
-
-                var stageController = Mojo.Controller.getAppController().getActiveStageController();
-                stageController.swapScene({ transition: Mojo.Transition.zoomFade, name: "welcome" });
-            }
-        } catch (ex) {
-            Mojo.Additions.ShowDialogBox("Server Error", "An unexpected server response error occured: " + ex);
-        }
-    }
-    this.controller.get('btnOK').mojo.deactivate();
-}
-
 NewuserAssistant.prototype.cancelClick = function(event) {
     var stageController = Mojo.Controller.getAppController().getActiveStageController();
     stageController.swapScene({ transition: Mojo.Transition.zoomFade, name: "main" });
+}
+
+NewuserAssistant.prototype.errorHandler = function (errorText, callback) {
+    Mojo.Log.error(errorText);
+    Mojo.Controller.getAppController().showBanner({ messageText: errorText, icon: "images/notify.png" }, "", "");
+    errorText = errorText.charAt(0).toUpperCase() + errorText.slice(1);
+    Mojo.Additions.ShowDialogBox("Share Sevice Error", errorText);
+    this.controller.get('btnOK').mojo.deactivate();
 }
 
 NewuserAssistant.prototype.deactivate = function(event) {

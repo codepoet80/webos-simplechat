@@ -103,27 +103,27 @@ NewshareAssistant.prototype.handleOKPress = function(event) {
 }
 
 NewshareAssistant.prototype.tryAddShare = function() {
-    serviceModel.DoShareAddRequestText(appModel.LastShareSelected.content, appModel.AppSettingsCurrent["Username"], appModel.AppSettingsCurrent["Credential"], appModel.LastShareSelected.contenttype, function(response) {
-        try {
-            var responseObj = JSON.parse(response);
-        } catch (ex) {
-            Mojo.Log.error("Could not parse share add response!");
-        }
-        if (responseObj && responseObj.success && responseObj.success != "") {
+    serviceModel.DoShareAddRequestText(appModel.LastShareSelected.content, appModel.AppSettingsCurrent["Username"], appModel.AppSettingsCurrent["Credential"], appModel.LastShareSelected.contenttype, function(responseObj) {
+        if (responseObj && responseObj.guid && responseObj.guid != "") {
             Mojo.Log.info("Add share success!");
             Mojo.Controller.getAppController().showBanner({ messageText: 'Content shared!', icon: 'images/notify.png' }, { source: 'notification' });
-            
         } else {
-            Mojo.Log.error("Add share failure: " + response);
+            this.errorHandler("Share failure: " + JSON.stringify(responseObj))
         }
         this.handleCancelPress();
-    }.bind(this));
+    }.bind(this), this.errorHandler.bind(this));
+}
+
+NewshareAssistant.prototype.errorHandler = function (errorText, callback) {
+    Mojo.Log.error(errorText);
+    Mojo.Controller.getAppController().showBanner({ messageText: errorText, icon: "images/notify.png" }, "", "");
+    errorText = errorText.charAt(0).toUpperCase() + errorText.slice(1);
+    this.controller.get('goButton').mojo.deactivate();
+    Mojo.Additions.ShowDialogBox("Share Sevice Error", errorText);
 }
 
 NewshareAssistant.prototype.deactivate = function(event) {
     Mojo.Log.info("NewShare assistant deactivated");
-    /* remove any event handlers you added in activate and do any other cleanup that should happen before
-       this scene is popped or another scene is pushed on top */
     Mojo.Event.stopListening(this.controller.get("txtShareContent"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.stopListening(this.controller.get("goButton"), Mojo.Event.tap, this.handleOKPress.bind(this));
     Mojo.Event.stopListening(this.controller.get("cancelButton"), Mojo.Event.tap, this.handleCancelPress.bind(this));

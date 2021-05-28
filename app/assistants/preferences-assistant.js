@@ -59,7 +59,7 @@ PreferencesAssistant.prototype.setup = function() {
     //Text fields
     this.controller.setupWidget("txtCustomClientId",
         this.attributes = {
-            hintText: $L("Your Service API Key"),
+            hintText: $L("Your Service Client Id"),
             multiline: false,
             enterSubmits: false,
             autoReplace: false,
@@ -67,20 +67,7 @@ PreferencesAssistant.prototype.setup = function() {
         },
         this.model = {
             value: appModel.AppSettingsCurrent["CustomClientId"],
-            disabled: !appModel.AppSettingsCurrent["CustomClientId"]
-        }
-    );
-    this.controller.setupWidget("txtCustomCreateKey",
-        this.attributes = {
-            hintText: $L("Your Service Create Key"),
-            multiline: false,
-            enterSubmits: false,
-            autoReplace: false,
-            textCase: Mojo.Widget.steModeLowerCase
-        },
-        this.model = {
-            value: appModel.AppSettingsCurrent["CustomCreateKey"],
-            disabled: !appModel.AppSettingsCurrent["CustomCreateKey"]
+            disabled: !appModel.AppSettingsCurrent["UseCustomEndpoint"]
         }
     );
     this.controller.setupWidget("txtEndpointURL",
@@ -93,7 +80,7 @@ PreferencesAssistant.prototype.setup = function() {
         },
         this.model = {
             value: appModel.AppSettingsCurrent["EndpointURL"],
-            disabled: !appModel.AppSettingsCurrent["CustomClientId"]
+            disabled: !appModel.AppSettingsCurrent["UseCustomEndpoint"]
         }
     );
     this.controller.setupWidget("txtShortURL",
@@ -106,7 +93,20 @@ PreferencesAssistant.prototype.setup = function() {
         },
         this.model = {
             value: appModel.AppSettingsCurrent["ShortURL"],
-            disabled: !appModel.AppSettingsCurrent["CustomClientId"]
+            disabled: !appModel.AppSettingsCurrent["UseCustomEndpoint"]
+        }
+    );
+    this.controller.setupWidget("txtCustomCreateKey",
+        this.attributes = {
+            hintText: $L("Your Service Create Key"),
+            multiline: false,
+            enterSubmits: false,
+            autoReplace: false,
+            textCase: Mojo.Widget.steModeLowerCase
+        },
+        this.model = {
+            value: appModel.AppSettingsCurrent["CustomCreateKey"],
+            disabled: !appModel.AppSettingsCurrent["UseCustomEndpoint"]
         }
     );
 
@@ -131,6 +131,7 @@ PreferencesAssistant.prototype.setup = function() {
     Mojo.Event.listen(this.controller.get("toggleCustomEndPoint"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.controller.get("txtEndpointURL"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.controller.get("txtShortURL"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
+    Mojo.Event.listen(this.controller.get("txtCustomCreateKey"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.controller.get("btnOK"), Mojo.Event.tap, this.okClick.bind(this));
     
 };
@@ -222,6 +223,7 @@ PreferencesAssistant.prototype.deactivate = function(event) {
     Mojo.Event.stopListening(this.controller.get("toggleCustomEndPoint"), Mojo.Event.propertyChange, this.handleValueChange);
     Mojo.Event.stopListening(this.controller.get("txtEndpointURL"), Mojo.Event.propertyChange, this.handleValueChange);
     Mojo.Event.stopListening(this.controller.get("txtShortURL"), Mojo.Event.propertyChange, this.handleValueChange);
+    Mojo.Event.stopListening(this.controller.get("txtCustomCreateKey"), Mojo.Event.propertyChange, this.handleValueChange);
     Mojo.Event.stopListening(this.controller.get("btnOK"), Mojo.Event.tap, this.okClick.bind(this));
 
 };

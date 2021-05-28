@@ -100,6 +100,7 @@ MainAssistant.prototype.activate = function(event) {
     serviceModel.UseCustomEndpoint = appModel.AppSettingsCurrent["UseCustomEndpoint"];
     serviceModel.CustomEndpointURL = appModel.AppSettingsCurrent["EndpointURL"];
     serviceModel.CustomShortURL = appModel.AppSettingsCurrent["ShortURL"];
+    serviceModel.CustomCreateKey = appModel.AppSettingsCurrent["CustomCreateKey"];
     serviceModel.UseCustomClientId = appModel.AppSettingsCurrent["UseCustomClientId"];
     serviceModel.CustomClientId = appModel.AppSettingsCurrent["CustomClientId"];
 
@@ -284,33 +285,12 @@ MainAssistant.prototype.handlePopupChoose = function(share, command) {
 
 /* Get Share Stuff */
 MainAssistant.prototype.fetchShares = function() {
-    serviceModel.DoShareListRequest(appModel.AppSettingsCurrent["Username"], appModel.AppSettingsCurrent["Credential"], this.handleServerResponse.bind(this), this.errorHandler.bind(this));
-}
-
-MainAssistant.prototype.errorHandler = function (errorText, callback) {
-    this.errorCount++;
-    Mojo.Log.error("error count: " + this.errorCount + ", " + errorText);
-    if (this.errorCount > 5) {
-        Mojo.Additions.ShowDialogBox("Sync Error", errorText);
-        clearInterval(this.refreshInt);
-        Mojo.Controller.getAppController().showBanner({ messageText: "Sync offline", icon: "images/notify.png" }, "", "");
-    }
-    if (callback) {
-        callback.bind(this);
-        callback({"error": errorText});
-    }
-}
-
-MainAssistant.prototype.handleServerResponse = function(responseObj) {
-    Mojo.Log.info("ready to process share list: " + JSON.stringify(responseObj));
+    serviceModel.DoShareListRequest(appModel.AppSettingsCurrent["Username"], appModel.AppSettingsCurrent["Credential"], function(responseObj){
+        Mojo.Log.info("ready to process share list: " + JSON.stringify(responseObj));
     
-    if (responseObj != null) {
-        if (responseObj.status == "error") {
-            Mojo.Log.error("Error message from server while loading shares: " + responseObj.msg);
-            this.errorHandler("The server responded to the share list request with: " + responseObj.msg.replace("ERROR: ", ""));
-        } else {
+        if (responseObj != null) {
             if (responseObj.shares) {
-                //If we got a good looking response update the UI
+                //If we got a good looking response, update the UI
                 this.updateShareListWidget(appModel.AppSettingsCurrent["Username"], responseObj.shares, responseObj.accesslevel);
                 if ((!appModel.AppSettingsCurrent["SharePhrase"] || appModel.AppSettingsCurrent["SharePhrase"] == "") && responseObj.sharephrase){
                     appModel.AppSettingsCurrent["SharePhrase"] = responseObj.sharephrase;
@@ -319,11 +299,11 @@ MainAssistant.prototype.handleServerResponse = function(responseObj) {
             } else {
                 Mojo.Log.warn("Share list was empty. Either there was no matching result, or there were server or connectivity problems.");
             }
+        } else {
+            Mojo.Log.error("No usable response from server while loading shares: " + response);
+            this.errorHandler("The server did not answer with a usable response to the share list request. Check network connectivity, SSL and/or self-host settings.");
         }
-    } else {
-        Mojo.Log.error("No usable response from server while loading shares: " + response);
-        this.errorHandler("The server did not answer with a usable response to the share list request. Check network connectivity, SSL and/or self-host settings.");
-    }
+    }.bind(this), this.errorHandler.bind(this));
 }
 
 MainAssistant.prototype.updateShareListWidget = function(username, results, accessLevel) {
@@ -355,7 +335,7 @@ MainAssistant.prototype.showNewShareOptions = function() {
         onChoose: function(value) {
             Mojo.Log.info("Choice was: " + value);
             if (value == "image") {
-                this.invokeFilePicker();
+                this.pickAndUploadImage();
             } else if (value == "text/plain" || value == "application/json") {
                 appModel.LastShareSelected.contenttype = value;
                 Mojo.Log.info("LastShareSelected: " + JSON.stringify(appModel.LastShareSelected));
@@ -375,7 +355,7 @@ MainAssistant.prototype.showNewShareOptions = function() {
     });
 }
 
-MainAssistant.prototype.invokeFilePicker = function() {
+MainAssistant.prototype.pickAndUploadImage = function() {
     var self = this; //Retain the reference for the callback
     var params = { kind: 'image', actionName: 'Share Photo',
         onSelect: function(file){
@@ -390,7 +370,18 @@ MainAssistant.prototype.invokeFilePicker = function() {
             else 
                 mimetype = "image/" + ext;
                 
-            serviceModel.DoShareAddRequestImage(file.fullPath, appModel.AppSettingsCurrent["Username"], appModel.AppSettingsCurrent["Credential"], mimetype);
+            serviceModel.DoShareAddRequestImage(file.fullPath, appModel.AppSettingsCurrent["Username"], appModel.AppSettingsCurrent["Credential"], mimetype, function(responseObj) {
+                if (responseObj != null) {
+                    Mojo.Controller.getAppController().showBanner({ messageText: "Image shared!", icon: "images/notify.png" }, "", "");
+                    self.fetchShares();
+                } else {
+                    Mojo.Log.error("No usable response from server while uploading share");
+                    Mojo.Controller.getAppController().showBanner({ messageText: "Bad response uploading image", icon: "images/notify.png" }, "", "");
+                }
+            }.bind(self), function(errorText) {
+                Mojo.Log.error(errorText);
+                Mojo.Controller.getAppController().showBanner({ messageText: "Upload failure: " + errorText, icon: "images/notify.png" }, "", "");
+            });
         }
     }
     Mojo.FilePicker.pickFile(params, this.controller.stageController);
@@ -453,9 +444,11 @@ MainAssistant.prototype.showLogin = function() {
                     var stageController = Mojo.Controller.getAppController().getActiveStageController();
                     stageController.swapScene({ transition: Mojo.Transition.crossFade, name: "main", disableSceneScroller: false });
                 } else {
-                    var readableError = dialogResponse.error.replace("Share service error: ", "");
-                    readableError = readableError.charAt(0).toUpperCase() + readableError.slice(1);
-                    Mojo.Additions.ShowDialogBox("Share Service Error", readableError);
+                    if (dialogResponse.error) {
+                        var readableError = dialogResponse.error.replace("Share service error: ", "");
+                        readableError = readableError.charAt(0).toUpperCase() + readableError.slice(1);
+                        Mojo.Additions.ShowDialogBox("Share Service Error", readableError);
+                    }
                 }
             }.bind(this))
         });
@@ -482,9 +475,20 @@ MainAssistant.prototype.cleanup = function(event) {
 };
 
 /* Helper Functions */
-Array.prototype.move = function(from, to) {
-    this.splice(to, 0, this.splice(from, 1)[0]);
-};
+
+MainAssistant.prototype.errorHandler = function (errorText, callback) {
+    this.errorCount++;
+    Mojo.Log.error("error count: " + this.errorCount + ", " + errorText);
+    if (this.errorCount > 5) {
+        Mojo.Additions.ShowDialogBox("Sync Error", errorText);
+        clearInterval(this.refreshInt);
+        Mojo.Controller.getAppController().showBanner({ messageText: "Sync offline", icon: "images/notify.png" }, "", "");
+    }
+    if (callback) {
+        callback.bind(this);
+        callback({"error": errorText});
+    }
+}
 
 MainAssistant.prototype.playSound = function(soundToPlay) {
     if (appModel.AppSettingsCurrent["SoundTheme"] > 0) {
@@ -492,4 +496,8 @@ MainAssistant.prototype.playSound = function(soundToPlay) {
         Mojo.Log.info("Trying to play sound: " + soundToPlay);
         Mojo.Controller.getAppController().playSoundNotification("media", soundToPlay, 1200);
     }
+}
+
+Array.prototype.move = function(from, to) {
+    this.splice(to, 0, this.splice(from, 1)[0]);
 }

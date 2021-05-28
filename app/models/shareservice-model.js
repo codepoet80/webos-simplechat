@@ -18,6 +18,7 @@ ShareServiceModel.prototype.UseCustomShare = false;
 ShareServiceModel.prototype.UseCustomEndpoint = false;
 ShareServiceModel.prototype.CustomEndpointURL = "";
 ShareServiceModel.prototype.CustomShortURL = "";
+ShareServiceModel.prototype.CustomCreateKey = "";
 ShareServiceModel.prototype.UseCustomClientId = false;
 ShareServiceModel.prototype.CustomClientId = "";
 //ShareServiceModel.prototype.ServiceCompatWarning = 0;
@@ -47,6 +48,7 @@ ShareServiceModel.prototype.DoShareListRequest = function(username, credential, 
     if (!errorhandler) {
         errorhandler = function(errorText) {
             Mojo.Log.warn(errorText);
+            Mojo.Controller.getAppController().showBanner({ messageText: errorText }, "", "");
         }
     }
     var useURL = this.buildURL(username, "get-shares");
@@ -79,7 +81,7 @@ ShareServiceModel.prototype.DoShareListRequest = function(username, credential, 
                             return true;
                         }
                     } catch (ex) {
-                        errorhandler("Error parsing Share list response: " + ex + ", response: " + xmlhttp.responseText, callback);
+                        errorhandler("Error parsing share list response: " + ex + ", response: " + xmlhttp.responseText, callback);
                         return false;
                     }
                 } else {
@@ -98,6 +100,7 @@ ShareServiceModel.prototype.DoShareAddRequestText = function(content, username, 
     if (!errorhandler) {
         errorhandler = function(errorText) {
             Mojo.Log.warn(errorText);
+            Mojo.Controller.getAppController().showBanner({ messageText: errorText }, "", "");
         }
     }
     var useURL = this.buildURL(username, "share-text");
@@ -116,7 +119,6 @@ ShareServiceModel.prototype.DoShareAddRequestText = function(content, username, 
                 return false;
             } else {
                 Mojo.Log.info("Share service sent response while sharing text: " + xmlhttp.responseText);
-                Mojo.Log.warn(JSON.stringify(xmlhttp));
                 if (xmlhttp.responseText && xmlhttp.responseText != "") {
                     try {
                         var responseObj = JSON.parse(xmlhttp.responseText);
@@ -124,20 +126,20 @@ ShareServiceModel.prototype.DoShareAddRequestText = function(content, username, 
                             errorhandler("Error sharing text: " + responseObj.error);
                             return false;
                         } else {
-                            Mojo.Log.info("Share success! " + xmlhttp.responseText);
+                            Mojo.Log.info("Share text success! " + xmlhttp.responseText);
                             if (callback) {
-                                callback(xmlhttp.responseText);
+                                callback(responseObj);
                             } else {
                                 Mojo.Controller.getAppController().showBanner({ messageText: "Content shared!" }, "", "");
                             }
                             return true;
                         }
                     } catch (ex) {
-                        errorhandler("Error parsing add Share response: " + ex);
+                        errorhandler("Error parsing add share response: " + ex);
                         return false;
                     }
                 } else {
-                    errorhandler("Add Share response was empty");
+                    errorhandler("Add share response was empty");
                     return false;
                 }
             }
@@ -152,6 +154,7 @@ ShareServiceModel.prototype.DoShareAddRequestImage = function (fullFilePath, use
     if (!errorhandler) {
         errorhandler = function(errorText) {
             Mojo.Log.warn(errorText);
+            Mojo.Controller.getAppController().showBanner({ messageText: errorText }, "", "");
         }
     }
     var useURL = this.buildURL(username, "share-image");
@@ -175,24 +178,52 @@ ShareServiceModel.prototype.DoShareAddRequestImage = function (fullFilePath, use
         },
         onSuccess: function(response) {
             Mojo.Log.info("Upload progress", JSON.stringify(response));
-            if (callback) {
-                callback(response.responseString);
-                return true;
-            } else {
-                if (response.completed == true) {
+            if ((response.completed && response.completed == true) || (response.completionCode && response.completionCode != 0)) {
+                if (response.error) {
+                    errorhandler(response.error);
+                    return false;
+                } else if (response.completionCode && response.completionCode != 0) {
+                    var errMsg = "error code " + response.completionCode;
+                    switch(Math.abs(response.completionCode)) {
+                        case 1:
+                            errMsg = "General Error";
+                            break;
+                        case 2:
+                            errMsg = "Connection Timeout";
+                            break;
+                        case 3:
+                            errMsg = "Corrupt File";
+                            break;
+                        case 4:
+                            errMsg = "File System Error";
+                            break;
+                        case 5:
+                            errMsg = "HTTP Error";
+                            break;
+                        case 6:
+                            errMsg = "Connection Offline";
+                            break;
+                    }
+                    errorhandler(errMsg);
+                    return false;
+                } else {
                     if (response.responseString) {
+                        Mojo.Log.info("Upload response: " + response.responseString);
                         var responseObj = JSON.parse(response.responseString);
                         if (responseObj.error) {
-                            errorhandler("Error deleting share: " + responseObj.error);
+                            errorhandler(responseObj.error);
                             return false;
                         } else {
-                            Mojo.Log.info("Upload response: " + response.responseString);
                             if (callback) {
-                                callback(response.responseStringj);
+                                callback(response.responseString);
                             } else {
-                                Mojo.Controller.getAppController().showBanner({ messageText: "Content uploaded!" }, "", "");
+                                Mojo.Controller.getAppController().showBanner({ messageText: "Image uploaded!" }, "", "");
                             }
+                            return true;
                         }
+                    } else {
+                        errorhandler("Error uploading image: server response was empty");
+                        return false;
                     }
                 }
             }
@@ -211,6 +242,7 @@ ShareServiceModel.prototype.DoShareDeleteRequest = function(itemid, username, cr
     if (!errorhandler) {
         errorhandler = function(errorText) {
             Mojo.Log.warn(errorText);
+            Mojo.Controller.getAppController().showBanner({ messageText: errorText }, "", "");
         }
     }
     var useURL = this.buildURL(username, "delete-share-item");
@@ -228,6 +260,7 @@ ShareServiceModel.prototype.DoShareDeleteRequest = function(itemid, username, cr
                 errorhandler(xmlhttp.status + " Error deleting share: " + responseObj.error);
                 return false;
             } else {
+                Mojo.Log.info("Share service sent response while deleting share: " + xmlhttp.responseText);
                 if (xmlhttp.responseText && xmlhttp.responseText != "") {
                     try {
                         var responseObj = JSON.parse(xmlhttp.responseText);
@@ -235,20 +268,20 @@ ShareServiceModel.prototype.DoShareDeleteRequest = function(itemid, username, cr
                             errorhandler("Error deleting share: " + responseObj.error);
                             return false;
                         } else {
-                            //Mojo.Log.info("Share Delete success! " + xmlhttp.responseText);
+                            Mojo.Log.info("Share Delete success! " + xmlhttp.responseText);
                             if (callback) {
-                                callback(xmlhttp.responseText);
+                                callback(responseObj);
                             } else {
                                 Mojo.Controller.getAppController().showBanner({ messageText: "Content deleted!" }, "", "");
                             }
                             return true;
                         }
                     } catch (ex) {
-                        errorhandler("Error parsing Share delete response: " + ex);
+                        errorhandler("Error parsing delete share response: " + ex);
                         return false;
                     }
                 } else {
-                    errorhandler("Delete Share response was empty");
+                    errorhandler("Delete share response was empty");
                     return false;
                 }
             }
@@ -263,6 +296,7 @@ ShareServiceModel.prototype.DoNewUserRequest = function(username, sharephrase, p
     if (!errorhandler) {
         errorhandler = function(errorText) {
             Mojo.Log.warn(errorText);
+            Mojo.Controller.getAppController().showBanner({ messageText: errorText }, "", "");
         }
     }
     var useURL = this.buildURL(null, "new-user");
@@ -294,7 +328,7 @@ ShareServiceModel.prototype.DoNewUserRequest = function(username, sharephrase, p
                         } else {
                             Mojo.Log.info("New user success! " + xmlhttp.responseText);
                             if (callback) {
-                                callback(xmlhttp.responseText);
+                                callback(responseObj);
                             } else {
                                 Mojo.Controller.getAppController().showBanner({ messageText: "User created!" }, "", "");
                             }
@@ -363,7 +397,7 @@ ShareServiceModel.prototype.getCurrentClientKey = function() {
 ShareServiceModel.prototype.getCurrentCreateKey = function() {
     var retVal = atob(appKeys['shareBoardCreateKey']);
     if (this.UseCustomEndpoint) {
-        retVal = this.CustomClientId;
+        retVal = this.CustomCreateKey;
         Mojo.Log.info("Using custom shareboard create key: " + retVal);
     }
     //Mojo.Log.info("Using shareboard create key: " + retVal);
