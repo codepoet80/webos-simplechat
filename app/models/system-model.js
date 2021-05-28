@@ -252,7 +252,7 @@ SystemModel.prototype.SendDataForTouch2Share = function(url, callback) {
 }
 
 //Download a file
-SystemModel.prototype.DownloadFile = function (url, mimetype, pathFromInteral, fileName, callback) {
+SystemModel.prototype.DownloadFile = function (url, mimetype, pathFromInteral, fileName, subscribe, callback) {
     if (!url) {
         Mojo.Log.error("Download URL not supplied");
         return false;
@@ -268,8 +268,12 @@ SystemModel.prototype.DownloadFile = function (url, mimetype, pathFromInteral, f
     var ext = "";
     mimetype = mimetype.toLowerCase();
     if (mimetype.indexOf("image/") != -1) {
-        ext = mimetype.split("/");
-        ext = ext[ext.length - 1];
+        if (mimetype == "image/jpeg")
+            ext = "jpg"
+        else {
+            ext = mimetype.split("/");
+            ext = ext[ext.length - 1];
+        }
     } else if (mimetype == "text/plain") {
         ext = "txt";
     } else if (mimetype == "application/json") {
@@ -290,7 +294,7 @@ SystemModel.prototype.DownloadFile = function (url, mimetype, pathFromInteral, f
             targetDir : "/media/internal/" + pathFromInteral,
             targetFilename : fileName + ext,
             keepFilenameOnRedirect: true,
-            subscribe: true
+            subscribe: subscribe
         },
         onSuccess: function(response) {
             Mojo.Log.info("Download Success!", JSON.stringify(response));

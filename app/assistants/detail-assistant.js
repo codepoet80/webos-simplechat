@@ -100,6 +100,9 @@ DetailAssistant.prototype.activate = function(event) {
         this.controller.get("divShareLinks").innerHTML = "• <a href='" + link + "'>View in Browser</a>";
         this.controller.get("divShareLinks").innerHTML += " &nbsp;(<a href='javascript:this.doCopy(\"" + link + "\")'>Copy Link</a>)<br>";
     }
+    if (appModel.AppSettingsCurrent["DebugMode"]) {
+        this.controller.get("divShareInfo").style.display = "block";
+    }
 
     //Show actual content
     if (appModel.LastShareSelected.contenttype == "application/json") {
@@ -110,14 +113,14 @@ DetailAssistant.prototype.activate = function(event) {
         this.controller.get("divImageContent").innerHTML = "<img src='" + appModel.LastShareSelected.content + "' style='max-width:90%;'>";
     }
 
-    Mojo.Controller.getAppController().showBanner({ messageText: 'Touch2Share Ready!', icon: 'images/notify.png' }, { source: 'notification' });
+    Mojo.Controller.getAppController().showBanner({ messageText: 'Touch2Share Ready!', icon: 'assets/notify.png' }, { source: 'notification' });
 };
 
 doCopy = function(link) {
     Mojo.Log.info("Copy tapped for link " + link);
     var stageController = Mojo.Controller.getAppController().getActiveStageController()
     stageController.setClipboard(link);
-    Mojo.Controller.getAppController().showBanner({ messageText: 'Link copied!', icon: 'images/notify.png' }, { source: 'notification' });
+    Mojo.Controller.getAppController().showBanner({ messageText: 'Link copied!', icon: 'assets/notify.png' }, { source: 'notification' });
 }
 
 DetailAssistant.prototype.makeShareURLs = function(thumbUrl, type) {
@@ -156,7 +159,7 @@ DetailAssistant.prototype.handleCommand = function(event) {
                 var usePath = "sharespace/" + appModel.AppSettingsCurrent["Username"];
                 if (appModel.AppSettingsCurrent["UseCustomDownloadPath"] && appModel.AppSettingsCurrent["CustomDownloadPath"] != "")
                     usePath = appModel.AppSettingsCurrent["CustomDownloadPath"];
-                systemModel.DownloadFile(this.downloadLink, appModel.LastShareSelected.contenttype, usePath, appModel.LastShareSelected.guid);
+                systemModel.DownloadFile(this.downloadLink, appModel.LastShareSelected.contenttype, usePath, appModel.LastShareSelected.guid, true);
                 break;
         }
     }
@@ -191,11 +194,11 @@ DetailAssistant.prototype.handlePopupChoose = function(task, command) {
             break;
         case "do-copyLink":
             stageController.setClipboard(this.downloadLink);
-            Mojo.Controller.getAppController().showBanner({ messageText: 'Link copied!', icon: 'images/notify.png' }, { source: 'notification' });
+            Mojo.Controller.getAppController().showBanner({ messageText: 'Link copied!', icon: 'assets/notify.png' }, { source: 'notification' });
             break;
         case "do-copyContent":
             stageController.setClipboard(appModel.LastShareSelected.content);
-            Mojo.Controller.getAppController().showBanner({ messageText: 'Content copied!', icon: 'images/notify.png' }, { source: 'notification' });
+            Mojo.Controller.getAppController().showBanner({ messageText: 'Content copied!', icon: 'assets/notify.png' }, { source: 'notification' });
             break;
     }
 }

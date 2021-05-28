@@ -129,7 +129,7 @@ NewuserAssistant.prototype.okClick = function(event) {
                         stageController.swapScene({ transition: Mojo.Transition.zoomFade, name: "welcome" });
                     } else {
                         Mojo.Log.error("No usable response from server while uploading share");
-                        Mojo.Controller.getAppController().showBanner({ messageText: "Bad response uploading image", icon: "images/notify.png" }, "", "");
+                        Mojo.Controller.getAppController().showBanner({ messageText: "Bad response uploading image", icon: "assets/notify.png" }, "", "");
                     }
                     this.controller.get('btnOK').mojo.deactivate();
                 }.bind(this), this.errorHandler.bind(this));
@@ -148,7 +148,7 @@ NewuserAssistant.prototype.cancelClick = function(event) {
 
 NewuserAssistant.prototype.errorHandler = function (errorText, callback) {
     Mojo.Log.error(errorText);
-    Mojo.Controller.getAppController().showBanner({ messageText: errorText, icon: "images/notify.png" }, "", "");
+    Mojo.Controller.getAppController().showBanner({ messageText: errorText, icon: "assets/notify.png" }, "", "");
     errorText = errorText.charAt(0).toUpperCase() + errorText.slice(1);
     Mojo.Additions.ShowDialogBox("Share Sevice Error", errorText);
     this.controller.get('btnOK').mojo.deactivate();

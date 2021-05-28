@@ -50,9 +50,11 @@ ShareServiceModel.prototype.DoShareListRequest = function(username, credential, 
             Mojo.Log.warn(errorText);
             Mojo.Controller.getAppController().showBanner({ messageText: errorText }, "", "");
         }
+    } else {
+        errorhandler = errorhandler.bind(this);
     }
     var useURL = this.buildURL(username, "get-shares");
-    Mojo.Log.info("calling sharing service at " + useURL + " with key " + this.getCurrentClientKey());
+    Mojo.Log.info("Calling sharing service at " + useURL + " with key " + this.getCurrentClientKey());
 
     var xmlhttp = new XMLHttpRequest();
     xmlhttp.open("GET", useURL);
@@ -246,7 +248,7 @@ ShareServiceModel.prototype.DoShareDeleteRequest = function(itemid, username, cr
         }
     }
     var useURL = this.buildURL(username, "delete-share-item");
-    Mojo.Log.info("calling sharing service at " + useURL + " for item " + itemid + " with key " + this.getCurrentClientKey());
+    Mojo.Log.info("Calling sharing service at " + useURL + " for item " + itemid + " with key " + this.getCurrentClientKey());
 
     var xmlhttp = new XMLHttpRequest();
     xmlhttp.open("GET", useURL);
@@ -367,12 +369,32 @@ ShareServiceModel.prototype.GetTnC = function(callback) {
 
 //HTTP request to get random share phrase
 ShareServiceModel.prototype.GetRandomWords = function(callback) {
-    this.retVal = "";
     if (callback)
         callback = callback.bind(this);
 
     var theQuery = this.buildURL(null, "random-words");
     Mojo.Log.info("Getting Random words query: " + theQuery);
+    var xmlhttp = new XMLHttpRequest();
+    xmlhttp.open("GET", theQuery);
+    xmlhttp.send();
+    xmlhttp.onreadystatechange = function() {
+        if (xmlhttp.readyState == XMLHttpRequest.DONE) {
+            if (callback)
+                callback(xmlhttp.responseText);
+        }
+    }.bind(this);
+}
+
+//HTTP request to get random share phrase
+ShareServiceModel.prototype.QueryShareData = function(query, callback) {
+    if (callback)
+        callback = callback.bind(this);
+
+    var theQuery = query;
+    theQuery = theQuery.replace("image.php", "q.php");
+    theQuery = theQuery.replace("t.php", "q.php");
+    Mojo.Log.warn("Querying share item with URL: " + theQuery);
+
     var xmlhttp = new XMLHttpRequest();
     xmlhttp.open("GET", theQuery);
     xmlhttp.send();

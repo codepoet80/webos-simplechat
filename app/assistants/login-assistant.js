@@ -138,6 +138,6 @@ LoginAssistant.prototype.errorHandler = function (errorText, callback) {
         callback.bind(this);
         callback({"error": errorText});
     } else {
-        Mojo.Controller.getAppController().showBanner({ messageText: errorText, icon: "images/notify.png" }, "", "");
+        Mojo.Controller.getAppController().showBanner({ messageText: errorText, icon: "assets/notify.png" }, "", "");
     }
 }

@@ -22,8 +22,8 @@ var AppModel = function() {
         Username: "",
         Credential: "",
         SharePhrase: "",
-        SoundTheme: 1,
         RefreshTimeout: 60000,
+        BackgroundUpdate: "00:05:00",
         ForceHTTP: false,
         UseCustomEndpoint: false,
         EndpointURL: "",
@@ -33,8 +33,63 @@ var AppModel = function() {
         CustomCreateKey: "",
         UseCustomDownloadPath: false,
         CustomDownloadPath: null,
-        FirstRun: true
+        FirstRun: true,
+        DebugMode: false
     };
+}
+
+AppModel.prototype.ShowDownloaderStage = function() {
+    Mojo.Log.info("App Model checking if we should to show Dashboard stage...");
+    this.serviceEndpointBase = appModel.ServiceEndpointBase;
+    if (appModel.AppSettingsCurrent["UseCustomEndpoint"] && appModel.AppSettingsCurrent["EndpointURL"]) {
+        this.serviceEndpointBase = appModel.AppSettingsCurrent["EndpointURL"];
+    }
+    //Check for connectivity, then check for messages
+    systemModel.GetInternetConnectionState(this.checkForMessages.bind(this));
+}
+
+AppModel.prototype.checkForMessages = function(connMgrResponse) {
+    Mojo.Log.info("App Model got response from connection manager: " + JSON.stringify(connMgrResponse));
+    if (connMgrResponse && connMgrResponse.isInternetConnectionAvailable) {
+        this.actuallyShowDownloaderStage();
+    }
+}
+
+AppModel.prototype.actuallyShowDownloaderStage = function() {
+    this.controller = Mojo.Controller.getAppController();
+    var dashboardStage = this.controller.getStageProxy("download");
+    var pushDashScene = function(stageController) {
+        stageController.pushScene('download', "download/download-scene");
+    }.bind(this);
+
+    if (!dashboardStage) {
+        Mojo.Log.info("Download dashboard not open, creating it...");
+        this.controller.createStageWithCallback({
+            name: 'download',
+            lightweight: true,
+            height: 100,
+            soundclass: "assets/silent.mp3"
+        }, pushDashScene, 'dashboard');
+    } else {
+        Mojo.Log.info("Download dashboard already open, activating it...");
+        var dashboardStageController = this.controller.getStageController("download");
+        if (dashboardStageController) {
+            dashboardStageController.activate();
+            dashboardStageController.delegateToSceneAssistant("activate");
+        }
+    }
+}
+
+AppModel.prototype.CloseDashboardStageByName = function(stageName) {
+    this.controller = Mojo.Controller.getAppController();
+    var dashboardStage = this.controller.getStageProxy(stageName);
+
+    if (!dashboardStage) {
+        Mojo.Log.info(stageName + " dashboard not open, nothing to do");
+    } else {
+        Mojo.Log.info(stageName + " dashboard open, closing it...");
+        this.controller.closeStage(stageName);
+    }
 }
 
 //You probably don't need to change the below functions since they all work against the Cookie defaults you defined above.

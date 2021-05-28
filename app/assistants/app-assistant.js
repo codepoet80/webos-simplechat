@@ -5,6 +5,7 @@ var appModel = null;
 var updaterModel = null;
 var serviceModel = null;
 var MainStageName = "main";
+var InDockMode = false;
 
 function AppAssistant() {
     appModel = new AppModel();
@@ -22,17 +23,15 @@ AppAssistant.prototype.handleLaunch = function(params) {
     appModel.LoadSettings();
     Mojo.Log.info("settings now: " + JSON.stringify(appModel.AppSettingsCurrent));
     
-    /*
     if (!appModel.AppSettingsCurrent["BackgroundUpdate"]) {
-        appModel.AppSettingsCurrent["BackgroundUpdate"] = "00:30:00";
+        appModel.AppSettingsCurrent["BackgroundUpdate"] = "00:05:00";
         appModel.SaveSettings();
     }
 
     //Reset alarms
-    systemModel.ClearSystemAlarm("ShareSpace");
+    systemModel.ClearSystemAlarm("BackgroundDownload");
     if (appModel.AppSettingsCurrent["BackgroundUpdate"] && appModel.AppSettingsCurrent["BackgroundUpdate"] != "" && appModel.AppSettingsCurrent["BackgroundUpdate"] != -1)
-        systemModel.SetSystemAlarmRelative("ShareSpace", appModel.AppSettingsCurrent["BackgroundUpdate"]);
-    */
+        systemModel.SetSystemAlarmRelative("BackgroundDownload", appModel.AppSettingsCurrent["BackgroundUpdate"]);
 
     if (!params || !params["action"]) {
         var mainStage = this.controller.getStageProxy("main"); //get the proxy for the stage if it already exists (eg: app is currently open)
@@ -59,49 +58,49 @@ AppAssistant.prototype.handleLaunch = function(params) {
             }.bind(this));
         }
     } else {
-        //this is an alarm launch
-        //TODO: Add Dashboard scene
+        this.handleParameterLaunch(params);
     }
 };
 
-AppAssistant.prototype.handleParameterLaunch = function(params, stageController) {
+AppAssistant.prototype.handleParameterLaunch = function(params) {
     Mojo.Log.info("Launch params: " + JSON.stringify(params));
+    //Touch2Share Launch (goes to main)
     if (params["sendDataToShare"]) {
         Mojo.Log.info("Launch with Touch2Share request!");
         systemModel.SendDataForTouch2Share(appModel.CurrentShareURL);
-    } else {
-        Mojo.Log.info("Launch with item request to be handled by Main scene...");
-        //Make sure the main scene is there
-        appModel.LaunchQuery = params;
-        stageController.swapScene({ transition: Mojo.Transition.crossFade, name: "main" });
     }
-}
-/*
 
-//This function will handle relaunching the app when an alarm goes off(see the device/alarm scene)
-AppAssistant.prototype.handleLaunch = function(params) {
+    //Alarm Launch (goes to dashboard) 
+    else if (params.action && params.action == "BackgroundDownload"){
+        Mojo.Log.info("Alarm launch for background sync...");
+        //TODO: Check if in Dock Mode (and remember)
+        systemModel.GetDisplayState(function(response) {
+            Mojo.Log.info("Called back from GetDisplayState with response: " + JSON.stringify(response));
+            InDockMode = false;
+            if (response && response.state == "on" && response.active == false) {
+                InDockMode = true;
+                systemModel.SetDisplayState("unlock");
+                systemModel.SetDisplayState("on");
+            }
+            appModel.ShowDownloaderStage();
+        }.bind(this));
+    }
 
-    //get the proxy for the stage in the event it already exists (eg: app is currently open)
-    var mainStage = this.controller.getStageProxy("");
-    Mojo.Log.info("Share space is Launching! Launch params: " + JSON.stringify(params));
+    //JustType or other (goes to main) 
+    else {
+        Mojo.Log.info("Launch with item request to be handled by Main scene...");
+        appModel.LaunchQuery = params;
 
-    //if there was a search query, load with that
-    Mojo.Log.info("Launch params: " + JSON.stringify(params));
-    if (params) {
-        if (params["sendDataToShare"]) {
-            Mojo.Log.info("Launch with Touch2Share request!");
-            systemModel.SendDataForTouch2Share(appModel.CurrentShareURL);
-        } else {
-            Mojo.Log.info("Launch with item request to be handled by Main scene...");
-            appModel.LaunchQuery = params;
+        var mainStage = this.controller.getStageProxy(MainStageName);
+        if (mainStage) {
+            var stageController = this.controller.getStageController(MainStageName);
+            stageController.swapScene({ transition: Mojo.Transition.crossFade, name: MainStageName });
+        }
+        else {
+            var stageArguments = { name: MainStageName, lightweight: true };
+            this.controller.createStageWithCallback(stageArguments, function(stageController) {
+                stageController.pushScene(MainStageName);
+            }.bind(this));
         }
     }
-
-    //if the stage already exists then just bring it into focus
-    if (mainStage) {
-        var stageController = this.controller.getStageController("");
-        stageController.activate();
-    }
-    return;
-};
-*/
+}

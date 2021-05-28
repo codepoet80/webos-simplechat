@@ -29,6 +29,11 @@
         "scenes": "preferences",
         "source": "app/assistants/preferences-assistant.js"
     },
+    {   
+        "scenes": "download", 
+        "source": "app/assistants/download-assistant.js",
+        "comment": "this is a dashboard"
+    },
     { "source": "app/models/shareservice-model.js" },
     { "source": "app/models/updater-model.js" },
     { "source": "app/models/app-model.js" },

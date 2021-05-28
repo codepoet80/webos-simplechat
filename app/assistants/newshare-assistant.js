@@ -31,9 +31,11 @@ NewshareAssistant.prototype.setup = function(widget) {
         textAttrib.autoReplace = false;
         textAttrib.textCase = Mojo.Widget.steModeLowerCase;
     }
+    Mojo.Log.warn("**** " + JSON.stringify(appModel.LastShareSelected));
     this.controller.setupWidget("txtShareContent",
         this.attributes = textAttrib,
         this.model = {
+            value: appModel.LastShareSelected.content,
             disabled: false
         }
     );
@@ -51,7 +53,6 @@ NewshareAssistant.prototype.activate = function(event) {
     }
 
     /* add event handlers to listen to events from widgets */
-    Mojo.Event.listen(this.controller.get("txtShareContent"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.controller.get("goButton"), Mojo.Event.tap, this.handleOKPress.bind(this));
     Mojo.Event.listen(this.controller.get("cancelButton"), Mojo.Event.tap, this.handleCancelPress.bind(this));
     //Resize event
@@ -70,35 +71,29 @@ NewshareAssistant.prototype.calculateControlsPosition = function() {
     }
 }
 
-NewshareAssistant.prototype.handleValueChange = function(event) {
-    switch (event.srcElement.title) {
-        case "ShareContent":
-            this.ShareContent = event.value;
-            break;
-    }
-}
-
 NewshareAssistant.prototype.handleCancelPress = function(event) {
     var stageController = Mojo.Controller.getAppController().getActiveStageController();
     stageController.pushScene({ transition: Mojo.Transition.crossFade, name: "main" });
 }
 
 NewshareAssistant.prototype.handleOKPress = function(event) {
-    if (this.ShareContent && this.ShareContent != "") {
+    var shareContent = this.controller.get("txtShareContent").mojo.getValue();
+    if (shareContent && shareContent != "") {
         if (appModel.LastShareSelected.contenttype == "application/json") {
             try {
-                var testObj = JSON.parse(this.ShareContent);
+                var testObj = JSON.parse(shareContent);
             } catch (ex) {
-                Mojo.Controller.getAppController().showBanner({ messageText: 'JSON content not be parsed', icon: 'images/notify.png' }, { source: 'notification' });
+                Mojo.Controller.getAppController().showBanner({ messageText: 'JSON content not be parsed', icon: 'assets/notify.png' }, { source: 'notification' });
                 this.controller.get('goButton').mojo.deactivate();
                 this.controller.window.setTimeout(this.controller.get('txtShareContent').mojo.focus(), 500);
                 return false;
             }
         }
-        appModel.LastShareSelected.content = this.ShareContent;        
+        appModel.LastShareSelected.content = shareContent;        
         this.tryAddShare();
     } else {
-        this.handleCancelPress(event);
+        this.controller.get('goButton').mojo.deactivate();
+        this.controller.get("txtShareContent").mojo.focus();
     }
 }
 
@@ -106,7 +101,7 @@ NewshareAssistant.prototype.tryAddShare = function() {
     serviceModel.DoShareAddRequestText(appModel.LastShareSelected.content, appModel.AppSettingsCurrent["Username"], appModel.AppSettingsCurrent["Credential"], appModel.LastShareSelected.contenttype, function(responseObj) {
         if (responseObj && responseObj.guid && responseObj.guid != "") {
             Mojo.Log.info("Add share success!");
-            Mojo.Controller.getAppController().showBanner({ messageText: 'Content shared!', icon: 'images/notify.png' }, { source: 'notification' });
+            Mojo.Controller.getAppController().showBanner({ messageText: 'Content shared!', icon: 'assets/notify.png' }, { source: 'notification' });
         } else {
             this.errorHandler("Share failure: " + JSON.stringify(responseObj))
         }
@@ -116,7 +111,7 @@ NewshareAssistant.prototype.tryAddShare = function() {
 
 NewshareAssistant.prototype.errorHandler = function (errorText, callback) {
     Mojo.Log.error(errorText);
-    Mojo.Controller.getAppController().showBanner({ messageText: errorText, icon: "images/notify.png" }, "", "");
+    Mojo.Controller.getAppController().showBanner({ messageText: errorText, icon: "assets/notify.png" }, "", "");
     errorText = errorText.charAt(0).toUpperCase() + errorText.slice(1);
     this.controller.get('goButton').mojo.deactivate();
     Mojo.Additions.ShowDialogBox("Share Sevice Error", errorText);

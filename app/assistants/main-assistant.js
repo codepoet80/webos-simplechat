@@ -16,7 +16,7 @@ MainAssistant.prototype.setup = function() {
     //Load preferences
     appModel.LoadSettings();
     Mojo.Log.info("settings now: " + JSON.stringify(appModel.AppSettingsCurrent));
-    this.errorCount = 0;
+    this.errorCount = 5;
     
     //Loading spinner - with global members for easy toggling later
     this.spinnerAttrs = {
@@ -52,32 +52,37 @@ MainAssistant.prototype.setup = function() {
             { label: "Preferences", command: 'do-Preferences' },
             { label: "Handle URLs", chosen: false, command: 'do-HandleURLs' },
             { label: "Log In", command: 'do-LogInOut' },
-            { label: "About", command: 'do-myAbout' }
+            { label: "About", command: 'do-myAbout' },
+            { label: "Debug Mode", chosen: appModel.AppSettingsCurrent["DebugMode"], command: 'do-debugMode' }      //TODO: Remove Debug Menu
         ]
     };
+
     if(appModel.AppSettingsCurrent["SharePhrase"] && appModel.AppSettingsCurrent["SharePhrase"] != "") {
         this.appMenuModel.items.push({ label: "Show Share Phrase", command: 'do-mySharePhrase' });
     }
     this.controller.setupWidget(Mojo.Menu.appMenu, this.appMenuAttributes, this.appMenuModel);
     //Command Buttons
     this.cmdMenuAttributes = {
-            spacerHeight: 40,
-            //menuClass: 'no-fade'
-        },
-        this.cmdMenuModel = {
-            visible: false,
-            items: [{
-                    items: [
-                        { label: 'Refresh', icon: 'refresh', command: 'do-refresh' }
-                    ]
-                },
-                {
-                    items: [
-                        { label: 'New', icon: 'new', command: 'do-new' }
-                    ]
-                }
-            ]
-        };
+        spacerHeight: 40,
+        //menuClass: 'no-fade'
+    },
+    this.cmdMenuModel = {
+        visible: false,
+        items: [{
+                items: [
+                    { label: 'Refresh', icon: 'refresh', command: 'do-refresh' }
+                ]
+            },
+            {
+                items: [
+                    { label: 'New', icon: 'new', command: 'do-new' }
+                ]
+            }
+        ]
+    };
+    if (appModel.AppSettingsCurrent["DebugMode"]) {
+        this.cmdMenuModel.items[0].items.push({ label: "Download", command: 'do-download' });
+    }
     this.controller.setupWidget(Mojo.Menu.commandMenu, this.cmdMenuAttributes, this.cmdMenuModel);
     /* Always on Event handlers */
     Mojo.Event.listen(this.controller.get("shareList"), Mojo.Event.listDelete, this.handleListDelete.bind(this));
@@ -143,26 +148,29 @@ MainAssistant.prototype.activate = function(event) {
             if (appModel.AppSettingsCurrent["RefreshTimeout"] && appModel.AppSettingsCurrent["RefreshTimeout"] > 1000) {
                 Mojo.Log.info("Auto refresh interval: " + appModel.AppSettingsCurrent["RefreshTimeout"]);
                 clearInterval(this.refreshInt);
-                this.refreshInt = window.setInterval(this.fetchShares.bind(this), appModel.AppSettingsCurrent["RefreshTimeout"]);
+                this.refreshInt = this.controller.window.setInterval(this.fetchShares.bind(this), appModel.AppSettingsCurrent["RefreshTimeout"]);
             } else {
                 Mojo.Log.warn("Using Manual Refresh");
             }
+
             //handle launch with query
             Mojo.Log.info("Main scene loaded with launch query: " + JSON.stringify(appModel.LaunchQuery));
             if (appModel.LaunchQuery && appModel.LaunchQuery != "") {
+                //JustType Launch
                 if (appModel.LaunchQuery.newshare) {
-                    Mojo.Log.warn("Creating new text Share from Just Type");
-                    appModel.LastShareSelected = { guid: "new", contenttype: "text/plain", content: appModel.LaunchQuery };
+                    Mojo.Log.info("Creating new text Share from Just Type");
+                    appModel.LastShareSelected = { guid: "new", contenttype: "text/plain", content: appModel.LaunchQuery.newshare };
                     this.showNewShareScene();
-                } else if (appModel.LaunchQuery.target && appModel.LaunchQuery.target != "") {
-                    Mojo.Log.warn("Handling URL launch of: " + appModel.LaunchQuery.target);
-                    var newURL = appModel.LaunchQuery.target;
-                    newURL = newURL.replace("image.php", "q.php");
-                    newURL = newURL.replace("t.php", "q.php");
-                    Mojo.Log.warn("Querying share item with URL: " + newURL);
-                } else {
+                }
+                //URL Launch
+                else if (appModel.LaunchQuery.target && appModel.LaunchQuery.target != "") {
+                    this.handleURLInvocation(appModel.LaunchQuery.target);
+                }
+                //Some other kind of query launch 
+                else {
                     Mojo.Log.warn("Unknown launch query received");
                 }
+                appModel.LaunchQuery = "";
             }
         } else {
             appModel.LaunchQuery = "";
@@ -197,6 +205,27 @@ MainAssistant.prototype.handleUpdateResponse = function(responseObj) {
                 updaterModel.InstallUpdate();
         }.bind(this));
     }
+}
+
+MainAssistant.prototype.handleURLInvocation = function(query) {
+    Mojo.Log.warn("Handling URL launch of: " + appModel.LaunchQuery.target);
+    serviceModel.QueryShareData(query, function(data) {
+        Mojo.Log.warn("Item query response payload was: " + data);
+        if (data) {
+            try {
+                var itemData = JSON.parse(data);
+                if (itemData.guid) {
+                    appModel.LastShareSelected = itemData;
+                    var stageController = Mojo.Controller.getAppController().getActiveStageController();
+                    stageController.pushScene({ transition: Mojo.Transition.crossFade, name: "detail" });
+                } else {
+                    throw("expected item data missing");
+                }
+            } catch (ex) {
+                Mojo.Log.warn("Got bad item query response payload: " + ex);
+            }
+        }
+    });
 }
 
 /* UI Event Handlers */
@@ -241,6 +270,20 @@ MainAssistant.prototype.handleCommand = function(event) {
             case 'do-mySharePhrase':
                 Mojo.Additions.ShowDialogBox("Your Share Phrase", "<b>" + appModel.AppSettingsCurrent["SharePhrase"] + "</b><br><br>Remember that anyone who has your Share Space name and Share Phrase can share with you.");
                 break;
+            case 'do-debugMode':
+                if (appModel.AppSettingsCurrent["DebugMode"]) {
+                    appModel.AppSettingsCurrent["DebugMode"] = false;
+                } else {
+                    appModel.AppSettingsCurrent["DebugMode"] = true;
+                }
+                appModel.SaveSettings();
+                var stageController = Mojo.Controller.getAppController().getActiveStageController();
+                stageController.swapScene({ transition: Mojo.Transition.crossFade, name: "main" });
+                break;
+            case 'do-download':
+                Mojo.Log.info("Trying to download in background");
+                appModel.ShowDownloaderStage();
+                break;
             case 'do-new':
                 appModel.LastShareSelected = { guid: "new" };
                 this.showNewShareOptions();
@@ -261,7 +304,7 @@ MainAssistant.prototype.handleListClick = function(event) {
 
     Mojo.Log.info("Item tapped with element class " + event.originalEvent.target.className);
     Mojo.Log.info("Item details: " + JSON.stringify(event.item));
-    appModel.LastShareSelected  = event.item;
+    appModel.LastShareSelected = event.item;
     var stageController = Mojo.Controller.getAppController().getActiveStageController();
     stageController.pushScene({ transition: Mojo.Transition.crossFade, name: "detail" });
 
@@ -360,7 +403,7 @@ MainAssistant.prototype.pickAndUploadImage = function() {
     var params = { kind: 'image', actionName: 'Share Photo',
         onSelect: function(file){
             Mojo.Log.info("selected file was: " + JSON.stringify(file));
-            Mojo.Controller.getAppController().showBanner({ messageText: 'Sharing image...', icon: 'images/notify.png' }, { source: 'notification' });
+            Mojo.Controller.getAppController().showBanner({ messageText: 'Sharing image...', icon: 'assets/notify.png' }, { source: 'notification' });
 
             //Figure out what mimetype to use
             var ext = file.fullPath.split(".");
@@ -372,15 +415,15 @@ MainAssistant.prototype.pickAndUploadImage = function() {
                 
             serviceModel.DoShareAddRequestImage(file.fullPath, appModel.AppSettingsCurrent["Username"], appModel.AppSettingsCurrent["Credential"], mimetype, function(responseObj) {
                 if (responseObj != null) {
-                    Mojo.Controller.getAppController().showBanner({ messageText: "Image shared!", icon: "images/notify.png" }, "", "");
+                    Mojo.Controller.getAppController().showBanner({ messageText: "Image shared!", icon: "assets/notify.png" }, "", "");
                     self.fetchShares();
                 } else {
                     Mojo.Log.error("No usable response from server while uploading share");
-                    Mojo.Controller.getAppController().showBanner({ messageText: "Bad response uploading image", icon: "images/notify.png" }, "", "");
+                    Mojo.Controller.getAppController().showBanner({ messageText: "Bad response uploading image", icon: "assets/notify.png" }, "", "");
                 }
             }.bind(self), function(errorText) {
                 Mojo.Log.error(errorText);
-                Mojo.Controller.getAppController().showBanner({ messageText: "Upload failure: " + errorText, icon: "images/notify.png" }, "", "");
+                Mojo.Controller.getAppController().showBanner({ messageText: "Upload failure: " + errorText, icon: "assets/notify.png" }, "", "");
             });
         }
     }
@@ -390,6 +433,8 @@ MainAssistant.prototype.pickAndUploadImage = function() {
 MainAssistant.prototype.showNewShareScene = function() {
     this.DoingEdit = true;
     var stageController = Mojo.Controller.getAppController().getActiveStageController();
+    if (!stageController)
+        stageController = Mojo.Controller.getAppController().getStageController(MainStageName);
     stageController.pushScene({ transition: Mojo.Transition.crossFade, name: "newshare" });
 }
 
@@ -482,19 +527,11 @@ MainAssistant.prototype.errorHandler = function (errorText, callback) {
     if (this.errorCount > 5) {
         Mojo.Additions.ShowDialogBox("Sync Error", errorText);
         clearInterval(this.refreshInt);
-        Mojo.Controller.getAppController().showBanner({ messageText: "Sync offline", icon: "images/notify.png" }, "", "");
+        Mojo.Controller.getAppController().showBanner({ messageText: "Sync offline", icon: "assets/notify.png" }, "", "");
     }
     if (callback) {
         callback.bind(this);
         callback({"error": errorText});
-    }
-}
-
-MainAssistant.prototype.playSound = function(soundToPlay) {
-    if (appModel.AppSettingsCurrent["SoundTheme"] > 0) {
-        soundToPlay = "sounds/" + soundToPlay + appModel.AppSettingsCurrent["SoundTheme"] + ".mp3";
-        Mojo.Log.info("Trying to play sound: " + soundToPlay);
-        Mojo.Controller.getAppController().playSoundNotification("media", soundToPlay, 1200);
     }
 }
 

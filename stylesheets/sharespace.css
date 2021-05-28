@@ -78,3 +78,7 @@
 h3 {
     margin: 8px 12px 12px 12px
 }
+
+.dashboard-icon-download {
+    background: url(../assets/dash-icon.png);
+}
