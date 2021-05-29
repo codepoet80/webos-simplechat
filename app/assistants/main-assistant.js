@@ -4,6 +4,7 @@
     You can also host the service yourself: http://www.github.com/codepoet80/sharing-service
 */
 
+var refreshInt;
 function MainAssistant() {
     /* this is the creator function for your scene assistant object. It will be passed all the 
        additional parameters (after the scene name) that were passed to pushScene. The reference
@@ -96,6 +97,8 @@ MainAssistant.prototype.setup = function() {
     if (!appModel.UpdateCheckDone) {
         appModel.UpdateCheckDone = true;
         updaterModel.CheckForUpdate("Share Space", this.handleUpdateResponse.bind(this));
+        //Check for dependencies
+        this.checkForFileMgr();
     }
 };
 
@@ -147,8 +150,8 @@ MainAssistant.prototype.activate = function(event) {
             this.fetchShares();
             if (appModel.AppSettingsCurrent["RefreshTimeout"] && appModel.AppSettingsCurrent["RefreshTimeout"] > 1000) {
                 Mojo.Log.info("Auto refresh interval: " + appModel.AppSettingsCurrent["RefreshTimeout"]);
-                clearInterval(this.refreshInt);
-                this.refreshInt = this.controller.window.setInterval(this.fetchShares.bind(this), appModel.AppSettingsCurrent["RefreshTimeout"]);
+                clearInterval(refreshInt);
+                refreshInt = this.controller.window.setInterval(this.fetchShares.bind(this), appModel.AppSettingsCurrent["RefreshTimeout"]);
             } else {
                 Mojo.Log.warn("Using Manual Refresh");
             }
@@ -197,6 +200,28 @@ MainAssistant.prototype.activate = function(event) {
         }.bind(this)
     );
 };
+
+MainAssistant.prototype.checkForFileMgr = function() {
+    systemModel.GetInstalledApps(function(response) {
+        var found = false;
+        if (response && response.apps) {
+            for (var i=0; i<response.apps.length; i++)
+            {
+                if (response.apps[i].id == "ca.canucksoftware.filemgr")
+                    found = true;
+            }
+        } else
+            Mojo.Log.info("Could not get listed of installed apps.")
+        if (found)
+            Mojo.Log.info("Found FileMgr by Jason Robitaille! Download features enabled.")
+        else {
+            appModel.AppSettingsCurrent["UseAutoDownload"] = false;
+            Mojo.Log.info("Could not find FileMgr installed! Download features disabled.")
+        }
+        appModel.FileMgrPresent = found;
+        
+    }.bind(this));
+}
 
 MainAssistant.prototype.handleUpdateResponse = function(responseObj) {
     if (responseObj && responseObj.updateFound) {
@@ -505,7 +530,7 @@ MainAssistant.prototype.showLogin = function() {
 MainAssistant.prototype.deactivate = function(event) {
     /* remove any event handlers you added in activate and do any other cleanup that should happen before
        this scene is popped or another scene is pushed on top */
-    clearInterval(this.refreshInt);
+    clearInterval(refreshInt);
     Mojo.Event.stopListening(this.controller.get("shareList"), Mojo.Event.listDelete, this.handleListDelete);
     Mojo.Event.stopListening(this.controller.get("shareList"), Mojo.Event.listTap, this.handleListClick);
     Mojo.Event.stopListening(this.controller.get("shareList"), Mojo.Event.listAdd, this.handleListAdd);
@@ -526,7 +551,7 @@ MainAssistant.prototype.errorHandler = function (errorText, callback) {
     Mojo.Log.error("error count: " + this.errorCount + ", " + errorText);
     if (this.errorCount > 5) {
         Mojo.Additions.ShowDialogBox("Sync Error", errorText);
-        clearInterval(this.refreshInt);
+        clearInterval(refreshInt);
         Mojo.Controller.getAppController().showBanner({ messageText: "Sync offline", icon: "assets/notify.png" }, "", "");
     }
     if (callback) {

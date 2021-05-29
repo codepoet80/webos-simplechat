@@ -26,6 +26,41 @@ PreferencesAssistant.prototype.setup = function() {
         }
     );
     //Toggles
+    var disableDL = true;
+    if (appModel.FileMgrPresent && appModel.AppSettingsCurrent["UseAutoDownload"])
+    disableDL = false;
+    this.controller.setupWidget("toggleAutoDownload",
+        this.attributes = {
+            trueValue: true,
+            falseValue: false
+        },
+        this.model = {
+            value: appModel.AppSettingsCurrent["UseAutoDownload"],
+            disabled: disableDL
+        }
+    );
+    //List boxes
+    this.controller.setupWidget("listAutoDownloadTime",
+        this.attributes = {
+            label: $L("Download Time"),
+            choices: [
+                { label: "5 minutes", value: "00:05:00" },
+                { label: "1 Hour", value: "00:60:00" },
+                { label: "2 Hours", value: "02:00:00" },
+                { label: "3 Hours", value: "03:00:00" },
+                { label: "6 Hours", value: "06:00:00" },
+                { label: "12 Hours", value: "12:00:00" },
+                { label: "24 Hours", value: "24:00:00" }
+            ]
+        },
+        this.model = {
+            value: appModel.AppSettingsCurrent["AutoDownloadTime"],
+            disabled: disableDL
+        }
+    );
+    if (!disableDL)
+        this.controller.get("divDownloadExplain").innerHTML = "Frequent automatic downloads can have significant impact on battery life.";
+    //More toggles
     this.controller.setupWidget("toggleForceHTTP",
         this.attributes = {
             trueValue: true,
@@ -125,6 +160,8 @@ PreferencesAssistant.prototype.setup = function() {
 
     /* add event handlers to listen to events from widgets */
     Mojo.Event.listen(this.controller.get("listRefresh"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
+    Mojo.Event.listen(this.controller.get("toggleAutoDownload"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
+    Mojo.Event.listen(this.controller.get("listAutoDownloadTime"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.controller.get("toggleForceHTTP"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.controller.get("toggleCustomClientId"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.controller.get("txtCustomClientId"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
@@ -140,6 +177,8 @@ PreferencesAssistant.prototype.activate = function(event) {
     /* put in event handlers here that should only be in effect when this scene is active. For
        example, key handlers that are observing the document */
     //this.showBetaFeatures();
+    //Mojo.Log.info("HTML: " + this.controller.get("listBasic").innerHTML);
+    //divDownloadExplain
 };
 
 PreferencesAssistant.prototype.showBetaFeatures = function() {
@@ -157,6 +196,13 @@ PreferencesAssistant.prototype.handleValueChange = function(event) {
                 this.controller.modelChanged(thisWidgetSetup.model);
                 if (event.value)
                     this.controller.get('txtCustomClientId').mojo.focus();
+                break;
+            }
+        case "toggleAutoDownload":
+            {
+                var thisWidgetSetup = this.controller.getWidgetSetup("listAutoDownloadTime");
+                thisWidgetSetup.model.disabled = !event.value;
+                this.controller.modelChanged(thisWidgetSetup.model);
                 break;
             }
         case "toggleCustomEndPoint":
@@ -217,6 +263,8 @@ PreferencesAssistant.prototype.deactivate = function(event) {
     /* remove any event handlers you added in activate and do any other cleanup that should happen before
        this scene is popped or another scene is pushed on top */
     Mojo.Event.stopListening(this.controller.get("listRefresh"), Mojo.Event.propertyChange, this.handleValueChange);
+    Mojo.Event.stopListening(this.controller.get("toggleAutoDownload"), Mojo.Event.propertyChange, this.handleValueChange);
+    Mojo.Event.stopListening(this.controller.get("listAutoDownloadTime"), Mojo.Event.propertyChange, this.handleValueChange);
     Mojo.Event.stopListening(this.controller.get("toggleForceHTTP"), Mojo.Event.propertyChange, this.handleValueChange);
     Mojo.Event.stopListening(this.controller.get("toggleCustomClientId"), Mojo.Event.propertyChange, this.handleValueChange);
     Mojo.Event.stopListening(this.controller.get("txtCustomClientId"), Mojo.Event.propertyChange, this.handleValueChange);
@@ -225,7 +273,6 @@ PreferencesAssistant.prototype.deactivate = function(event) {
     Mojo.Event.stopListening(this.controller.get("txtShortURL"), Mojo.Event.propertyChange, this.handleValueChange);
     Mojo.Event.stopListening(this.controller.get("txtCustomCreateKey"), Mojo.Event.propertyChange, this.handleValueChange);
     Mojo.Event.stopListening(this.controller.get("btnOK"), Mojo.Event.tap, this.okClick.bind(this));
-
 };
 
 PreferencesAssistant.prototype.cleanup = function(event) {

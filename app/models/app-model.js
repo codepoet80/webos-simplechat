@@ -15,6 +15,7 @@ var AppModel = function() {
     this.LaunchQuery = "";
     this.LastShareSelected = null;
     this.CurrentShareURL = null;
+    this.FileMgrPresent = true;
 
     //Define your app preferences (to be saved by OS)
     this.AppSettingsCurrent = null;
@@ -23,7 +24,8 @@ var AppModel = function() {
         Credential: "",
         SharePhrase: "",
         RefreshTimeout: 60000,
-        BackgroundUpdate: "00:05:00",
+        UseAutoDownload: false,
+        AutoDownloadTime: "00:60:00",
         ForceHTTP: false,
         UseCustomEndpoint: false,
         EndpointURL: "",
@@ -34,7 +36,7 @@ var AppModel = function() {
         UseCustomDownloadPath: false,
         CustomDownloadPath: null,
         FirstRun: true,
-        DebugMode: false
+        DebugMode: false,
     };
 }
 

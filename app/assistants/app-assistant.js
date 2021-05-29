@@ -23,15 +23,20 @@ AppAssistant.prototype.handleLaunch = function(params) {
     appModel.LoadSettings();
     Mojo.Log.info("settings now: " + JSON.stringify(appModel.AppSettingsCurrent));
     
-    if (!appModel.AppSettingsCurrent["BackgroundUpdate"]) {
-        appModel.AppSettingsCurrent["BackgroundUpdate"] = "00:05:00";
+    if (!appModel.AppSettingsCurrent["AutoDownloadTime"]) {
+        appModel.AppSettingsCurrent["AutoDownloadTime"] = "00:60:00";
         appModel.SaveSettings();
     }
 
     //Reset alarms
     systemModel.ClearSystemAlarm("BackgroundDownload");
-    if (appModel.AppSettingsCurrent["BackgroundUpdate"] && appModel.AppSettingsCurrent["BackgroundUpdate"] != "" && appModel.AppSettingsCurrent["BackgroundUpdate"] != -1)
-        systemModel.SetSystemAlarmRelative("BackgroundDownload", appModel.AppSettingsCurrent["BackgroundUpdate"]);
+    Mojo.Log.warn("Background setting is: " + appModel.AppSettingsCurrent["UseAutoDownload"]);
+    if (appModel.AppSettingsCurrent["UseAutoDownload"]) {
+        Mojo.Log.info("Re-establishing background download alarm");
+        systemModel.SetSystemAlarmRelative("BackgroundDownload", appModel.AppSettingsCurrent["AutoDownloadTime"]);
+    } else {
+        Mojo.Log.info("Not setting background download alarm");
+    }
 
     if (!params || !params["action"]) {
         var mainStage = this.controller.getStageProxy("main"); //get the proxy for the stage if it already exists (eg: app is currently open)

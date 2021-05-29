@@ -8,10 +8,29 @@
     <div class="palm-group-title">
         <span x-mojo-loc=''>Basic</span>
     </div>
-    <div class="palm-list">
+    <div class="palm-list" id="listBasic">
         <div class="palm-row first">
             <div class="palm-row-wrapper">
                 <div id="listRefresh" x-mojo-element="ListSelector" title="RefreshTimeout" class="right"></div>
+            </div>
+        </div>
+
+        <div class="palm-row">
+            <div class="palm-row-wrapper">
+                <div x-mojo-element="ToggleButton" id="toggleAutoDownload" title="UseAutoDownload"></div>
+                <div class="title" style="margin-left: -4px; float:left;"><span class="label">Auto Download</span></div>
+            </div>
+        </div>
+
+        <div class="palm-row">
+            <div class="palm-row-wrapper">
+                <div id="listAutoDownloadTime" x-mojo-element="ListSelector" title="AutoDownloadTime" class="right"></div>
+            </div>
+        </div>
+
+        <div class="palm-row">
+            <div class="palm-row-wrapper">
+                <div class="explanation-text" id="divDownloadExplain">Download features require FileMgr, which you can install from PreWare.</div>
             </div>
         </div>
 

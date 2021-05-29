@@ -585,8 +585,10 @@ SystemModel.prototype.bluetoothControlService = function(url, params, cb) {
 }
 
 SystemModel.prototype.GetInstalledApps = function(callBack) {
+    if (callBack)
+        callBack.bind(this);
     if (Mojo.Controller.appInfo.id.indexOf("com.palm") != -1) {
-        Mojo.Log.info("Getting list of running apps.");
+        Mojo.Log.info("Getting list of installed apps.");
         this.appRequest = new Mojo.Service.Request("palm://com.palm.applicationManager/listApps", {
             method: "",
             parameters: {},
@@ -642,7 +644,7 @@ SystemModel.prototype.ListHandlersForURL = function(url, callback) {
                 "url": url
             },
             onSuccess: function(response) {
-                Mojo.Log.info("Handler list success: " + JSON.stringify(response));
+                //Mojo.Log.info("Handler list success: " + JSON.stringify(response));
                 if (response && response.redirectHandlers) {
                     if (callback)
                         callback(response.redirectHandlers);
