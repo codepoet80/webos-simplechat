@@ -210,7 +210,7 @@ DetailAssistant.prototype.handlePopupChoose = function(task, command) {
                     id: "com.palm.app.email",
                     params: {
                         summary: "Check out this link",
-                        text: this.downloadLink
+                        text: appModel.CurrentShareURL
                     }
                 }
             });
@@ -221,13 +221,13 @@ DetailAssistant.prototype.handlePopupChoose = function(task, command) {
                 parameters: {
                     id: 'com.palm.app.messaging',
                     params: {
-                        messageText: "Check out this link: " + this.downloadLink
+                        messageText: "Check out this link: " + appModel.CurrentShareURL
                     }
                 }
             });
             break;
         case "do-copyLink":
-            stageController.setClipboard(this.downloadLink);
+            stageController.setClipboard(appModel.CurrentShareURL);
             Mojo.Controller.getAppController().showBanner({ messageText: 'Link copied!', icon: 'assets/notify.png' }, { source: 'notification' });
             break;
         case "do-copyContent":
