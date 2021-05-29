@@ -182,6 +182,7 @@ DetailAssistant.prototype.handleCommand = function(event) {
                 var usePath = "sharespace/" + appModel.AppSettingsCurrent["Username"];
                 if (appModel.AppSettingsCurrent["UseCustomDownloadPath"] && appModel.AppSettingsCurrent["CustomDownloadPath"] != "")
                     usePath = appModel.AppSettingsCurrent["CustomDownloadPath"];
+                    Mojo.Controller.getAppController().showBanner({ messageText: 'Downloading content...', icon: 'assets/notify.png' }, { source: 'notification' });
                 systemModel.DownloadFile(this.downloadLink, appModel.LastShareSelected.contenttype, usePath, appModel.LastShareSelected.guid, true);
                 break;
         }

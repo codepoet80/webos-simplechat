@@ -11,7 +11,7 @@ function WelcomeAssistant(startup) {
         items: [
             {},
             {
-                label: $L("OK! Let's Go..."),
+                label: $L("Got it!"),
                 command: 'do-continue'
             },
             {}
