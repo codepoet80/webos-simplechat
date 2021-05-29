@@ -112,7 +112,7 @@ DetailAssistant.prototype.activate = function(event) {
         var useImg = appModel.LastShareSelected.content;
         useImg = useImg.split("?");
         useImg = useImg[0] + "?img=" + useImg[1] + "&size=" + this.setPhotoSize();
-        Mojo.Log.warn("Redering img: " + useImg);
+        Mojo.Log.info("Rendering img: " + useImg);
         this.controller.get("divImageContent").innerHTML = "<img src='" + useImg + "' style='max-width:90%;'>";
     }
 

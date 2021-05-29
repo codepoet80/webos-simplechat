@@ -149,7 +149,7 @@ MainAssistant.prototype.activate = function(data) {
             }
             //Some other kind of query launch 
             else {
-                Mojo.Log.warn("Unknown launch query received");
+                Mojo.Log.warn("Ignoring unhandled launch query");
             }
             appModel.LaunchQuery = "";
         }
@@ -404,7 +404,7 @@ MainAssistant.prototype.showNewShareOptions = function() {
         { label: "JSON", value: "application/json", type: "neutral" },
         { label: "Image", value: "image", type: "neutral" },
     ];
-    if (this.DeviceType != "TouchPad")
+    if (this.deviceType != "TouchPad")
         choices.push({ label: "Camera", value: "camera", type: "neutral" });
     choices.push({ label: "Cancel", value: "cancel", type: "negative" });
 
