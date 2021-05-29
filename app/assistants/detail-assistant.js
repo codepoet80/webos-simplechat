@@ -86,7 +86,7 @@ DetailAssistant.prototype.activate = function(event) {
 
     //Calculate links
     if (appModel.LastShareSelected.contenttype.indexOf("image") != -1) {    //image links
-        var link = this.makeShareURLs(appModel.LastShareSelected.thumbnail, "image");
+        var link = this.makeShareURLs(appModel.LastShareSelected.thumbnail, "download");
         appModel.CurrentShareURL = link;
         this.controller.get("divShareLinks").innerHTML += "• <a href='" + link + "'>View in Browser</a>";
         this.controller.get("divShareLinks").innerHTML += " &nbsp;(<a href='javascript:this.doCopy(\"" + link + "\")'>Copy Link</a>)<br>";
@@ -227,7 +227,7 @@ DetailAssistant.prototype.handlePopupChoose = function(task, command) {
             });
             break;
         case "do-copyLink":
-            stageController.setClipboard(appModel.CurrentShareURL);
+            stageController.setClipboard(this.downloadLink);
             Mojo.Controller.getAppController().showBanner({ messageText: 'Link copied!', icon: 'assets/notify.png' }, { source: 'notification' });
             break;
         case "do-copyContent":
