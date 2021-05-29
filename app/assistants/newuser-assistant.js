@@ -77,7 +77,10 @@ NewuserAssistant.prototype.activate = function(event) {
 };
 
 NewuserAssistant.prototype.calculateControlsPosition = function() {
-    this.controller.get("scrollTnC").style.height = (window.innerHeight - 180) + "px";
+    var maxHeight = 380;
+    if ((this.controller.window.innerHeight - 180) < maxHeight)
+        maxHeight = this.controller.window.innerHeight - 180;
+    this.controller.get("scrollTnC").style.height = maxHeight + "px";
 }
 
 NewuserAssistant.prototype.agreeClick = function(event) {
@@ -85,15 +88,13 @@ NewuserAssistant.prototype.agreeClick = function(event) {
     Mojo.Additions.DisableWidget("btnAgree", true);
     this.controller.get("divCredentials").style.display = "block";
     this.controller.get("btnOK").style.display = "block";
-    //this.controller.get("btnCancel").style.display = "none";
     this.generateSharePhrase();
-    this.controller.getSceneScroller().mojo.revealElement(document.getElementById("txtPassword"));
+    this.controller.getSceneScroller().mojo.revealElement(this.controller.get("txtPassword"));
 }
 
 NewuserAssistant.prototype.generateSharePhrase = function() {
     //Get new credentials from service and put into UI
     serviceModel.GetRandomWords(function(response) {
-        Mojo.Log.info(response);
         if (response) {
             this.controller.get("divSharephrase").innerHTML = response;
             this.sharephrase = response;

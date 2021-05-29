@@ -124,7 +124,7 @@ DownloadAssistant.prototype.getFileListForUser = function(username, callback) {
 
 DownloadAssistant.prototype.checkDownloadManagerStatus = function() {
     if (this.downloadList.length > 0) {
-        Mojo.Log.warn("checking if download manager is done...");
+        Mojo.Log.info("checking if download manager is done...");
         this.controller.serviceRequest('palm://com.palm.downloadmanager/', {
             method: 'listPending',
             parameters: {},

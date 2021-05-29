@@ -41,6 +41,21 @@ ShareServiceModel.prototype.buildURL = function(username, actionType) {
     return path;
 }
 
+ShareServiceModel.prototype.MakeShareURL = function(username, guid, type) {
+    var urlBase = this.shortUrlBase;
+    if (this.CustomShortURL == true && this.CustomShortURL != "") {
+        urlBase = this.CustomShortURL;
+    }
+    if (type.indexOf("image") != -1)
+        urlBase = urlBase + "image.php?";
+    else
+        urlBase = urlBase + "t.php?";
+    var data = username + "|" + guid;
+    data = btoa(data);
+    urlBase = urlBase + data;
+    return urlBase;
+}
+
 //HTTP request for list files
 ShareServiceModel.prototype.DoShareListRequest = function(username, credential, callback, errorhandler) {
     if (callback)
@@ -217,7 +232,7 @@ ShareServiceModel.prototype.DoShareAddRequestImage = function (fullFilePath, use
                             return false;
                         } else {
                             if (callback) {
-                                callback(response.responseString);
+                                callback(responseObj);
                             } else {
                                 Mojo.Controller.getAppController().showBanner({ messageText: "Image uploaded!" }, "", "");
                             }
@@ -400,8 +415,13 @@ ShareServiceModel.prototype.QueryShareData = function(query, callback) {
     xmlhttp.send();
     xmlhttp.onreadystatechange = function() {
         if (xmlhttp.readyState == XMLHttpRequest.DONE) {
-            if (callback)
-                callback(xmlhttp.responseText);
+            try {
+                var itemData = JSON.parse(xmlhttp.responseText);
+                if (callback)
+                    callback(itemData);
+            } catch (ex) {
+                Mojo.Log.error("Got bad item query response payload: " + ex);
+            }
         }
     }.bind(this);
 }

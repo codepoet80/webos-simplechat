@@ -31,7 +31,7 @@ AppAssistant.prototype.handleLaunch = function(params) {
     //Reset alarms
     systemModel.ClearSystemAlarm("BackgroundDownload");
     if (appModel.AppSettingsCurrent["UseAutoDownload"] && appModel.AppSettingsCurrent["Username"] != "" && appModel.AppSettingsCurrent["Credential"]) {
-        Mojo.Log.info("Re-establishing background download alarm with time: " + appModel.AppSettingsCurrent["AutoDownloadTime"]);
+        Mojo.Log.warn("Re-establishing background download alarm with time: " + appModel.AppSettingsCurrent["AutoDownloadTime"]);
         systemModel.SetSystemAlarmRelative("BackgroundDownload", appModel.AppSettingsCurrent["AutoDownloadTime"]);
     } else {
         Mojo.Log.warn("Not setting background download alarm since conditions weren't met.");

@@ -12,6 +12,27 @@ var SystemModel = function() {
 
 };
 
+SystemModel.prototype.DetectDevice = function() {
+    //find out what kind of device this is
+    var deviceType;
+    if (Mojo.Environment.DeviceInfo.platformVersionMajor >= 3) {
+        deviceType = "TouchPad";
+        Mojo.Log.info("Device detected as TouchPad");
+    } else {
+        if (window.screen.width == 800 || window.screen.height == 800) {
+            deviceType = "Pre3";
+            Mojo.Log.info("Device detected as Pre3");
+        } else if ((window.screen.width == 480 || window.screen.height == 480) && (window.screen.width == 320 || window.screen.height == 320)) {
+            deviceType = "Pre";
+            Mojo.Log.info("Device detected as Pre or Pre2");
+        } else {
+            deviceType = "Tiny";
+            Mojo.Log.info("Device detected as Pixi or Veer");
+        }
+    }
+    return deviceType;
+}
+
 //Create a named System Alarm using relative time ("in")
 SystemModel.prototype.SetSystemAlarmRelative = function(alarmName, alarmTime) {
     this.wakeupRequest = new Mojo.Service.Request("palm://com.palm.power/timeout", {

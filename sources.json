@@ -29,6 +29,10 @@
         "scenes": "preferences",
         "source": "app/assistants/preferences-assistant.js"
     },
+    {
+        "scenes": "version",
+        "source": "app/assistants/version-assistant.js"
+    },
     {   
         "scenes": "download", 
         "source": "app/assistants/download-assistant.js",

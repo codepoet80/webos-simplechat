@@ -42,9 +42,10 @@ PreferencesAssistant.prototype.setup = function() {
     //List boxes
     this.controller.setupWidget("listAutoDownloadTime",
         this.attributes = {
-            label: $L("Download Time"),
+            label: $L("Download Interval"),
             choices: [
                 { label: "5 minutes", value: "00:05:00" },
+                { label: "30 minutes", value: "00:30:00" },
                 { label: "1 Hour", value: "01:00:00" },
                 { label: "2 Hours", value: "02:00:00" },
                 { label: "3 Hours", value: "03:00:00" },
@@ -61,6 +62,16 @@ PreferencesAssistant.prototype.setup = function() {
     if (appModel.FileMgrPresent)
         this.controller.get("divDownloadExplain").innerHTML = "Frequent automatic downloads can have significant impact on battery life.";
     //More toggles
+    this.controller.setupWidget("toggleCopyLinkOnShare",
+        this.attributes = {
+            trueValue: true,
+            falseValue: false
+        },
+        this.model = {
+            value: appModel.AppSettingsCurrent["CopyLinkOnShare"],
+            disabled: false
+        }
+    );
     this.controller.setupWidget("toggleForceHTTP",
         this.attributes = {
             trueValue: true,
@@ -172,6 +183,7 @@ PreferencesAssistant.prototype.setup = function() {
     Mojo.Event.listen(this.controller.get("listRefresh"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.controller.get("toggleAutoDownload"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.controller.get("listAutoDownloadTime"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
+    Mojo.Event.listen(this.controller.get("toggleCopyLinkOnShare"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.controller.get("toggleForceHTTP"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.controller.get("toggleCustomClientId"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.controller.get("txtCustomClientId"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));

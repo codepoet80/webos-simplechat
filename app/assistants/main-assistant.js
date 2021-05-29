@@ -17,24 +17,8 @@ MainAssistant.prototype.setup = function() {
     //Load preferences
     appModel.LoadSettings();
     Mojo.Log.info("settings now: " + JSON.stringify(appModel.AppSettingsCurrent));
+    this.deviceType = systemModel.DetectDevice();
     this.errorCount = 5;
-
-    //find out what kind of device this is
-    if (Mojo.Environment.DeviceInfo.platformVersionMajor >= 3) {
-        this.DeviceType = "TouchPad";
-        Mojo.Log.info("Device detected as TouchPad");
-    } else {
-        if (window.screen.width == 800 || window.screen.height == 800) {
-            this.DeviceType = "Pre3";
-            Mojo.Log.info("Device detected as Pre3");
-        } else if ((window.screen.width == 480 || window.screen.height == 480) && (window.screen.width == 320 || window.screen.height == 320)) {
-            this.DeviceType = "Pre";
-            Mojo.Log.warn("Device detected as Pre or Pre2");
-        } else {
-            this.DeviceType = "Tiny";
-            Mojo.Log.warn("Device detected as Pixi or Veer");
-        }
-    }
     
     //Loading spinner - with global members for easy toggling later
     this.spinnerAttrs = {
@@ -71,7 +55,8 @@ MainAssistant.prototype.setup = function() {
             { label: "Handle URLs", chosen: false, command: 'do-HandleURLs' },
             { label: "Log In", command: 'do-LogInOut' },
             { label: "About", command: 'do-myAbout' },
-            { label: "Debug Mode", chosen: appModel.AppSettingsCurrent["DebugMode"], command: 'do-debugMode' }      //TODO: Remove Debug Menu
+            { label: "Version Info", command: 'do-versionInfo' },
+            //{ label: "Debug Mode", chosen: appModel.AppSettingsCurrent["DebugMode"], command: 'do-debugMode' }      //TODO: Remove Debug Menu
         ]
     };
 
@@ -142,45 +127,50 @@ MainAssistant.prototype.activate = function(data) {
     thisMenuModel.items[3].label = loggedInLabel;
     this.controller.modelChanged(thisMenuModel);
 
-    if (appModel.AppSettingsCurrent["FirstRun"]) {
-        appModel.AppSettingsCurrent["FirstRun"] = false;
-        appModel.SaveSettings();
-        this.showWelcomePrompt();
-    } else {
-        if (appModel.AppSettingsCurrent["Username"] != "" && appModel.AppSettingsCurrent["Credential"] != "") {
-            Mojo.Log.info("About to fetch shares...");
-            this.controller.get('workingSpinner').mojo.start();
-            this.fetchShares();
+    if (appModel.AppSettingsCurrent["Username"] != "" && appModel.AppSettingsCurrent["Credential"] != "") {
+        Mojo.Log.info("About to fetch shares...");
+        this.controller.get('workingSpinner').mojo.start();
+        this.fetchShares();
 
-            //handle launch with query
-            Mojo.Log.info("Main scene loaded with launch query: " + JSON.stringify(appModel.LaunchQuery) + ", data: " + JSON.stringify(data));
-            if (appModel.LaunchQuery && appModel.LaunchQuery != "") {
-                //JustType Launch
-                if (appModel.LaunchQuery.newshare) {
-                    Mojo.Log.info("Creating new text Share from Just Type");
-                    appModel.LastShareSelected = { guid: "new", contenttype: "text/plain", content: appModel.LaunchQuery.newshare };
-                    this.showNewShareScene();
-                }
-                //URL Launch
-                else if (appModel.LaunchQuery.target && appModel.LaunchQuery.target != "") {
-                    this.handleURLInvocation(appModel.LaunchQuery.target);
-                }
-                //Some other kind of query launch 
-                else {
-                    Mojo.Log.warn("Unknown launch query received");
-                }
-                appModel.LaunchQuery = "";
+        //handle launch with query
+        Mojo.Log.info("Main scene loaded with launch query: " + JSON.stringify(appModel.LaunchQuery) + ", data: " + JSON.stringify(data));
+        var busy = false;
+        if (appModel.LaunchQuery && appModel.LaunchQuery != "") {
+            busy = true;
+            //JustType Launch
+            if (appModel.LaunchQuery.newshare) {
+                Mojo.Log.info("Creating new text Share from Just Type");
+                appModel.LastShareSelected = { guid: "new", contenttype: "text/plain", content: appModel.LaunchQuery.newshare };
+                this.showNewShareScene();
             }
-            if (data && data.filename) {
-                Mojo.Log.info("Creating a new share from Camera sub-launch " + data.filename);
-                Mojo.Controller.getAppController().showBanner({ messageText: "Sharing camera image...", icon: "assets/notify.png" }, "", "");
-                this.uploadCameraImage(data.filename);
+            //URL Launch
+            else if (appModel.LaunchQuery.target && appModel.LaunchQuery.target != "") {
+                this.handleURLInvocation(appModel.LaunchQuery.target);
             }
-        } else {
+            //Some other kind of query launch 
+            else {
+                Mojo.Log.warn("Unknown launch query received");
+            }
             appModel.LaunchQuery = "";
-            this.showWelcomePrompt();
         }
+        //Handle camera sub-launch
+        if (data && data.filename) {
+            busy = true;
+            Mojo.Log.info("Creating a new share from Camera sub-launch " + data.filename);
+            Mojo.Controller.getAppController().showBanner({ messageText: "Sharing camera image...", icon: "assets/notify.png" }, "", "");
+            this.uploadCameraImage(data.filename);
+        }
+        if (!busy && appModel.AppSettingsCurrent["LastVersionRun"] != Mojo.Controller.appInfo.version) {
+            appModel.AppSettingsCurrent["LastVersionRun"] = Mojo.Controller.appInfo.version;
+            appModel.SaveSettings();
+            var stageController = Mojo.Controller.getAppController().getActiveStageController();
+            stageController.pushScene({ name: "version", disableSceneScroller: false });
+        }
+    } else {
+        appModel.LaunchQuery = "";
+        this.showWelcomePrompt();
     }
+
 
     //Check if we're registered to handle URLs
     useShortLink = Mojo.Controller.appInfo.shortURL;
@@ -234,23 +224,16 @@ MainAssistant.prototype.handleUpdateResponse = function(responseObj) {
 }
 
 MainAssistant.prototype.handleURLInvocation = function(query) {
-    Mojo.Log.warn("Handling URL launch of: " + appModel.LaunchQuery.target);
-    serviceModel.QueryShareData(query, function(data) {
-        Mojo.Log.warn("Item query response payload was: " + data);
-        if (data) {
-            try {
-                var itemData = JSON.parse(data);
-                if (itemData.guid) {
-                    appModel.LastShareSelected = itemData;
-                    var stageController = Mojo.Controller.getAppController().getActiveStageController();
-                    stageController.pushScene({ transition: Mojo.Transition.crossFade, name: "detail" });
-                } else {
-                    throw("expected item data missing");
-                }
-            } catch (ex) {
-                Mojo.Log.warn("Got bad item query response payload: " + ex);
-            }
-        }
+    Mojo.Log.info("Handling URL launch of: " + appModel.LaunchQuery.target);
+    serviceModel.QueryShareData(query, function(itemData) {
+        Mojo.Log.info("Item query response payload was: " + JSON.stringify(itemData));
+        if (itemData && itemData.guid) {
+            appModel.LastShareSelected = itemData;
+            var stageController = Mojo.Controller.getAppController().getActiveStageController();
+            stageController.pushScene({ transition: Mojo.Transition.crossFade, name: "detail" });
+        } else {
+            Mojo.Log.error("Item query data invalid.");
+        }  
     });
 }
 
@@ -292,6 +275,10 @@ MainAssistant.prototype.handleCommand = function(event) {
                 break;
             case 'do-myAbout':
                 Mojo.Additions.ShowDialogBox("Share Space - " + Mojo.Controller.appInfo.version, "Share Space sharing service client for webOS. Copyright 2021, Jon Wise. Distributed under an MIT License.<br>Source code available at: https://github.com/codepoet80/webos-sharespace");
+                break;
+            case 'do-versionInfo':
+                var stageController = Mojo.Controller.getAppController().getActiveStageController();
+                stageController.pushScene({ name: "version", disableSceneScroller: false });
                 break;
             case 'do-mySharePhrase':
                 Mojo.Additions.ShowDialogBox("Your Share Phrase", "<b>" + appModel.AppSettingsCurrent["SharePhrase"] + "</b><br><br>Remember that anyone who has your Share Space name and Share Phrase can share with you.");
@@ -388,7 +375,8 @@ MainAssistant.prototype.updateShareListWidget = function(username, results, acce
 
     Mojo.Log.info("Displaying shares for: " + username + " with access level: " + accessLevel);
     this.controller.get("spnUsername").innerHTML = username;
-    this.controller.get('workingSpinner').mojo.stop();
+    this.controller.get("workingSpinner").mojo.stop();
+    this.controller.get("divSpinnerContainer").style.display = "none";
 
     var thisShareList = this.controller.getWidgetSetup("shareList");
     thisShareList.model.items = []; //remove the previous list
@@ -398,6 +386,7 @@ MainAssistant.prototype.updateShareListWidget = function(username, results, acce
         } else {
             results[i].readonly = true;
         }
+        results[i].timestamp = appModel.convertTimeStamp(results[i].timestamp, true);
         thisShareList.model.items.push(results[i]);
     }
 
@@ -457,7 +446,14 @@ MainAssistant.prototype.pickAndUploadImage = function() {
                 
             serviceModel.DoShareAddRequestImage(file.fullPath, appModel.AppSettingsCurrent["Username"], appModel.AppSettingsCurrent["Credential"], mimetype, function(responseObj) {
                 if (responseObj != null) {
-                    Mojo.Controller.getAppController().showBanner({ messageText: "Image shared!", icon: "assets/notify.png" }, "", "");
+                    Mojo.Log.info("image share response: " + JSON.stringify(responseObj));
+                    if (appModel.AppSettingsCurrent["CopyLinkOnShare"]) {
+                        var stageController = Mojo.Controller.getAppController().getActiveStageController()
+                        stageController.setClipboard(serviceModel.MakeShareURL(appModel.AppSettingsCurrent["Username"], responseObj.guid, "image"));
+                        Mojo.Controller.getAppController().showBanner({ messageText: "Image shared, link copied!", icon: "assets/notify.png" }, "", "");
+                    } else {
+                        Mojo.Controller.getAppController().showBanner({ messageText: "Image shared!", icon: "assets/notify.png" }, "", "");
+                    }
                     self.fetchShares();
                 } else {
                     Mojo.Log.error("No usable response from server while uploading share");
@@ -483,7 +479,13 @@ MainAssistant.prototype.uploadCameraImage = function(file) {
     var self = this;
     serviceModel.DoShareAddRequestImage(file, appModel.AppSettingsCurrent["Username"], appModel.AppSettingsCurrent["Credential"], "image/jpeg", function(responseObj) {
         if (responseObj != null) {
-            Mojo.Controller.getAppController().showBanner({ messageText: "Image shared!", icon: "assets/notify.png" }, "", "");
+            if (appModel.AppSettingsCurrent["CopyLinkOnShare"]) {
+                var stageController = Mojo.Controller.getAppController().getActiveStageController()
+                stageController.setClipboard(serviceModel.MakeShareURL(appModel.AppSettingsCurrent["Username"], responseObj.guid, "image"));
+                Mojo.Controller.getAppController().showBanner({ messageText: "Image shared, link copied!", icon: "assets/notify.png" }, "", "");
+            } else {
+                Mojo.Controller.getAppController().showBanner({ messageText: "Image shared!", icon: "assets/notify.png" }, "", "");
+            }
             self.fetchShares();
         } else {
             Mojo.Log.error("No usable response from server while uploading share");

@@ -31,7 +31,7 @@ NewshareAssistant.prototype.setup = function(widget) {
         textAttrib.autoReplace = false;
         textAttrib.textCase = Mojo.Widget.steModeLowerCase;
     }
-    Mojo.Log.warn("**** " + JSON.stringify(appModel.LastShareSelected));
+    Mojo.Log.info("Using Last Share: " + JSON.stringify(appModel.LastShareSelected));
     this.controller.setupWidget("txtShareContent",
         this.attributes = textAttrib,
         this.model = {
@@ -61,14 +61,10 @@ NewshareAssistant.prototype.activate = function(event) {
 };
 
 NewshareAssistant.prototype.calculateControlsPosition = function() {
-
-    this.controller.get("txtShareContent").style.height = (window.innerHeight - 220) + "px";
-    if (appModel.DeviceType == "Touchpad") {
-        //TODO: make room for virtual keyboard     
-        if (window.innerWidth > window.innerHeight) { //landscape
-            //TODO: let's only allow landscape on touchpad
-        }  
-    }
+    var maxHeight = 380;
+    if ((this.controller.window.innerHeight - 210) < maxHeight)
+        maxHeight = this.controller.window.innerHeight - 210;
+    this.controller.get("txtShareContent").style.height = maxHeight + "px";
 }
 
 NewshareAssistant.prototype.handleCancelPress = function(event) {
@@ -101,7 +97,13 @@ NewshareAssistant.prototype.tryAddShare = function() {
     serviceModel.DoShareAddRequestText(appModel.LastShareSelected.content, appModel.AppSettingsCurrent["Username"], appModel.AppSettingsCurrent["Credential"], appModel.LastShareSelected.contenttype, function(responseObj) {
         if (responseObj && responseObj.guid && responseObj.guid != "") {
             Mojo.Log.info("Add share success!");
-            Mojo.Controller.getAppController().showBanner({ messageText: 'Content shared!', icon: 'assets/notify.png' }, { source: 'notification' });
+            if (appModel.AppSettingsCurrent["CopyLinkOnShare"]) {
+                var stageController = Mojo.Controller.getAppController().getActiveStageController()
+                stageController.setClipboard(serviceModel.MakeShareURL(appModel.AppSettingsCurrent["Username"], responseObj.guid, "text"));
+                Mojo.Controller.getAppController().showBanner({ messageText: 'Content shared, link copied!', icon: 'assets/notify.png' }, { source: 'notification' });
+            } else {
+                Mojo.Controller.getAppController().showBanner({ messageText: 'Content shared!', icon: 'assets/notify.png' }, { source: 'notification' });
+            }
         } else {
             this.errorHandler("Share failure: " + JSON.stringify(responseObj))
         }
@@ -119,9 +121,8 @@ NewshareAssistant.prototype.errorHandler = function (errorText, callback) {
 
 NewshareAssistant.prototype.deactivate = function(event) {
     Mojo.Log.info("NewShare assistant deactivated");
-    Mojo.Event.stopListening(this.controller.get("txtShareContent"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
-    Mojo.Event.stopListening(this.controller.get("goButton"), Mojo.Event.tap, this.handleOKPress.bind(this));
-    Mojo.Event.stopListening(this.controller.get("cancelButton"), Mojo.Event.tap, this.handleCancelPress.bind(this));
+    Mojo.Event.stopListening(this.controller.get("goButton"), Mojo.Event.tap, this.handleOKPress);
+    Mojo.Event.stopListening(this.controller.get("cancelButton"), Mojo.Event.tap, this.handleCancelPress);
 };
 
 NewshareAssistant.prototype.cleanup = function(event) {

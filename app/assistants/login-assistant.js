@@ -18,7 +18,7 @@ LoginAssistant.prototype.setup = function(widget) {
     this.sceneAssistant.controller.setupWidget("txtUsername",
         this.attributes = {
             textFieldName: "Username",
-            hintText: "User or Service Name",
+            hintText: "User Name",
             property: 'value',
             multiline: false,
             changeOnKeyPress: true,
@@ -35,7 +35,7 @@ LoginAssistant.prototype.setup = function(widget) {
     this.sceneAssistant.controller.setupWidget("txtCredential",
         this.attributes = {
             textFieldName: "Credential",
-            hintText: "Share phrase or password",
+            hintText: "Admin Password",
             property: 'value',
             multiline: false,
             changeOnKeyPress: true,

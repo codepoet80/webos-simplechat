@@ -82,7 +82,7 @@ DetailAssistant.prototype.activate = function(event) {
     //Bind selected podcast to scene elements
     Mojo.Log.info(JSON.stringify(appModel.LastShareSelected));
     
-    this.controller.get("divShareTitle").innerHTML = "Shared: " + appModel.LastShareSelected.timestamp;
+    this.controller.get("divShareTitle").innerHTML = "Shared: " + appModel.convertTimeStamp(appModel.LastShareSelected.timestamp, true);
 
     //Calculate links
     if (appModel.LastShareSelected.contenttype.indexOf("image") != -1) {    //image links
@@ -109,7 +109,11 @@ DetailAssistant.prototype.activate = function(event) {
     } else if (appModel.LastShareSelected.contenttype == "text/plain") {
         this.controller.get("divTextContent").innerHTML = "<pre>" + appModel.LastShareSelected.content + "</pre>"
     } else {
-        this.controller.get("divImageContent").innerHTML = "<img src='" + appModel.LastShareSelected.content + "' style='max-width:90%;'>";
+        var useImg = appModel.LastShareSelected.content;
+        useImg = useImg.split("?");
+        useImg = useImg[0] + "?img=" + useImg[1] + "&size=" + this.setPhotoSize();
+        Mojo.Log.warn("Redering img: " + useImg);
+        this.controller.get("divImageContent").innerHTML = "<img src='" + useImg + "' style='max-width:90%;'>";
     }
 
     Mojo.Controller.getAppController().showBanner({ messageText: 'Touch2Share Ready!', icon: 'assets/notify.png' }, { source: 'notification' });
@@ -127,6 +131,25 @@ DetailAssistant.prototype.makeShareURLs = function(thumbUrl, type) {
     newURL = newURL.replace("tthumb", type);
     newURL = newURL.replace("ithumb", type);
     return newURL;
+}
+
+DetailAssistant.prototype.setPhotoSize = function() {
+    switch(systemModel.DetectDevice()) {
+        case "TouchPad":
+            return 800;
+            break;
+        case "Pre3":
+            return 400;
+            break;
+        case "Pre":
+            return 300;
+            break;
+        case "Tiny":
+            return 280;
+            break;
+        default:
+            return 400;
+    }
 }
 
 //Handle menu and button bar commands

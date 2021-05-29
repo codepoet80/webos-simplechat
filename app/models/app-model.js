@@ -26,6 +26,7 @@ var AppModel = function() {
         RefreshTimeout: 60000,
         UseAutoDownload: false,
         AutoDownloadTime: "01:00:00",
+        CopyLinkOnShare: true,
         ForceHTTP: false,
         UseCustomEndpoint: false,
         EndpointURL: "",
@@ -35,7 +36,7 @@ var AppModel = function() {
         CustomCreateKey: "",
         UseCustomDownloadPath: false,
         CustomDownloadPath: null,
-        FirstRun: true,
+        LastVersionRun: "0.0.1",
         DebugMode: false,
     };
 }
@@ -92,6 +93,19 @@ AppModel.prototype.CloseDashboardStageByName = function(stageName) {
         Mojo.Log.info(stageName + " dashboard open, closing it...");
         this.controller.closeStage(stageName);
     }
+}
+
+AppModel.prototype.convertTimeStamp = function(timeStamp, isUTC) {
+    if (isUTC) {
+        var offset = new Date().getTimezoneOffset();
+        timeStamp = Date.parse(timeStamp);
+        timeStamp = timeStamp - ((offset * 60) * 1000);
+        timeStamp = new Date(timeStamp);
+    }
+    timeStamp = timeStamp.toLocaleString();
+    timeStamp = timeStamp.split("GMT");
+    timeStamp = timeStamp[0];
+    return timeStamp;
 }
 
 //You probably don't need to change the below functions since they all work against the Cookie defaults you defined above.
