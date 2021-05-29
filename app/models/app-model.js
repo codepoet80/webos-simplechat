@@ -25,7 +25,7 @@ var AppModel = function() {
         SharePhrase: "",
         RefreshTimeout: 60000,
         UseAutoDownload: false,
-        AutoDownloadTime: "00:60:00",
+        AutoDownloadTime: "01:00:00",
         ForceHTTP: false,
         UseCustomEndpoint: false,
         EndpointURL: "",

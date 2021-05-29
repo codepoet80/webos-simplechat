@@ -27,8 +27,8 @@ PreferencesAssistant.prototype.setup = function() {
     );
     //Toggles
     var disableDL = true;
-    if (appModel.FileMgrPresent && appModel.AppSettingsCurrent["UseAutoDownload"])
-    disableDL = false;
+    if (appModel.FileMgrPresent)
+        disableDL = false;
     this.controller.setupWidget("toggleAutoDownload",
         this.attributes = {
             trueValue: true,
@@ -45,12 +45,12 @@ PreferencesAssistant.prototype.setup = function() {
             label: $L("Download Time"),
             choices: [
                 { label: "5 minutes", value: "00:05:00" },
-                { label: "1 Hour", value: "00:60:00" },
+                { label: "1 Hour", value: "01:00:00" },
                 { label: "2 Hours", value: "02:00:00" },
                 { label: "3 Hours", value: "03:00:00" },
                 { label: "6 Hours", value: "06:00:00" },
                 { label: "12 Hours", value: "12:00:00" },
-                { label: "24 Hours", value: "24:00:00" }
+                { label: "24 Hours", value: "23:59:59" }
             ]
         },
         this.model = {
@@ -58,7 +58,7 @@ PreferencesAssistant.prototype.setup = function() {
             disabled: disableDL
         }
     );
-    if (!disableDL)
+    if (appModel.FileMgrPresent)
         this.controller.get("divDownloadExplain").innerHTML = "Frequent automatic downloads can have significant impact on battery life.";
     //More toggles
     this.controller.setupWidget("toggleForceHTTP",
@@ -144,6 +144,16 @@ PreferencesAssistant.prototype.setup = function() {
             disabled: !appModel.AppSettingsCurrent["UseCustomEndpoint"]
         }
     );
+    //Drawer
+    this.controller.setupWidget("drawerSelfHost",
+        this.attributes = {
+            modelProperty: 'open',
+            unstyled: false
+        },
+        this.model = {
+            open: appModel.AppSettingsCurrent["UseCustomEndpoint"]
+        }
+    ); 
 
     //OK Button
     this.controller.setupWidget("btnOK", { type: Mojo.Widget.activityButton }, { label: "Done", disabled: false });
@@ -208,6 +218,9 @@ PreferencesAssistant.prototype.handleValueChange = function(event) {
         case "toggleCustomEndPoint":
             {
                 //Toggle enabled on related text boxes
+                var thisWidgetSetup = this.controller.getWidgetSetup("drawerSelfHost");
+                thisWidgetSetup.model.open = event.value;
+                this.controller.modelChanged(thisWidgetSetup.model);
                 var thisWidgetSetup = this.controller.getWidgetSetup("txtEndpointURL");
                 thisWidgetSetup.model.disabled = !event.value;
                 this.controller.modelChanged(thisWidgetSetup.model);
@@ -255,6 +268,10 @@ PreferencesAssistant.prototype.handleCommand = function(event) {
 };
 
 PreferencesAssistant.prototype.okClick = function(event) {
+    if (this.controller.get('txtEndpointURL').mojo.getValue() == "") {
+        appModel.AppSettingsCurrent["UseCustomEndpoint"] = false;
+        appModel.SaveSettings();
+    }
     var stageController = Mojo.Controller.getAppController().getActiveStageController();
     stageController.popScene();
 }

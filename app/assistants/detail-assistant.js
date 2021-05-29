@@ -60,17 +60,18 @@ DetailAssistant.prototype.setup = function() {
             },
             {
                 items: [
-                    { label: 'Share', command: 'do-share' }
+                    
                 ]
             },
             {
                 items: [
-                    { label: 'Save', icon: 'save', command: 'do-save' },
+                    { label: 'Share', command: 'do-share' },
                 ]
             }
         ]
     };
-
+    if (!appModel.AppSettingsCurrent["UseAutoDownload"])    //If not auto-download, allow manual download
+        this.cmdMenuModel.items[2].items.push({ label: 'Save', icon: 'save', command: 'do-save' })
     this.controller.setupWidget(Mojo.Menu.commandMenu, this.cmdMenuAttributes, this.cmdMenuModel);
 
     /* add event handlers to listen to events from widgets */
@@ -83,14 +84,12 @@ DetailAssistant.prototype.activate = function(event) {
     
     this.controller.get("divShareTitle").innerHTML = "Shared: " + appModel.LastShareSelected.timestamp;
 
-    //Show links
+    //Calculate links
     if (appModel.LastShareSelected.contenttype.indexOf("image") != -1) {    //image links
-
         var link = this.makeShareURLs(appModel.LastShareSelected.thumbnail, "image");
         appModel.CurrentShareURL = link;
         this.controller.get("divShareLinks").innerHTML += "• <a href='" + link + "'>View in Browser</a>";
         this.controller.get("divShareLinks").innerHTML += " &nbsp;(<a href='javascript:this.doCopy(\"" + link + "\")'>Copy Link</a>)<br>";
-        //TODO: We need to handle tapping of the link with an app launch request
         link = this.makeShareURLs(appModel.LastShareSelected.thumbnail, "download");
         this.downloadLink = link;
     } else {    //text links
@@ -100,7 +99,7 @@ DetailAssistant.prototype.activate = function(event) {
         this.controller.get("divShareLinks").innerHTML = "• <a href='" + link + "'>View in Browser</a>";
         this.controller.get("divShareLinks").innerHTML += " &nbsp;(<a href='javascript:this.doCopy(\"" + link + "\")'>Copy Link</a>)<br>";
     }
-    if (appModel.AppSettingsCurrent["DebugMode"]) {
+    if (appModel.AppSettingsCurrent["DebugMode"]) { //If debugging, show links
         this.controller.get("divShareInfo").style.display = "block";
     }
 
@@ -144,6 +143,7 @@ DetailAssistant.prototype.handleCommand = function(event) {
                 var itemsToShow = [
                     { label: 'Open in Browser', command: 'do-browserOpen' },
                     { label: 'Email Link', command: 'do-emailLink' },
+                    { label: 'Message Link', command: 'do-messageLink' },
                     { label: 'Copy Link', command: 'do-copyLink' }
                 ]
                 if (appModel.LastShareSelected.contenttype.indexOf("image") == -1) {
@@ -188,6 +188,17 @@ DetailAssistant.prototype.handlePopupChoose = function(task, command) {
                     params: {
                         summary: "Check out this link",
                         text: this.downloadLink
+                    }
+                }
+            });
+            break;
+        case "do-messageLink":
+            this.controller.serviceRequest('palm://com.palm.applicationManager', {
+                method: 'open',
+                parameters: {
+                    id: 'com.palm.app.messaging',
+                    params: {
+                        messageText: "Check out this link: " + this.downloadLink
                     }
                 }
             });

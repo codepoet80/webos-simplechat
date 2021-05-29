@@ -24,18 +24,17 @@ AppAssistant.prototype.handleLaunch = function(params) {
     Mojo.Log.info("settings now: " + JSON.stringify(appModel.AppSettingsCurrent));
     
     if (!appModel.AppSettingsCurrent["AutoDownloadTime"]) {
-        appModel.AppSettingsCurrent["AutoDownloadTime"] = "00:60:00";
+        appModel.AppSettingsCurrent["AutoDownloadTime"] = appModel.AppSettingsDefaults["AutoDownloadTime"];
         appModel.SaveSettings();
     }
 
     //Reset alarms
     systemModel.ClearSystemAlarm("BackgroundDownload");
-    Mojo.Log.warn("Background setting is: " + appModel.AppSettingsCurrent["UseAutoDownload"]);
-    if (appModel.AppSettingsCurrent["UseAutoDownload"]) {
-        Mojo.Log.info("Re-establishing background download alarm");
+    if (appModel.AppSettingsCurrent["UseAutoDownload"] && appModel.AppSettingsCurrent["Username"] != "" && appModel.AppSettingsCurrent["Credential"]) {
+        Mojo.Log.info("Re-establishing background download alarm with time: " + appModel.AppSettingsCurrent["AutoDownloadTime"]);
         systemModel.SetSystemAlarmRelative("BackgroundDownload", appModel.AppSettingsCurrent["AutoDownloadTime"]);
     } else {
-        Mojo.Log.info("Not setting background download alarm");
+        Mojo.Log.warn("Not setting background download alarm since conditions weren't met.");
     }
 
     if (!params || !params["action"]) {

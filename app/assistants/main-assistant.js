@@ -18,6 +18,23 @@ MainAssistant.prototype.setup = function() {
     appModel.LoadSettings();
     Mojo.Log.info("settings now: " + JSON.stringify(appModel.AppSettingsCurrent));
     this.errorCount = 5;
+
+    //find out what kind of device this is
+    if (Mojo.Environment.DeviceInfo.platformVersionMajor >= 3) {
+        this.DeviceType = "TouchPad";
+        Mojo.Log.info("Device detected as TouchPad");
+    } else {
+        if (window.screen.width == 800 || window.screen.height == 800) {
+            this.DeviceType = "Pre3";
+            Mojo.Log.info("Device detected as Pre3");
+        } else if ((window.screen.width == 480 || window.screen.height == 480) && (window.screen.width == 320 || window.screen.height == 320)) {
+            this.DeviceType = "Pre";
+            Mojo.Log.warn("Device detected as Pre or Pre2");
+        } else {
+            this.DeviceType = "Tiny";
+            Mojo.Log.warn("Device detected as Pixi or Veer");
+        }
+    }
     
     //Loading spinner - with global members for easy toggling later
     this.spinnerAttrs = {
@@ -102,7 +119,8 @@ MainAssistant.prototype.setup = function() {
     }
 };
 
-MainAssistant.prototype.activate = function(event) {
+MainAssistant.prototype.activate = function(data) {
+
     //Set options for service model
     serviceModel.ForceHTTP = appModel.AppSettingsCurrent["ForceHTTP"];
     serviceModel.UseCustomEndpoint = appModel.AppSettingsCurrent["UseCustomEndpoint"];
@@ -124,22 +142,6 @@ MainAssistant.prototype.activate = function(event) {
     thisMenuModel.items[3].label = loggedInLabel;
     this.controller.modelChanged(thisMenuModel);
 
-    //find out what kind of device this is
-    if (Mojo.Environment.DeviceInfo.platformVersionMajor >= 3) {
-        this.DeviceType = "TouchPad";
-        Mojo.Log.info("Device detected as TouchPad");
-    } else {
-        if (window.screen.width == 800 || window.screen.height == 800) {
-            this.DeviceType = "Pre3";
-            Mojo.Log.info("Device detected as Pre3");
-        } else if ((window.screen.width == 480 || window.screen.height == 480) && (window.screen.width == 320 || window.screen.height == 320)) {
-            this.DeviceType = "Pre";
-            Mojo.Log.warn("Device detected as Pre or Pre2");
-        } else {
-            this.DeviceType = "Tiny";
-            Mojo.Log.warn("Device detected as Pixi or Veer");
-        }
-    }
     if (appModel.AppSettingsCurrent["FirstRun"]) {
         appModel.AppSettingsCurrent["FirstRun"] = false;
         appModel.SaveSettings();
@@ -147,17 +149,11 @@ MainAssistant.prototype.activate = function(event) {
     } else {
         if (appModel.AppSettingsCurrent["Username"] != "" && appModel.AppSettingsCurrent["Credential"] != "") {
             Mojo.Log.info("About to fetch shares...");
+            this.controller.get('workingSpinner').mojo.start();
             this.fetchShares();
-            if (appModel.AppSettingsCurrent["RefreshTimeout"] && appModel.AppSettingsCurrent["RefreshTimeout"] > 1000) {
-                Mojo.Log.info("Auto refresh interval: " + appModel.AppSettingsCurrent["RefreshTimeout"]);
-                clearInterval(refreshInt);
-                refreshInt = this.controller.window.setInterval(this.fetchShares.bind(this), appModel.AppSettingsCurrent["RefreshTimeout"]);
-            } else {
-                Mojo.Log.warn("Using Manual Refresh");
-            }
 
             //handle launch with query
-            Mojo.Log.info("Main scene loaded with launch query: " + JSON.stringify(appModel.LaunchQuery));
+            Mojo.Log.info("Main scene loaded with launch query: " + JSON.stringify(appModel.LaunchQuery) + ", data: " + JSON.stringify(data));
             if (appModel.LaunchQuery && appModel.LaunchQuery != "") {
                 //JustType Launch
                 if (appModel.LaunchQuery.newshare) {
@@ -174,6 +170,11 @@ MainAssistant.prototype.activate = function(event) {
                     Mojo.Log.warn("Unknown launch query received");
                 }
                 appModel.LaunchQuery = "";
+            }
+            if (data && data.filename) {
+                Mojo.Log.info("Creating a new share from Camera sub-launch " + data.filename);
+                Mojo.Controller.getAppController().showBanner({ messageText: "Sharing camera image...", icon: "assets/notify.png" }, "", "");
+                this.uploadCameraImage(data.filename);
             }
         } else {
             appModel.LaunchQuery = "";
@@ -353,8 +354,17 @@ MainAssistant.prototype.handlePopupChoose = function(share, command) {
 
 /* Get Share Stuff */
 MainAssistant.prototype.fetchShares = function() {
+
+    this.controller.window.clearInterval(refreshInt);
+    if (appModel.AppSettingsCurrent["RefreshTimeout"] && appModel.AppSettingsCurrent["RefreshTimeout"] > 1000) {
+        Mojo.Log.info("Auto refresh interval: " + appModel.AppSettingsCurrent["RefreshTimeout"]);
+        refreshInt = this.controller.window.setInterval(this.fetchShares.bind(this), appModel.AppSettingsCurrent["RefreshTimeout"]);
+    } else {
+        Mojo.Log.warn("Using Manual Refresh");
+    }
+
     serviceModel.DoShareListRequest(appModel.AppSettingsCurrent["Username"], appModel.AppSettingsCurrent["Credential"], function(responseObj){
-        Mojo.Log.info("ready to process share list: " + JSON.stringify(responseObj));
+        //Mojo.Log.info("ready to process share list: " + JSON.stringify(responseObj));
     
         if (responseObj != null) {
             if (responseObj.shares) {
@@ -378,6 +388,7 @@ MainAssistant.prototype.updateShareListWidget = function(username, results, acce
 
     Mojo.Log.info("Displaying shares for: " + username + " with access level: " + accessLevel);
     this.controller.get("spnUsername").innerHTML = username;
+    this.controller.get('workingSpinner').mojo.stop();
 
     var thisShareList = this.controller.getWidgetSetup("shareList");
     thisShareList.model.items = []; //remove the previous list
@@ -399,11 +410,22 @@ MainAssistant.prototype.updateShareListWidget = function(username, results, acce
 /* New Share Stuff */
 
 MainAssistant.prototype.showNewShareOptions = function() {
+    var choices = [
+        { label: "Text", value: "text/plain", type: "neutral" },
+        { label: "JSON", value: "application/json", type: "neutral" },
+        { label: "Image", value: "image", type: "neutral" },
+    ];
+    if (this.DeviceType != "TouchPad")
+        choices.push({ label: "Camera", value: "camera", type: "neutral" });
+    choices.push({ label: "Cancel", value: "cancel", type: "negative" });
+
     this.controller.showAlertDialog({
         onChoose: function(value) {
             Mojo.Log.info("Choice was: " + value);
             if (value == "image") {
                 this.pickAndUploadImage();
+            } else if (value == "camera") {
+                this.getCameraImage();
             } else if (value == "text/plain" || value == "application/json") {
                 appModel.LastShareSelected.contenttype = value;
                 Mojo.Log.info("LastShareSelected: " + JSON.stringify(appModel.LastShareSelected));
@@ -414,12 +436,7 @@ MainAssistant.prototype.showNewShareOptions = function() {
         },
         title: "New Share",
         message: "What do you want to share?",
-        choices: [
-            { label: "Text", value: "text/plain", type: "neutral" },
-            { label: "JSON", value: "application/json", type: "neutral" },
-            { label: "Image", value: "image", type: "neutral" },
-            { label: "Cancel", value: "cancel", type: "negative" }
-        ]
+        choices: choices
     });
 }
 
@@ -453,6 +470,29 @@ MainAssistant.prototype.pickAndUploadImage = function() {
         }
     }
     Mojo.FilePicker.pickFile(params, this.controller.stageController);
+}
+
+MainAssistant.prototype.getCameraImage = function() {
+    this.controller.stageController.pushScene(
+        { appId: "com.palm.app.camera", name: "capture" },
+        { sublaunch: true, mode: "stil" }
+      ); 
+}
+
+MainAssistant.prototype.uploadCameraImage = function(file) {
+    var self = this;
+    serviceModel.DoShareAddRequestImage(file, appModel.AppSettingsCurrent["Username"], appModel.AppSettingsCurrent["Credential"], "image/jpeg", function(responseObj) {
+        if (responseObj != null) {
+            Mojo.Controller.getAppController().showBanner({ messageText: "Image shared!", icon: "assets/notify.png" }, "", "");
+            self.fetchShares();
+        } else {
+            Mojo.Log.error("No usable response from server while uploading share");
+            Mojo.Controller.getAppController().showBanner({ messageText: "Bad response uploading image", icon: "assets/notify.png" }, "", "");
+        }
+    }.bind(self), function(errorText) {
+        Mojo.Log.error(errorText);
+        Mojo.Controller.getAppController().showBanner({ messageText: "Upload failure: " + errorText, icon: "assets/notify.png" }, "", "");
+    });
 }
 
 MainAssistant.prototype.showNewShareScene = function() {
@@ -530,7 +570,7 @@ MainAssistant.prototype.showLogin = function() {
 MainAssistant.prototype.deactivate = function(event) {
     /* remove any event handlers you added in activate and do any other cleanup that should happen before
        this scene is popped or another scene is pushed on top */
-    clearInterval(refreshInt);
+    this.controller.window.clearInterval(refreshInt);
     Mojo.Event.stopListening(this.controller.get("shareList"), Mojo.Event.listDelete, this.handleListDelete);
     Mojo.Event.stopListening(this.controller.get("shareList"), Mojo.Event.listTap, this.handleListClick);
     Mojo.Event.stopListening(this.controller.get("shareList"), Mojo.Event.listAdd, this.handleListAdd);
@@ -551,8 +591,8 @@ MainAssistant.prototype.errorHandler = function (errorText, callback) {
     Mojo.Log.error("error count: " + this.errorCount + ", " + errorText);
     if (this.errorCount > 5) {
         Mojo.Additions.ShowDialogBox("Sync Error", errorText);
-        clearInterval(refreshInt);
-        Mojo.Controller.getAppController().showBanner({ messageText: "Sync offline", icon: "assets/notify.png" }, "", "");
+        this.controller.window.clearInterval(refreshInt);
+        Mojo.Controller.getAppController().showBanner({ messageText: "Offline", icon: "assets/notify.png" }, "", "");
     }
     if (callback) {
         callback.bind(this);
