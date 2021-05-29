@@ -6,6 +6,7 @@
     "main": "index.html",
     "title": "Share Space",
     "icon": "icon.png",
+    "miniicon": "assets/notify.png",
     "noWindow": true,
     "splashicon": "icon-256.png",
     "uiRevision": "2",

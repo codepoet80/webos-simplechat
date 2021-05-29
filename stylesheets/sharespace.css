@@ -82,3 +82,8 @@ h3 {
 .dashboard-icon-download {
     background: url(../assets/dash-icon.png);
 }
+
+.palm-dashboard-text {
+    font-size: 14px;
+    margin-top: -2px;
+}

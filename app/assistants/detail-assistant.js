@@ -86,14 +86,14 @@ DetailAssistant.prototype.activate = function(event) {
 
     //Calculate links
     if (appModel.LastShareSelected.contenttype.indexOf("image") != -1) {    //image links
-        var link = this.makeShareURLs(appModel.LastShareSelected.thumbnail, "download");
+        var link = serviceModel.MakeShareURL(appModel.AppSettingsCurrent["Username"], appModel.LastShareSelected.guid, "image");
         appModel.CurrentShareURL = link;
         this.controller.get("divShareLinks").innerHTML += "• <a href='" + link + "'>View in Browser</a>";
         this.controller.get("divShareLinks").innerHTML += " &nbsp;(<a href='javascript:this.doCopy(\"" + link + "\")'>Copy Link</a>)<br>";
-        link = this.makeShareURLs(appModel.LastShareSelected.thumbnail, "image");
+        link = this.makeDownloadURL(appModel.LastShareSelected.thumbnail, "i");
         this.downloadLink = link;
     } else {    //text links
-        var link = this.makeShareURLs(appModel.LastShareSelected.thumbnail, "t");
+        var link = serviceModel.MakeShareURL(appModel.LastShareSelected.thumbnail, "t");
         appModel.CurrentShareURL = link;
         this.downloadLink = link;
         this.controller.get("divShareLinks").innerHTML = "• <a href='" + link + "'>View in Browser</a>";
@@ -126,7 +126,7 @@ doCopy = function(link) {
     Mojo.Controller.getAppController().showBanner({ messageText: 'Link copied!', icon: 'assets/notify.png' }, { source: 'notification' });
 }
 
-DetailAssistant.prototype.makeShareURLs = function(thumbUrl, type) {
+DetailAssistant.prototype.makeDownloadURL = function(thumbUrl, type) {
     var newURL = thumbUrl;
     newURL = newURL.replace("tthumb", type);
     newURL = newURL.replace("ithumb", type);
@@ -198,10 +198,11 @@ DetailAssistant.prototype.handlePopupChoose = function(task, command) {
                 parameters: {
                     id: 'com.palm.app.browser',
                     params: {
-                        "target": this.downloadLink
+                        "target": appModel.CurrentShareURL
                     }
                 }
             });
+            Mojo.Log.warn("target: " + appModel.CurrentShareURL);
             break;
         case "do-emailLink":
             this.controller.serviceRequest("palm://com.palm.applicationManager", {
@@ -210,10 +211,11 @@ DetailAssistant.prototype.handlePopupChoose = function(task, command) {
                     id: "com.palm.app.email",
                     params: {
                         summary: "Check out this link",
-                        text: this.downloadLink
+                        text: appModel.CurrentShareURL
                     }
                 }
             });
+            Mojo.Log.warn("target: " + appModel.CurrentShareURL);
             break;
         case "do-messageLink":
             this.controller.serviceRequest('palm://com.palm.applicationManager', {
@@ -225,10 +227,12 @@ DetailAssistant.prototype.handlePopupChoose = function(task, command) {
                     }
                 }
             });
+            Mojo.Log.warn("target: " + appModel.CurrentShareURL);
             break;
         case "do-copyLink":
-            stageController.setClipboard(this.downloadLink);
+            stageController.setClipboard(appModel.CurrentShareURL);
             Mojo.Controller.getAppController().showBanner({ messageText: 'Link copied!', icon: 'assets/notify.png' }, { source: 'notification' });
+            Mojo.Log.warn("target: " + appModel.CurrentShareURL);
             break;
         case "do-copyContent":
             stageController.setClipboard(appModel.LastShareSelected.content);

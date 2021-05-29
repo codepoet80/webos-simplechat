@@ -47,12 +47,14 @@ ShareServiceModel.prototype.MakeShareURL = function(username, guid, type) {
         urlBase = this.CustomShortURL;
     }
     if (type.indexOf("image") != -1)
-        urlBase = urlBase + "image.php?";
+        urlBase = urlBase + "download.php?";
     else
         urlBase = urlBase + "t.php?";
     var data = username + "|" + guid;
     data = btoa(data);
     urlBase = urlBase + data;
+    if (urlBase.indexOf("==") == urlBase.length - 2)
+        urlBase = urlBase.slice(0, urlBase.length - 2)
     return urlBase;
 }
 

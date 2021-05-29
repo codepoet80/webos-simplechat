@@ -86,7 +86,7 @@ DownloadAssistant.prototype.checkIfDownloadNeeded = function(username, results, 
                 if (!found) {
                     var newURL = results[i].thumbnail;
                     newURL = newURL.replace("tthumb", "t");
-                    newURL = newURL.replace("ithumb", "download");
+                    newURL = newURL.replace("ithumb", "i");
                     Mojo.Log.info("Need to download: " + newURL);
                     this.downloadList.push(newURL);
                     var usePath = "sharespace/" + username;
@@ -98,7 +98,7 @@ DownloadAssistant.prototype.checkIfDownloadNeeded = function(username, results, 
         }
         Mojo.Log.info("Files in download list: " + this.downloadList.length);
         if (this.downloadList.length > 0) {
-            this.displayDashboard(Mojo.Controller.appInfo.title, "Downloading " + this.downloadList.length + " shares...");
+            this.displayDashboard(Mojo.Controller.appInfo.title, "Downloading shares...", this.downloadList.length);
         } else {
             this.displayDashboard(Mojo.Controller.appInfo.title, "No new shares to download.");
         }
@@ -133,7 +133,7 @@ DownloadAssistant.prototype.checkDownloadManagerStatus = function() {
                 if (response) {
                     if (response.count && response.count > 0) {
                         Mojo.Log.info("Remaining downloads: " + response.count);
-                        this.displayDashboard(Mojo.Controller.appInfo.title, "Downloading " + response.count + " shares...");
+                        this.displayDashboard(Mojo.Controller.appInfo.title, "Downloading shares...", response.count);
                     } else {
                         Mojo.Log.info("Download Manager completed all downloads!");
                         this.controller.window.clearInterval(downloadMgrInt);
