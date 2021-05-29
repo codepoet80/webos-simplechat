@@ -90,7 +90,7 @@ DetailAssistant.prototype.activate = function(event) {
         appModel.CurrentShareURL = link;
         this.controller.get("divShareLinks").innerHTML += "• <a href='" + link + "'>View in Browser</a>";
         this.controller.get("divShareLinks").innerHTML += " &nbsp;(<a href='javascript:this.doCopy(\"" + link + "\")'>Copy Link</a>)<br>";
-        link = this.makeShareURLs(appModel.LastShareSelected.thumbnail, "download");
+        link = this.makeShareURLs(appModel.LastShareSelected.thumbnail, "image");
         this.downloadLink = link;
     } else {    //text links
         var link = this.makeShareURLs(appModel.LastShareSelected.thumbnail, "t");
@@ -198,7 +198,7 @@ DetailAssistant.prototype.handlePopupChoose = function(task, command) {
                 parameters: {
                     id: 'com.palm.app.browser',
                     params: {
-                        "target": appModel.CurrentShareURL
+                        "target": this.downloadLink
                     }
                 }
             });
@@ -210,7 +210,7 @@ DetailAssistant.prototype.handlePopupChoose = function(task, command) {
                     id: "com.palm.app.email",
                     params: {
                         summary: "Check out this link",
-                        text: appModel.CurrentShareURL
+                        text: this.downloadLink
                     }
                 }
             });

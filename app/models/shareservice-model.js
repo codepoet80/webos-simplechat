@@ -47,7 +47,7 @@ ShareServiceModel.prototype.MakeShareURL = function(username, guid, type) {
         urlBase = this.CustomShortURL;
     }
     if (type.indexOf("image") != -1)
-        urlBase = urlBase + "download.php?";
+        urlBase = urlBase + "image.php?";
     else
         urlBase = urlBase + "t.php?";
     var data = username + "|" + guid;
@@ -406,6 +406,7 @@ ShareServiceModel.prototype.QueryShareData = function(query, callback) {
         callback = callback.bind(this);
 
     var theQuery = query;
+    theQuery = theQuery.replace("download.php", "q.php");
     theQuery = theQuery.replace("image.php", "q.php");
     theQuery = theQuery.replace("t.php", "q.php");
     Mojo.Log.warn("Querying share item with URL: " + theQuery);
@@ -420,7 +421,7 @@ ShareServiceModel.prototype.QueryShareData = function(query, callback) {
                 if (callback)
                     callback(itemData);
             } catch (ex) {
-                Mojo.Log.error("Got bad item query response payload: " + ex);
+                Mojo.Log.error("Got bad item query response payload: " + ex, xmlhttp.responseText);
             }
         }
     }.bind(this);
