@@ -85,7 +85,7 @@ DetailAssistant.prototype.activate = function(event) {
     this.controller.get("divShareTitle").innerHTML = "Shared: " + appModel.convertTimeStamp(appModel.LastShareSelected.timestamp, true);
 
     //Calculate links
-    if (appModel.LastShareSelected.contenttype.indexOf("image") != -1) {    //image links
+    if (appModel.LastShareSelected && appModel.LastShareSelected.contenttype && appModel.LastShareSelected.contenttype.indexOf("image") != -1) {    //image links
         var link = serviceModel.MakeShareURL(appModel.AppSettingsCurrent["Username"], appModel.LastShareSelected.guid, "image");
         appModel.CurrentShareURL = link;
         this.controller.get("divShareLinks").innerHTML += "• <a href='" + link + "'>View in Browser</a>";
@@ -93,7 +93,7 @@ DetailAssistant.prototype.activate = function(event) {
         link = this.makeDownloadURL(appModel.LastShareSelected.thumbnail, "i");
         this.downloadLink = link;
     } else {    //text links
-        var link = serviceModel.MakeShareURL(appModel.LastShareSelected.thumbnail, "t");
+        var link = serviceModel.MakeShareURL(appModel.AppSettingsCurrent["Username"], appModel.LastShareSelected.guid, "t");
         appModel.CurrentShareURL = link;
         this.downloadLink = link;
         this.controller.get("divShareLinks").innerHTML = "• <a href='" + link + "'>View in Browser</a>";
@@ -102,7 +102,6 @@ DetailAssistant.prototype.activate = function(event) {
     if (appModel.AppSettingsCurrent["DebugMode"]) { //If debugging, show links
         this.controller.get("divShareInfo").style.display = "block";
     }
-
     //Show actual content
     if (appModel.LastShareSelected.contenttype == "application/json") {
         this.controller.get("divTextContent").innerHTML = "<pre>" + JSON.stringify(appModel.LastShareSelected.content, null, 1) + "</pre>"
