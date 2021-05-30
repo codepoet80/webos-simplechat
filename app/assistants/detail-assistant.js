@@ -246,7 +246,6 @@ DetailAssistant.prototype.deactivate = function(event) {
     /* remove any event handlers you added in activate and do any other cleanup that should happen before
        this scene is popped or another scene is pushed on top */
 
-    //Mojo.Event.stopListening(this.controller.get("btnOK"), Mojo.Event.tap, this.okClick.bind(this));
 };
 
 DetailAssistant.prototype.cleanup = function(event) {

@@ -178,6 +178,12 @@ PreferencesAssistant.prototype.setup = function() {
         ]
     };
     this.controller.setupWidget(Mojo.Menu.appMenu, this.appMenuAttributes, this.appMenuModel);
+    
+};
+
+PreferencesAssistant.prototype.activate = function(event) {
+    /* put in event handlers here that should only be in effect when this scene is active. For
+       example, key handlers that are observing the document */
 
     /* add event handlers to listen to events from widgets */
     Mojo.Event.listen(this.controller.get("listRefresh"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
@@ -192,15 +198,6 @@ PreferencesAssistant.prototype.setup = function() {
     Mojo.Event.listen(this.controller.get("txtShortURL"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.controller.get("txtCustomCreateKey"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.controller.get("btnOK"), Mojo.Event.tap, this.okClick.bind(this));
-    
-};
-
-PreferencesAssistant.prototype.activate = function(event) {
-    /* put in event handlers here that should only be in effect when this scene is active. For
-       example, key handlers that are observing the document */
-    //this.showBetaFeatures();
-    //Mojo.Log.info("HTML: " + this.controller.get("listBasic").innerHTML);
-    //divDownloadExplain
 };
 
 PreferencesAssistant.prototype.showBetaFeatures = function() {
@@ -280,15 +277,17 @@ PreferencesAssistant.prototype.handleCommand = function(event) {
 };
 
 PreferencesAssistant.prototype.okClick = function(event) {
-    if (this.controller.get('txtEndpointURL').mojo.getValue() == "") {
-        appModel.AppSettingsCurrent["UseCustomEndpoint"] = false;
-        appModel.SaveSettings();
-    }
     var stageController = Mojo.Controller.getAppController().getActiveStageController();
     stageController.popScene();
 }
 
 PreferencesAssistant.prototype.deactivate = function(event) {
+    if (this.controller.get('txtEndpointURL').mojo.getValue() == "") {
+        appModel.AppSettingsCurrent["UseCustomEndpoint"] = false;
+    }
+    appModel.SaveSettings();
+    appModel.EstablishAlarms();
+
     /* remove any event handlers you added in activate and do any other cleanup that should happen before
        this scene is popped or another scene is pushed on top */
     Mojo.Event.stopListening(this.controller.get("listRefresh"), Mojo.Event.propertyChange, this.handleValueChange);
@@ -301,7 +300,7 @@ PreferencesAssistant.prototype.deactivate = function(event) {
     Mojo.Event.stopListening(this.controller.get("txtEndpointURL"), Mojo.Event.propertyChange, this.handleValueChange);
     Mojo.Event.stopListening(this.controller.get("txtShortURL"), Mojo.Event.propertyChange, this.handleValueChange);
     Mojo.Event.stopListening(this.controller.get("txtCustomCreateKey"), Mojo.Event.propertyChange, this.handleValueChange);
-    Mojo.Event.stopListening(this.controller.get("btnOK"), Mojo.Event.tap, this.okClick.bind(this));
+    Mojo.Event.stopListening(this.controller.get("btnOK"), Mojo.Event.tap, this.okClick);
 };
 
 PreferencesAssistant.prototype.cleanup = function(event) {

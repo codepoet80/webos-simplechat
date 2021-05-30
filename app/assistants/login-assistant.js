@@ -120,10 +120,10 @@ LoginAssistant.prototype.deactivate = function(event) {
     Mojo.Log.info("Login assistant deactivated");
     /* remove any event handlers you added in activate and do any other cleanup that should happen before
        this scene is popped or another scene is pushed on top */
-    Mojo.Event.stopListening(this.sceneAssistant.controller.get("txtUsername"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
-    Mojo.Event.stopListening(this.sceneAssistant.controller.get("txtCredential"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
-    Mojo.Event.stopListening(this.sceneAssistant.controller.get("goButton"), Mojo.Event.tap, this.handleGoPress.bind(this));
-    Mojo.Event.stopListening(this.sceneAssistant.controller.get("cancelButton"), Mojo.Event.tap, this.handleCancelPress.bind(this));
+    Mojo.Event.stopListening(this.sceneAssistant.controller.get("txtUsername"), Mojo.Event.propertyChange, this.handleValueChange);
+    Mojo.Event.stopListening(this.sceneAssistant.controller.get("txtCredential"), Mojo.Event.propertyChange, this.handleValueChange);
+    Mojo.Event.stopListening(this.sceneAssistant.controller.get("goButton"), Mojo.Event.tap, this.handleGoPress);
+    Mojo.Event.stopListening(this.sceneAssistant.controller.get("cancelButton"), Mojo.Event.tap, this.handleCancelPress);
 };
 
 LoginAssistant.prototype.cleanup = function(event) {
