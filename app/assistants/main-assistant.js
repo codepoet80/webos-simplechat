@@ -386,7 +386,7 @@ MainAssistant.prototype.updateShareListWidget = function(username, results, acce
         } else {
             results[i].readonly = true;
         }
-        results[i].timestamp = appModel.convertTimeStamp(results[i].timestamp, true);
+        results[i].timestamp = appModel.ConvertTimeStamp(results[i].timestamp, true);
         thisShareList.model.items.push(results[i]);
     }
 

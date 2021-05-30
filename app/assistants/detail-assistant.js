@@ -66,12 +66,11 @@ DetailAssistant.prototype.setup = function() {
             {
                 items: [
                     { label: 'Share', command: 'do-share' },
+                    { label: 'Save', icon: 'save', command: 'do-save' }
                 ]
             }
         ]
     };
-    if (!appModel.AppSettingsCurrent["UseAutoDownload"])    //If not auto-download, allow manual download
-        this.cmdMenuModel.items[2].items.push({ label: 'Save', icon: 'save', command: 'do-save' })
     this.controller.setupWidget(Mojo.Menu.commandMenu, this.cmdMenuAttributes, this.cmdMenuModel);
 
     /* add event handlers to listen to events from widgets */
@@ -82,7 +81,7 @@ DetailAssistant.prototype.activate = function(event) {
     //Bind selected podcast to scene elements
     Mojo.Log.info(JSON.stringify(appModel.LastShareSelected));
     
-    this.controller.get("divShareTitle").innerHTML = "Shared: " + appModel.convertTimeStamp(appModel.LastShareSelected.timestamp, true);
+    this.controller.get("divShareTitle").innerHTML = "Shared: " + appModel.ConvertTimeStamp(appModel.LastShareSelected.timestamp, true);
 
     //Calculate links
     if (appModel.LastShareSelected && appModel.LastShareSelected.contenttype && appModel.LastShareSelected.contenttype.indexOf("image") != -1) {    //image links

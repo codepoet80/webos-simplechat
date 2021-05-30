@@ -106,7 +106,7 @@ AppModel.prototype.EstablishAlarms = function() {
     }
 }
 
-AppModel.prototype.convertTimeStamp = function(timeStamp, isUTC) {
+AppModel.prototype.ConvertTimeStamp = function(timeStamp, isUTC) {
     if (isUTC) {
         var offset = new Date().getTimezoneOffset();
         timeStamp = Date.parse(timeStamp);
