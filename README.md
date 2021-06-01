@@ -1,6 +1,9 @@
 # Share Space app for webOS
 
-Share Space sharing service client for legacy Palm/HP webOS devices, depends on back-end service listed below.
+![Share Space Icon](icon.png)
+
+Share Space is a sharing service app for legacy Palm/HP webOS devices, which depends on the back-end service listed below.
+You can download it for your webOS Device from the [webOS Archive App Museum II](appcatalog.webosarchive.com).
 
 Tested on Pre, Pre2, Pre3, Veer and Touchpad.
 
