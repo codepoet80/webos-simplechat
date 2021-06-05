@@ -5,7 +5,15 @@ function VersionAssistant(startup) {
     this.startupMessage = Mojo.Controller.appInfo.startupMessage;
 
     //New Features
-    this.changelog = [{
+    this.changelog = [
+        {
+            version: "Version 1.0.1 Changes",
+            detail: [
+                "Add download button to detail scene",
+                "Fix a layout issue",
+            ]
+        },
+        {
             version: "Version 1.0.0 Features",
             detail: [
                 "Wirelessly add photos to Exhibition from anywhere with automatic downloads -- just turn it on in Preferences (requires FileMgr)",
