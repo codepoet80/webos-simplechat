@@ -612,13 +612,9 @@ MainAssistant.prototype.updateChatsList = function(results) {
                 if (newMessages[n].message != thisWidgetSetup.model.items[m].message ||
                     newMessages[n].likes != thisWidgetSetup.model.items[m].likes ||
                     newMessages[n].color != thisWidgetSetup.model.items[m].color) {
-                    //Mojo.Log.info("Updating message from list at position " + m);
-                    //Mojo.Log.info("Old Message:          " + JSON.stringify(thisWidgetSetup.model.items[m]));
                     thisWidgetSetup.model.items[m] = newMessages[n];
                     this.controller.get('chatList').mojo.noticeUpdatedItems(m, [thisWidgetSetup.model.items[m]]);
                     changed = true;
-                    //Mojo.Log.info("New Message should be: " + JSON.stringify(newMessages[n]));
-                    //Mojo.Log.info("New Message is       : " + JSON.stringify(thisWidgetSetup.model.items[m]));
                 }
             }
             if (changed)
@@ -682,6 +678,7 @@ MainAssistant.prototype.updateChatsList = function(results) {
 MainAssistant.prototype.handleItemRendered = function(listWidget, itemModel, itemNode) {
     itemNode.innerHTML = this.unescapeEntities(itemNode.innerHTML);
     itemNode.innerHTML = this.replaceImageLinks(itemNode.innerHTML);
+    itemNode.innerHTML = this.parseShareSpaceLinks(itemNode.innerHTML);
     if (itemNode.innerHTML.indexOf("</span> </div>") != -1) {
         itemNode.innerHTML = itemModel.message;
         Mojo.Log.warn("**** EMPTY MESSAGE RENDERED! " + JSON.stringify(itemModel));
@@ -810,6 +807,39 @@ MainAssistant.prototype.replaceImageLinks = function(str) {
     return str;
 }
 
+MainAssistant.prototype.parseShareSpaceLinks = function(str) {
+    if (appModel.AppSettingsCurrent["ShowWOSAThumbs"] == undefined) {
+        Mojo.Log.warn("Thumbnail setting missing, adding with default value: " + appModel.AppSettingsDefaults["ShowWOSAThumbs"]);
+        appModel.AppSettingsCurrent["ShowWOSAThumbs"] = appModel.AppSettingsDefaults["ShowWOSAThumbs"];
+        appModel.SaveSettings();
+    }
+    if (appModel.AppSettingsCurrent["ShowWOSAThumbs"] == true) {
+        if (str.indexOf("wosa.link") != -1) {
+            Mojo.Log.info("Found WOSA link to parse!");
+            str = str.replace("download.php", "image.php");
+            var linkPortion = str.split("?");
+            if (linkPortion.length > 0) {
+                linkPortion = linkPortion[1]
+                linkPortion = linkPortion.replace("\"", " ");
+                linkPortion = linkPortion.replace("'", " ");
+                linkPortion = linkPortion.replace("<", " ");
+                linkPortion = linkPortion.replace(">", " ");
+                linkPortion = linkPortion.split(" ");
+                linkPortion = linkPortion[0];
+                if (str.indexOf("t.php") != -1) {
+                    linkPortion = "http://wosa.link/tthumb.php?" + linkPortion;
+                } else {
+                    linkPortion = "http://wosa.link/ithumb.php?" + linkPortion;
+                }
+                var thumbnail = "<img src=\"" + linkPortion + "\" style=\"float:right; width: 64px; height: 64px; margin-top: -2px;\"> "
+                str = thumbnail + str;
+                Mojo.Log.warn("Using html: " + str);
+            }
+        }
+    }
+    return str;
+}
+
 MainAssistant.prototype.convertTimeStamp = function(timeStamp, isUTC) {
     if (isUTC) {
         var offset = new Date().getTimezoneOffset();
@@ -910,7 +940,6 @@ MainAssistant.prototype.deactivate = function(event) {
     //this.controller.document.getElementById("divComposeTitle").removeEventListener("click", this.toggleCommandMenu.bind(this));
     this.controller.document.getElementById("spanCompose").removeEventListener("click", this.toggleCommandMenu.bind(this));
     this.controller.document.getElementById("imgTwisty").removeEventListener("click", this.toggleCommandMenu.bind(this));
-
 
     Mojo.Event.stopListening(this.controller.stageController.document, Mojo.Event.stageActivate, this.activateWindow);
     Mojo.Event.stopListening(this.controller.stageController.document, Mojo.Event.stageDeactivate, this.deactivateWindow);

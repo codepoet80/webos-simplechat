@@ -6,6 +6,11 @@ function VersionAssistant(startup) {
 
     //New Features
     this.changelog = [{
+            version: "Version 1.5.0",
+            detail: [
+                "Added ability to parse Share Services links and show thumbnails. You can disable thumbnails in the Preferences.",
+            ]
+        },{
             version: "Version 1.4.1",
             detail: [
                 "Add support for some basic markdown",

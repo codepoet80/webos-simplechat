@@ -79,6 +79,17 @@ PreferencesAssistant.prototype.setup = function() {
             disabled: false
         }
     );
+    //Thumbnail toggle
+    this.controller.setupWidget("toggleThumbs",
+        this.attributes = {
+            trueValue: true,
+            falseValue: false
+        },
+        this.model = {
+            value: appModel.AppSettingsCurrent["ShowWOSAThumbs"],
+            disabled: false
+        }
+    );
     //Setup sound picker
     this.soundChoices = {
         choices: [
@@ -168,6 +179,7 @@ PreferencesAssistant.prototype.setup = function() {
     Mojo.Event.listen(this.controller.get("listForegroundUpdate"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.controller.get("listBackgroundUpdate"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.controller.get("toggleEmojis"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
+    Mojo.Event.listen(this.controller.get("toggleThumbs"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.controller.get("listEnterSubmits"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.controller.get("listAlertSound"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.controller.get("txtClientAPI"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
@@ -192,7 +204,9 @@ PreferencesAssistant.prototype.handleValueChange = function(event) {
     Mojo.Log.info(event.srcElement.id + " value changed to " + event.value);
     switch (event.srcElement.id) {
         case "toggleEmojis":
-            Mojo.Log.info("Should show banner!");
+            Mojo.Controller.getAppController().showBanner({ messageText: "Re-launch app to apply this setting" }, "", "");
+            break;
+        case "toggleThumbs":
             Mojo.Controller.getAppController().showBanner({ messageText: "Re-launch app to apply this setting" }, "", "");
             break;
         case "listAlertSound":
@@ -299,6 +313,7 @@ PreferencesAssistant.prototype.deactivate = function(event) {
     Mojo.Event.stopListening(this.controller.get("listForegroundUpdate"), Mojo.Event.propertyChange, this.handleValueChange);
     Mojo.Event.stopListening(this.controller.get("listBackgroundUpdate"), Mojo.Event.propertyChange, this.handleValueChange);
     Mojo.Event.stopListening(this.controller.get("toggleEmojis"), Mojo.Event.propertyChange, this.handleValueChange);
+    Mojo.Event.stopListening(this.controller.get("toggleThumbs"), Mojo.Event.propertyChange, this.handleValueChange);
     Mojo.Event.stopListening(this.controller.get("listEnterSubmits"), Mojo.Event.propertyChange, this.handleValueChange);
     Mojo.Event.stopListening(this.controller.get("listAlertSound"), Mojo.Event.propertyChange, this.handleValueChange);
     Mojo.Event.stopListening(this.controller.get("toggleClientAPI"), Mojo.Event.propertyChange, this.handleValueChange);
