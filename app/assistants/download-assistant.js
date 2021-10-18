@@ -19,6 +19,15 @@ DownloadAssistant.prototype.setup = function() {
 
 DownloadAssistant.prototype.activate = function(event) {
     Mojo.Log.info("Dashboard activating!");
+    //Set options for service model
+    serviceModel.ForceHTTP = appModel.AppSettingsCurrent["ForceHTTP"];
+    serviceModel.UseCustomEndpoint = appModel.AppSettingsCurrent["UseCustomEndpoint"];
+    serviceModel.CustomEndpointURL = appModel.AppSettingsCurrent["EndpointURL"];
+    serviceModel.CustomShortURL = appModel.AppSettingsCurrent["ShortURL"];
+    serviceModel.CustomCreateKey = appModel.AppSettingsCurrent["CustomCreateKey"];
+    serviceModel.UseCustomClientId = appModel.AppSettingsCurrent["UseCustomClientId"];
+    serviceModel.CustomClientId = appModel.AppSettingsCurrent["CustomClientId"];
+    
     this.fetchShares();
 }
 

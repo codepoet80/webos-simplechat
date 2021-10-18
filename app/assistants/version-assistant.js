@@ -7,6 +7,12 @@ function VersionAssistant(startup) {
     //New Features
     this.changelog = [
         {
+            version: "Version 1.0.2 Changes",
+            detail: [
+                "Fixes a bug that prevents background downloads when Always Use HTTP is on",
+            ]
+        },
+        {
             version: "Version 1.0.1 Changes",
             detail: [
                 "Add download button to detail scene",
