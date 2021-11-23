@@ -679,6 +679,7 @@ MainAssistant.prototype.handleItemRendered = function(listWidget, itemModel, ite
     itemNode.innerHTML = this.unescapeEntities(itemNode.innerHTML);
     itemNode.innerHTML = this.replaceImageLinks(itemNode.innerHTML);
     itemNode.innerHTML = this.parseShareSpaceLinks(itemNode.innerHTML);
+    itemNode.innerHTML = this.parseImgurLinks(itemNode.innerHTML);
     if (itemNode.innerHTML.indexOf("</span> </div>") != -1) {
         itemNode.innerHTML = itemModel.message;
         Mojo.Log.warn("**** EMPTY MESSAGE RENDERED! " + JSON.stringify(itemModel));
@@ -795,14 +796,17 @@ MainAssistant.prototype.unescapeEntities = function(str) {
 }
 
 MainAssistant.prototype.replaceImageLinks = function(str) {
+    var urlBase = serviceModel.makeServiceUrl(this.serviceEndpointBase, "image.php") + "?";
+
     var pattern = /href=\"(http)?:?(\/\/[^"']*\.(?:png|jpg|jpeg|gif|png|svg))/g;
     str = str.replace(pattern, function(match, protocol, url) {
-        return "href=\"http://chat.webosarchive.com/image.php?" + btoa("http:" + url);
+        return "href=\"" + urlBase + btoa("http:" + url);
     });
 
     var pattern = /href=\"(https)?:?(\/\/[^"']*\.(?:png|jpg|jpeg|gif|png|svg))/g;
     str = str.replace(pattern, function(match, protocol, url) {
-        return "href=\"http://chat.webosarchive.com/image.php?" + btoa("https:" + url);
+        return "href=\"" + urlBase + btoa("https:" + url);
+        //return "href=\"http://chat.webosarchive.com/image.php?" + btoa("https:" + url);
     });
     return str;
 }
@@ -838,6 +842,25 @@ MainAssistant.prototype.parseShareSpaceLinks = function(str) {
         }
     }
     return str;
+}
+
+MainAssistant.prototype.parseImgurLinks = function(str) {
+    var newStr = str;
+    if (str.indexOf("https://imgur.com") != -1) {
+        Mojo.Log.error("Found Imgur link to parse!");
+        var urlBase = serviceModel.makeServiceUrl(this.serviceEndpointBase, "imgurproxy.php");
+        urlBase = urlBase + "?size=400&album=";
+ 
+        links = this.detectURLs(str);
+        for (var l=0;l<links.length;l++) {
+            if (links[l].indexOf("imgur.com") != -1 && links[l].indexOf("imgurproxy.php") == -1) {
+                var newLink = links[l].replace(links[l], urlBase + links[l]);
+                Mojo.Log.error("Replaced Imgur link " + links[l] + " with " + newLink);
+                newStr = newStr.replace(links[l], newLink);
+            }
+        }
+    }
+    return newStr;
 }
 
 MainAssistant.prototype.convertTimeStamp = function(timeStamp, isUTC) {

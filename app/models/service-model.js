@@ -2,6 +2,12 @@ var ServiceModel = function() {
 
 };
 
+ServiceModel.prototype.makeServiceUrl = function(serviceBase, endPoint) {
+    if (endPoint.indexOf(".php") == -1)
+        endPoint = endPoint + ".php";
+    return serviceBase + endPoint;
+}
+
 ServiceModel.prototype.getChats = function(serviceBase, clientId, callback) {
     serviceURL = serviceBase + "get-chat.php";
     Mojo.Log.info("Trying to get chats from: " + serviceURL);
