@@ -6,6 +6,11 @@ function VersionAssistant(startup) {
 
     //New Features
     this.changelog = [{
+            version: "Version 1.6.0",
+            detail: [
+                "Added ability to parse Imgur album links and render via a service proxy.",
+            ]
+        },{
             version: "Version 1.5.0",
             detail: [
                 "Added ability to parse Share Services links and show thumbnails, configurable in Preferences.",
