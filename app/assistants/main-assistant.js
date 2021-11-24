@@ -849,7 +849,7 @@ MainAssistant.prototype.parseImgurLinks = function(str) {
     if (str.indexOf("https://imgur.com") != -1) {
         Mojo.Log.error("Found Imgur link to parse!");
         var urlBase = serviceModel.makeServiceUrl(this.serviceEndpointBase, "imgurproxy.php");
-        urlBase = urlBase + "?size=400&album=";
+        urlBase = urlBase + "?maxwidth=" + Mojo.Environment.DeviceInfo.screenWidth + "&album=";
  
         links = this.detectURLs(str);
         for (var l=0;l<links.length;l++) {
