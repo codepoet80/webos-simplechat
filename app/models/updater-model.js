@@ -1,7 +1,7 @@
 /*
 Updater Model - Mojo
- Version 0.3
- Created: 2020
+ Version 0.5
+ Created: 2021
  Author: Jonathan Wise
  License: MIT
  Description: A model to check for and get updates from App Museum II web service.
@@ -17,53 +17,18 @@ var UpdaterModel = function() {
 
 /* "Public" Updater functions */
 
-//Check App Museum II web service to see if there are any updates
+//Gather information and Check App Museum II web service to see if there are any updates
 UpdaterModel.prototype.CheckForUpdate = function(appName, callback) {
 
     var currVersion = this.getVersionObject(Mojo.Controller.appInfo.version);
     Mojo.Log.info("UpdaterModel identified current app " + appName + " version: " + JSON.stringify(currVersion));
 
-    // TODO: It would be nice to use the AppID, instead of an arbitrary name, but the performance 
-    //      implications are overwhelming since the AppID is not a part of the masterData file.
-    //      We could get that from the app with: Mojo.Controller.appInfo.id
-    var updateURL = this.updateURL + encodeURI(appName);
-
-    // set scope for xmlhttp anonymous function callback
-    if (callback)
-        callBack = callback.bind(this);
-
-    var xmlhttp = new XMLHttpRequest();
-    xmlhttp.open("GET", updateURL);
-    Mojo.Log.info("Updater calling: " + updateURL);
-    xmlhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-    xmlhttp.send();
-    xmlhttp.onreadystatechange = function() {
-        if (xmlhttp.readyState == XMLHttpRequest.DONE) {
-            Mojo.Log.info("Museum responded: " + xmlhttp.responseText);
-            if (xmlhttp.responseText != null && xmlhttp.responseText != "" && xmlhttp.responseText.indexOf("ERROR:") != 0) {
-                var updateResponse = JSON.parse(xmlhttp.responseText);
-                if (updateResponse.version != null) {
-                    var museumVersion = this.getVersionObject(updateResponse.version);
-                    //Mojo.Log.info("Museum version: " + JSON.stringify(museumVersion));
-                    if (this.isVersionHigher(currVersion, museumVersion)) {
-                        Mojo.Log.warn("UpdaterModel found an update in webOS App Museum II!");
-                        updateResponse.updateFound = true;
-                    } else {
-                        Mojo.Log.info("UpdaterModel did not find an update in webOS App Museum II!");
-                        updateResponse.updateFound = false;
-                    }
-                }
-                this.lastUpdateResponse = updateResponse;
-            } else {
-                updateResponse = null;
-                Mojo.Log.info("UpdaterModel: No useable response from App Museum II update API");
-            }
-            //Mojo.Log.info("New update response object: " + JSON.stringify(updateResponse));
-            if (callback) {
-                callBack(updateResponse);
-            }
-        }
-    }.bind(this);
+    this.deviceInfoRequest = new Mojo.Service.Request("palm://com.palm.preferences/systemProperties", {
+        method: "Get",
+        parameters:{"key": "com.palm.properties.nduid" },
+        onSuccess: this.performIdentifiedUpdateCheck.bind(this, appName, currVersion, callback),
+        onFailure: this.performIdentifiedUpdateCheck.bind(this, appName, currVersion, callback)
+    });
 }
 
 //You can optionally call this function if you don't want to handle the user interaction related to prompting for an update
@@ -74,10 +39,9 @@ UpdaterModel.prototype.PromptUserForUpdate = function(callback, message) {
         Mojo.Log.warn("UpdaterModel: Not prompting user for update when no update has been discovered.");
     } else {
         if (!message)
-            message = "An update for " + Mojo.Controller.appInfo.title + " was found in App Museum II: <br>" + this.lastUpdateResponse.versionNote + "<br>Do you want to update now?";
+            message = "An update for " + Mojo.Controller.appInfo.title + " was found in App Museum II:<br>" + this.lastUpdateResponse.versionNote + "<br>Do you want to update now?";
 
-        // set scope for xmlhttp anonymous function callback
-        if (callback)
+        if (callback)   // set scope for xmlhttp anonymous function callback
             callBack = callback.bind(this);
 
         var stageController = Mojo.Controller.getAppController().getActiveStageController();
@@ -91,7 +55,7 @@ UpdaterModel.prototype.PromptUserForUpdate = function(callback, message) {
                     } else {
                         Mojo.Log.info("User deferred update.");
                     }
-                    if (callback)
+                    if (callBack)
                         callBack(value);
                 },
                 allowHTMLMessage: true,
@@ -107,32 +71,78 @@ UpdaterModel.prototype.PromptUserForUpdate = function(callback, message) {
 }
 
 //Ask Preware to actually install the update...
-UpdaterModel.prototype.InstallUpdate = function(callBack) {
+UpdaterModel.prototype.InstallUpdate = function() {
     if (!this.lastUpdateResponse) {
         Mojo.Log.warn("UpdaterModel: Not performing update when no update has been discovered.");
     } else {
         var app = this.lastUpdateResponse.downloadURI;
         Mojo.Log.info("Asking PreWare to perform update to " + app);
 
-        this.prewareRequest = new Mojo.Service.Request("palm://com.palm.applicationManager", {
-            method: "open",
-            parameters: {
-                "id": "org.webosinternals.preware",
-                params: { type: "install", file: app }
-            },
-            onSuccess: function(response) {
-                Mojo.Log.info("Preware launch success", JSON.stringify(response));
-            },
-            onFailure: function(response) {
-                Mojo.Log.error("Preware launch failure, " + app + ":",
-                    JSON.stringify(response), response.errorText);
-            }
-        });
+        this.InstallViaPreware(app);
         return true;
     }
 }
 
+UpdaterModel.prototype.InstallViaPreware = function(app) {
+    //Ask webOS to launch the video player with the new url
+    this.prewareRequest = new Mojo.Service.Request("palm://com.palm.applicationManager", {
+        method: "open",
+        parameters: {
+            "id": "org.webosinternals.preware",
+            params: { type: "install", file: app }
+        },
+        onSuccess: function(response) {
+            Mojo.Log.info("Preware launch success", JSON.stringify(response));
+        }.bind(this),
+        onFailure: function(response) {
+            Mojo.Log.error("Preware launch failure, " + app + ":", JSON.stringify(response), response.errorText);
+        }.bind(this)
+    });
+}
+
 /* "Private" helper functions */
+
+//Internal Function that uses the resolved information to actually do the check
+UpdaterModel.prototype.performIdentifiedUpdateCheck = function(appName, currVersion, callback, response) {
+    // Build appropriate URL for conditions
+    var updateURL = this.updateURL + encodeURI(appName);
+    if(response && JSON.stringify(response).indexOf("com.palm.properties.nduid") != -1) {
+        updateURL = updateURL + "&clientid=" + response[Object.keys(response)[0]];
+    }    
+    
+    if (callback)   // set scope for xmlhttp anonymous function callback
+        callBack = callback.bind(this);
+
+    var xmlhttp = new XMLHttpRequest();
+    xmlhttp.open("GET", updateURL);
+    Mojo.Log.info("Updater calling: " + updateURL);
+    xmlhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+    xmlhttp.send();
+    xmlhttp.onreadystatechange = function() {
+        if (xmlhttp.readyState == XMLHttpRequest.DONE) {
+            Mojo.Log.info("Museum responded: " + xmlhttp.responseText);
+            if (xmlhttp.responseText != null && xmlhttp.responseText != "" && xmlhttp.responseText.indexOf("ERROR:") != 1) {
+                var updateResponse = JSON.parse(xmlhttp.responseText);
+                if (updateResponse.version != null) {
+                    var museumVersion = this.getVersionObject(updateResponse.version);
+                    if (this.isVersionHigher(currVersion, museumVersion)) {
+                        Mojo.Log.warn("UpdaterModel found an update in webOS App Museum II!");
+                        updateResponse.updateFound = true;
+                    } else {
+                        Mojo.Log.info("UpdaterModel did not find an update in webOS App Museum II!");
+                        updateResponse.updateFound = false;
+                    }
+                }
+                this.lastUpdateResponse = updateResponse;
+            } else {
+                Mojo.Log.info("UpdaterModel: No useable response from App Museum II update API");
+            }
+            if (callBack) {
+                callBack(updateResponse);
+            }
+        }
+    }.bind(this);
+}
 
 //Turn a version string into an object with three independent number values
 UpdaterModel.prototype.getVersionObject = function(versionNum) {
