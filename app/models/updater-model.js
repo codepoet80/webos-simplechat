@@ -1,6 +1,6 @@
 /*
 Updater Model - Mojo
- Version 0.5
+ Version 0.6
  Created: 2021
  Author: Jonathan Wise
  License: MIT
@@ -84,7 +84,7 @@ UpdaterModel.prototype.InstallUpdate = function() {
 }
 
 UpdaterModel.prototype.InstallViaPreware = function(app) {
-    //Ask webOS to launch the video player with the new url
+    //Ask webOS to launch the PreWare with install url
     this.prewareRequest = new Mojo.Service.Request("palm://com.palm.applicationManager", {
         method: "open",
         parameters: {
@@ -106,16 +106,20 @@ UpdaterModel.prototype.InstallViaPreware = function(app) {
 UpdaterModel.prototype.performIdentifiedUpdateCheck = function(appName, currVersion, callback, response) {
     // Build appropriate URL for conditions
     var updateURL = this.updateURL + encodeURI(appName);
+    // If we have a device identifier, use that
     if(response && JSON.stringify(response).indexOf("com.palm.properties.nduid") != -1) {
         updateURL = updateURL + "&clientid=" + response[Object.keys(response)[0]];
-    }    
+    }
+    // Send some info about the device (could be used for compat checks)
+    deviceData = Mojo.Environment.DeviceInfo.modelName + "/" + Mojo.Environment.DeviceInfo.platformVersion + "/" + Mojo.Environment.DeviceInfo.carrierName + "/" + Mojo.Locale.getCurrentLocale();
+    updateURL = updateURL + "&device=" + encodeURIComponent(deviceData);
     
     if (callback)   // set scope for xmlhttp anonymous function callback
         callBack = callback.bind(this);
 
     var xmlhttp = new XMLHttpRequest();
     xmlhttp.open("GET", updateURL);
-    Mojo.Log.info("Updater calling: " + updateURL);
+    Mojo.Log.error("Updater calling: " + updateURL);
     xmlhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     xmlhttp.send();
     xmlhttp.onreadystatechange = function() {
