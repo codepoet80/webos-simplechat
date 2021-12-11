@@ -119,7 +119,7 @@ UpdaterModel.prototype.performIdentifiedUpdateCheck = function(appName, currVers
 
     var xmlhttp = new XMLHttpRequest();
     xmlhttp.open("GET", updateURL);
-    Mojo.Log.error("Updater calling: " + updateURL);
+    Mojo.Log.info("Updater calling: " + updateURL);
     xmlhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     xmlhttp.send();
     xmlhttp.onreadystatechange = function() {
