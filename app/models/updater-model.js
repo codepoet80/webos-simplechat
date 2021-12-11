@@ -105,7 +105,7 @@ UpdaterModel.prototype.InstallViaPreware = function(app) {
 //Internal Function that uses the resolved information to actually do the check
 UpdaterModel.prototype.performIdentifiedUpdateCheck = function(appName, currVersion, callback, response) {
     // Build appropriate URL for conditions
-    var updateURL = this.updateURL + encodeURI(appName);
+    var updateURL = this.updateURL + encodeURI(appName + "/" + Mojo.Controller.appInfo.version);
     // If we have a device identifier, use that
     if(response && JSON.stringify(response).indexOf("com.palm.properties.nduid") != -1) {
         updateURL = updateURL + "&clientid=" + response[Object.keys(response)[0]];
