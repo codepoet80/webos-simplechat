@@ -573,6 +573,7 @@ MainAssistant.prototype.updateChatsList = function(results) {
         var formattedMessage = Mojo.Format.runTextIndexer(results[i].message);
         if (formattedMessage.length < 1)
             formattedMessage = results[i].message;
+        formattedMessage = this.expandAttachments(formattedMessage, results[i]);
         newMessages.push({
             uid: results[i].uid,
             sender: results[i].sender,
@@ -582,6 +583,7 @@ MainAssistant.prototype.updateChatsList = function(results) {
             links: this.detectURLs(results[i].message),
             timestamp: this.convertTimeStamp(results[i].timestamp, true),
             likes: results[i].likes,
+            attachments: results[i].attachments,
             color: "black"
         });
     }
@@ -861,6 +863,23 @@ MainAssistant.prototype.parseImgurLinks = function(str) {
         }
     }
     return newStr;
+}
+
+MainAssistant.prototype.expandAttachments = function(str, itemData) {
+    var linkBase = serviceModel.makeServiceUrl(this.serviceEndpointBase, "attachment.php?");
+    var imgBase = serviceModel.makeServiceUrl(this.serviceEndpointBase, "thumb.php") + "?image=";
+    var supportedAttachments = ['jpg', 'jpeg', 'png', 'gif'];
+    if (itemData.attachments) {
+        str += "<br>";
+        Mojo.Log.info("Attachments found: " + itemData.attachments.length);
+        for (var i=0;i<itemData.attachments.length;i++) {
+            if (supportedAttachments.indexOf(itemData.attachments[i].extension.toLowerCase()) != -1) {
+                str += "<a href='" + linkBase + itemData.attachments[i].filename + "'>";
+                str += "<img src='" + imgBase + itemData.attachments[i].filename + "&size=64'></a>";
+            }
+        }
+    }
+    return str;
 }
 
 MainAssistant.prototype.convertTimeStamp = function(timeStamp, isUTC) {
