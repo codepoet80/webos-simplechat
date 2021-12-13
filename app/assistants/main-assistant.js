@@ -282,7 +282,7 @@ MainAssistant.prototype.handleKeyUp = function(event) {
 MainAssistant.prototype.handleListClick = function(event) {
     appModel.LastMessageSelected = event.item;
     this.listTarget = event.originalEvent.target;
-    if (this.listTarget.tagName != "A") { //don't pop-up menu if they tapped a hyperlink
+    if (this.listTarget.tagName != "A" && this.listTarget.tagName != "IMG") { //don't pop-up menu if they tapped a hyperlink or image
         //Decide what items to put in pop-up menu
         var popupMenuItems = [];
         var isMine = false;
@@ -298,6 +298,8 @@ MainAssistant.prototype.handleListClick = function(event) {
                 popupMenuItems.push({ label: 'Follow Link', command: 'do-followLink' });
             }
             popupMenuItems.push({ label: 'Copy Message', command: 'do-copy' });
+            if (event.item.attachments && event.item.attachments.length > 0)
+                popupMenuItems.push({ label: 'Save Attachments', command: 'do-saveAttachments' });
             popupMenuItems.push({ label: 'Like', command: 'do-like' });
         }
         this.controller.popupSubmenu({
@@ -339,6 +341,8 @@ MainAssistant.prototype.handlePopupChoose = function(message, command) {
             }
             systemModel.LaunchApp("com.palm.app.browser", parameters);
             break;
+        case "do-saveAttachments":
+            Mojo.Controller.getAppController().showBanner("Coming soon!", { source: 'notification' });
         case "do-editMessage":
             this.doEditMessage(message);
             break;
