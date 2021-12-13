@@ -1,6 +1,6 @@
 /*
 System Model
- Version 1.2
+ Version 1.2c
  Created: 2021
  Author: Jonathan Wise
  License: MIT
@@ -216,6 +216,74 @@ SystemModel.prototype.LaunchApp = function(appName, params) {
         }
     });
     return true;
+}
+
+//Download a file
+SystemModel.prototype.DownloadFile = function (url, mimetype, pathFromInteral, fileName, subscribe, callback) {
+    if (!url) {
+        Mojo.Log.error("Download URL not supplied");
+        return false;
+    }
+    if (!pathFromInteral){
+        Mojo.Log.error("Save path not supplied");
+        return false;
+    }
+	if (callback)
+        callback = callback.bind(this);
+    
+    //Figure out what extension to use
+    var ext = "";
+    mimetype = mimetype.toLowerCase();
+    if (mimetype.indexOf("image/") != -1) {
+        if (mimetype == "image/jpeg")
+            ext = "jpg"
+        else {
+            ext = mimetype.split("/");
+            ext = ext[ext.length - 1];
+        }
+    } else if (mimetype == "text/plain") {
+        ext = "txt";
+    } else if (mimetype == "application/json") {
+        ext = "json";
+    } else {
+        if (mimetype.indexOf("/") != -1) {
+            ext = mimetype.split("/");
+            ext = ext[1];
+        }
+    }
+    ext = "." + ext;
+    
+    this.downloadRequest = new Mojo.Service.Request('palm://com.palm.downloadmanager/', {
+        method: 'download',
+        parameters: {
+            target: url,
+            mime: mimetype,
+            targetDir : "/media/internal/" + pathFromInteral,
+            targetFilename : fileName + ext,
+            keepFilenameOnRedirect: true,
+            subscribe: subscribe
+        },
+        onSuccess: function(response) {
+            Mojo.Log.info("Download Success!", JSON.stringify(response));
+            if (callback) {
+                callback(response);
+                return true;
+            } else {
+                if (response.completed == true) {
+                    Mojo.Controller.getAppController().showBanner({ messageText: "Content downloaded!" }, "", "");
+                }
+            }
+        },
+        onFailure: function(response) {
+            Mojo.Log.error("Download Failure: ", JSON.stringify(response));
+            if (callback) {
+                callback(response);
+                return false;
+            } else {
+                Mojo.Controller.getAppController().showBanner({ messageText: "Download error:" + JSON.stringify(response) }, "", "");
+            }
+        }
+    });
 }
 
 //Helper Functions

@@ -342,7 +342,12 @@ MainAssistant.prototype.handlePopupChoose = function(message, command) {
             systemModel.LaunchApp("com.palm.app.browser", parameters);
             break;
         case "do-saveAttachments":
-            Mojo.Controller.getAppController().showBanner("Coming soon!", { source: 'notification' });
+            var attachments = appModel.LastMessageSelected.attachments;
+            for (var i=0; i< attachments.length; i++) {
+                var attach = attachments[i];
+                var url = serviceModel.makeServiceUrl(this.serviceEndpointBase, "attachment.php?") + attach.filename;
+                systemModel.DownloadFile(url, "image/" + attach.extension, "downloads", attach.filename, true);
+            }
         case "do-editMessage":
             this.doEditMessage(message);
             break;
