@@ -348,6 +348,7 @@ MainAssistant.prototype.handlePopupChoose = function(message, command) {
                 var url = serviceModel.makeServiceUrl(this.serviceEndpointBase, "attachment.php?") + attach.filename;
                 systemModel.DownloadFile(url, "image/" + attach.extension, "downloads", attach.filename, true);
             }
+            break;
         case "do-editMessage":
             this.doEditMessage(message);
             break;
