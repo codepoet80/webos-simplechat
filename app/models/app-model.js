@@ -45,6 +45,9 @@ AppModel.prototype.ShowNotificationStage = function() {
     if (appModel.AppSettingsCurrent["UseCustomEndpoint"] && appModel.AppSettingsCurrent["EndpointURL"]) {
         this.serviceEndpointBase = appModel.AppSettingsCurrent["EndpointURL"];
     }
+    if (appModel.AppSettingsCurrent["UseClientAPIKey"] && appModel.AppSettingsCurrent["ClientAPIKey"]) {
+        this.ClientId = appModel.AppSettingsCurrent["ClientAPIKey"];
+    }
     //Check for connectivity, then check for messages
     systemModel.GetInternetConnectionState(this.checkForMessages.bind(this));
 }
