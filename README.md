@@ -2,7 +2,13 @@
 
 SimpleChat client for legacy Palm/HP webOS devices, depends on back-end services listed below.
 
-Uses [simplechat-service](https://github.com/codepoet80/simplechat-service)
+![App Icon](icon.png)
+
+Uses:
+
++ [simplechat-service](https://github.com/codepoet80/simplechat-service)
+
++ [simplechat-discordbot](https://github.com/codepoet80/simplechat-discordbot) 
 
 You can also self-host the services.
 
