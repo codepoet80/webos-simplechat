@@ -798,6 +798,7 @@ MainAssistant.prototype.unescapeEntities = function(str) {
     str = str
         .replace(/^### (.*$)/gim, '<h3>$1</h3>')
         .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+        .replace(/^~~ (.*$)/gim, '<strike>$1</strike>')
         .replace(/^# (.*$)/gim, '<h1>$1</h1>')
         .replace(/^\> (.*$)/gim, '<blockquote>$1</blockquote>')
         .replace(/\*\*(.*)\*\*/gim, '<b>$1</b>')
