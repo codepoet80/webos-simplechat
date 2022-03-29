@@ -79,6 +79,17 @@ PreferencesAssistant.prototype.setup = function() {
             disabled: false
         }
     );
+    //Link toggle
+    this.controller.setupWidget("toggleLinks",
+        this.attributes = {
+            trueValue: true,
+            falseValue: false
+        },
+        this.model = {
+            value: appModel.AppSettingsCurrent["ParseLinks"],
+            disabled: false
+        }
+    );
     //Thumbnail toggle
     this.controller.setupWidget("toggleThumbs",
         this.attributes = {
@@ -179,6 +190,7 @@ PreferencesAssistant.prototype.setup = function() {
     Mojo.Event.listen(this.controller.get("listForegroundUpdate"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.controller.get("listBackgroundUpdate"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.controller.get("toggleEmojis"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
+    Mojo.Event.listen(this.controller.get("toggleLinks"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.controller.get("toggleThumbs"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.controller.get("listEnterSubmits"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.controller.get("listAlertSound"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
@@ -313,6 +325,7 @@ PreferencesAssistant.prototype.deactivate = function(event) {
     Mojo.Event.stopListening(this.controller.get("listForegroundUpdate"), Mojo.Event.propertyChange, this.handleValueChange);
     Mojo.Event.stopListening(this.controller.get("listBackgroundUpdate"), Mojo.Event.propertyChange, this.handleValueChange);
     Mojo.Event.stopListening(this.controller.get("toggleEmojis"), Mojo.Event.propertyChange, this.handleValueChange);
+    Mojo.Event.stopListening(this.controller.get("toggleLinks"), Mojo.Event.propertyChange, this.handleValueChange);
     Mojo.Event.stopListening(this.controller.get("toggleThumbs"), Mojo.Event.propertyChange, this.handleValueChange);
     Mojo.Event.stopListening(this.controller.get("listEnterSubmits"), Mojo.Event.propertyChange, this.handleValueChange);
     Mojo.Event.stopListening(this.controller.get("listAlertSound"), Mojo.Event.propertyChange, this.handleValueChange);

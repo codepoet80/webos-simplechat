@@ -39,14 +39,21 @@ MainAssistant.prototype.setup = function() {
         this.messageFieldModel.attributes,
         this.messageFieldModel
     );
-    //Loading spinner - with global members for easy toggling later
+    //Spinners
+    //   with global members for easy toggling later
     this.spinnerAttrs = {
         spinnerSize: Mojo.Widget.spinnerSmall
     };
-    this.spinnerModel = {
+    //Loading Spinner
+    this.spinnerLoadModel = {
+        spinning: true
+    }
+    this.controller.setupWidget('loadingSpinner', this.spinnerAttrs, this.spinnerLoadModel);
+    //Posting spinner
+    this.spinnerWorkModel = {
         spinning: false
     }
-    this.controller.setupWidget('workingSpinner', this.spinnerAttrs, this.spinnerModel);
+    this.controller.setupWidget('workingSpinner', this.spinnerAttrs, this.spinnerWorkModel);
     //Chat Log List (starts empty)
     this.listElement = this.controller.get('chatList');
     this.listInfoModel = {
@@ -543,6 +550,10 @@ MainAssistant.prototype.likeMessageToService = function() {
 
 //Send a request to Service to get chat messages
 MainAssistant.prototype.getChats = function() {
+    //start spinner
+    this.spinnerLoadModel.spinning = true;
+    this.controller.modelChanged(this.spinnerLoadModel);
+
     if (this.serverRetries <= this.serverGiveUp) {
         serviceModel.getChats(this.serviceEndpointBase, this.clientId, function(response) {
             //Mojo.Log.info("getChat response: " + response);
@@ -568,6 +579,10 @@ MainAssistant.prototype.getChats = function() {
                 }
             }
         }.bind(this));
+    } else {
+        //stop spinner
+        this.spinnerLoadModel.spinning = false;
+        this.controller.modelChanged(this.spinnerLoadModel);
     }
 }
 
@@ -584,13 +599,15 @@ MainAssistant.prototype.updateChatsList = function(results) {
         if (formattedMessage.length < 1)
             formattedMessage = results[i].message;
         formattedMessage = this.expandAttachments(formattedMessage, results[i]);
+        if (appModel.AppSettingsCurrent["ParseLinks"])
+            useLinks = this.detectURLs(results[i].message);
         newMessages.push({
             uid: results[i].uid,
             sender: results[i].sender,
             message: results[i].message,
             formattedMessage: formattedMessage,
             postedFrom: results[i].postedFrom,
-            links: this.detectURLs(results[i].message),
+            links: useLinks,
             timestamp: this.convertTimeStamp(results[i].timestamp, true),
             likes: results[i].likes,
             attachments: results[i].attachments,
@@ -672,6 +689,9 @@ MainAssistant.prototype.updateChatsList = function(results) {
         Mojo.Log.info("No changes to apply to list.")
     }
     this.firstPoll = false;
+    //stop spinner
+    this.spinnerLoadModel.spinning = false;
+    this.controller.modelChanged(this.spinnerLoadModel);
 
     //Also clean-up MyMessage history
     for (var m = 0; m < appModel.AppSettingsCurrent["MyMessages"].length; m++) {
@@ -689,9 +709,11 @@ MainAssistant.prototype.updateChatsList = function(results) {
 //Called by Mojo once the list has been painted, gives us an opportunity to force HTML changes in the message 
 MainAssistant.prototype.handleItemRendered = function(listWidget, itemModel, itemNode) {
     itemNode.innerHTML = this.unescapeEntities(itemNode.innerHTML);
-    itemNode.innerHTML = this.replaceImageLinks(itemNode.innerHTML);
-    itemNode.innerHTML = this.parseShareSpaceLinks(itemNode.innerHTML);
-    itemNode.innerHTML = this.parseImgurLinks(itemNode.innerHTML);
+    if (appModel.AppSettingsCurrent["ParseLinks"]) {
+        itemNode.innerHTML = this.replaceImageLinks(itemNode.innerHTML);
+        itemNode.innerHTML = this.parseShareSpaceLinks(itemNode.innerHTML);
+        itemNode.innerHTML = this.parseImgurLinks(itemNode.innerHTML);
+    }
     if (itemNode.innerHTML.indexOf("</span> </div>") != -1) {
         itemNode.innerHTML = itemModel.message;
         Mojo.Log.warn("**** EMPTY MESSAGE RENDERED! " + JSON.stringify(itemModel));
@@ -912,16 +934,16 @@ MainAssistant.prototype.detectURLs = function(message) {
 
 MainAssistant.prototype.disableUI = function(statusValue) {
     //start spinner
-    if (!this.spinnerModel.spinning) {
-        this.spinnerModel.spinning = true;
-        this.controller.modelChanged(this.spinnerModel);
+    if (!this.spinnerWorkModel.spinning) {
+        this.spinnerWorkModel.spinning = true;
+        this.controller.modelChanged(this.spinnerWorkModel);
     }
 }
 
 MainAssistant.prototype.enableUI = function() {
     //stop spinner
-    this.spinnerModel.spinning = false;
-    this.controller.modelChanged(this.spinnerModel);
+    this.spinnerWorkModel.spinning = false;
+    this.controller.modelChanged(this.spinnerWorkModel);
     this.controller.get('txtMessage').mojo.focus();
 }
 
