@@ -25,7 +25,7 @@ var AppModel = function() {
         BackgroundUpdate: "00:30:00",
         AlertSound: "Subtle (short)",
         ShowEmojis: true,
-        ParseLinks: true,
+        SkipParsing: false,
         ShowWOSAThumbs: true,
         EnterSubmits: "collapsed",
         UseClientAPIKey: false,

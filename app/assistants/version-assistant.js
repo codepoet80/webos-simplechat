@@ -6,6 +6,11 @@ function VersionAssistant(startup) {
 
     //New Features
     this.changelog = [{
+            version: "Version 1.7.1",
+            detail: [
+                "Fix a bug where hardware mute switch wasn't respected. Show transmit indicator. Add ability to disable link and image parsing to speed things up on tiny devices.",
+            ]
+        },{
             version: "Version 1.7.0",
             detail: [
                 "Images from Discord are now supported! Inline rendering uses a thumbnail for efficiency; tap the image to load the fullsize, or tap elsewhere on the row to pull up the menu that lets you download the image to your device (it will be saved to /internal/downloads)",

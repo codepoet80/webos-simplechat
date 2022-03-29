@@ -44,11 +44,6 @@ MainAssistant.prototype.setup = function() {
     this.spinnerAttrs = {
         spinnerSize: Mojo.Widget.spinnerSmall
     };
-    //Loading Spinner
-    this.spinnerLoadModel = {
-        spinning: true
-    }
-    this.controller.setupWidget('loadingSpinner', this.spinnerAttrs, this.spinnerLoadModel);
     //Posting spinner
     this.spinnerWorkModel = {
         spinning: false
@@ -550,9 +545,8 @@ MainAssistant.prototype.likeMessageToService = function() {
 
 //Send a request to Service to get chat messages
 MainAssistant.prototype.getChats = function() {
-    //start spinner
-    this.spinnerLoadModel.spinning = true;
-    this.controller.modelChanged(this.spinnerLoadModel);
+    //show transmitting
+    this.controller.get('imgTransmit').style.display = "block";
 
     if (this.serverRetries <= this.serverGiveUp) {
         serviceModel.getChats(this.serviceEndpointBase, this.clientId, function(response) {
@@ -580,9 +574,8 @@ MainAssistant.prototype.getChats = function() {
             }
         }.bind(this));
     } else {
-        //stop spinner
-        this.spinnerLoadModel.spinning = false;
-        this.controller.modelChanged(this.spinnerLoadModel);
+        //hide transmitting
+        this.controller.get('imgTransmit').style.display = "none";
     }
 }
 
@@ -595,12 +588,15 @@ MainAssistant.prototype.updateChatsList = function(results) {
     //now make the new list
     var newMessages = [];
     for (var i = 0; i < results.length; i++) {
-        var formattedMessage = Mojo.Format.runTextIndexer(results[i].message);
-        if (formattedMessage.length < 1)
-            formattedMessage = results[i].message;
-        formattedMessage = this.expandAttachments(formattedMessage, results[i]);
-        if (appModel.AppSettingsCurrent["ParseLinks"])
+        var useLinks;
+        var formattedMessage = results[i].message;
+        if (!appModel.AppSettingsCurrent["SkipParsing"]) {
+            formattedMessage = Mojo.Format.runTextIndexer(results[i].message);
+            if (formattedMessage.length < 1)
+                formattedMessage = results[i].message;    
+            formattedMessage = this.expandAttachments(formattedMessage, results[i]);
             useLinks = this.detectURLs(results[i].message);
+        }
         newMessages.push({
             uid: results[i].uid,
             sender: results[i].sender,
@@ -689,9 +685,8 @@ MainAssistant.prototype.updateChatsList = function(results) {
         Mojo.Log.info("No changes to apply to list.")
     }
     this.firstPoll = false;
-    //stop spinner
-    this.spinnerLoadModel.spinning = false;
-    this.controller.modelChanged(this.spinnerLoadModel);
+    //hide transmitting
+    this.controller.get('imgTransmit').style.display = "none";
 
     //Also clean-up MyMessage history
     for (var m = 0; m < appModel.AppSettingsCurrent["MyMessages"].length; m++) {
@@ -709,7 +704,7 @@ MainAssistant.prototype.updateChatsList = function(results) {
 //Called by Mojo once the list has been painted, gives us an opportunity to force HTML changes in the message 
 MainAssistant.prototype.handleItemRendered = function(listWidget, itemModel, itemNode) {
     itemNode.innerHTML = this.unescapeEntities(itemNode.innerHTML);
-    if (appModel.AppSettingsCurrent["ParseLinks"]) {
+    if (!appModel.AppSettingsCurrent["SkipParsing"]) {
         itemNode.innerHTML = this.replaceImageLinks(itemNode.innerHTML);
         itemNode.innerHTML = this.parseShareSpaceLinks(itemNode.innerHTML);
         itemNode.innerHTML = this.parseImgurLinks(itemNode.innerHTML);

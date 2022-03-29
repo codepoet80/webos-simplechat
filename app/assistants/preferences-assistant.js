@@ -80,13 +80,13 @@ PreferencesAssistant.prototype.setup = function() {
         }
     );
     //Link toggle
-    this.controller.setupWidget("toggleLinks",
+    this.controller.setupWidget("toggleParsing",
         this.attributes = {
             trueValue: true,
             falseValue: false
         },
         this.model = {
-            value: appModel.AppSettingsCurrent["ParseLinks"],
+            value: appModel.AppSettingsCurrent["SkipParsing"],
             disabled: false
         }
     );
@@ -190,7 +190,7 @@ PreferencesAssistant.prototype.setup = function() {
     Mojo.Event.listen(this.controller.get("listForegroundUpdate"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.controller.get("listBackgroundUpdate"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.controller.get("toggleEmojis"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
-    Mojo.Event.listen(this.controller.get("toggleLinks"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
+    Mojo.Event.listen(this.controller.get("toggleParsing"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.controller.get("toggleThumbs"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.controller.get("listEnterSubmits"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.controller.get("listAlertSound"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
@@ -215,6 +215,9 @@ PreferencesAssistant.prototype.handleValueChange = function(event) {
 
     Mojo.Log.info(event.srcElement.id + " value changed to " + event.value);
     switch (event.srcElement.id) {
+        case "toggleParsing":
+            Mojo.Controller.getAppController().showBanner({ messageText: "Re-launch app to apply this setting" }, "", "");
+            break;
         case "toggleEmojis":
             Mojo.Controller.getAppController().showBanner({ messageText: "Re-launch app to apply this setting" }, "", "");
             break;
@@ -325,7 +328,7 @@ PreferencesAssistant.prototype.deactivate = function(event) {
     Mojo.Event.stopListening(this.controller.get("listForegroundUpdate"), Mojo.Event.propertyChange, this.handleValueChange);
     Mojo.Event.stopListening(this.controller.get("listBackgroundUpdate"), Mojo.Event.propertyChange, this.handleValueChange);
     Mojo.Event.stopListening(this.controller.get("toggleEmojis"), Mojo.Event.propertyChange, this.handleValueChange);
-    Mojo.Event.stopListening(this.controller.get("toggleLinks"), Mojo.Event.propertyChange, this.handleValueChange);
+    Mojo.Event.stopListening(this.controller.get("toggleParsing"), Mojo.Event.propertyChange, this.handleValueChange);
     Mojo.Event.stopListening(this.controller.get("toggleThumbs"), Mojo.Event.propertyChange, this.handleValueChange);
     Mojo.Event.stopListening(this.controller.get("listEnterSubmits"), Mojo.Event.propertyChange, this.handleValueChange);
     Mojo.Event.stopListening(this.controller.get("listAlertSound"), Mojo.Event.propertyChange, this.handleValueChange);
