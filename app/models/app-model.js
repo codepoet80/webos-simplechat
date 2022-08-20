@@ -21,6 +21,7 @@ var AppModel = function() {
     //Define your app preferences (to be saved by OS)
     this.AppSettingsCurrent = null;
     this.AppSettingsDefaults = {
+        ThemePreference: "palm-default",
         ForegroundUpdate: 10000,
         BackgroundUpdate: "00:30:00",
         AlertSound: "Subtle (short)",
@@ -38,6 +39,20 @@ var AppModel = function() {
         LastKnownMessage: null,
         LastVersionRun: 0
     };
+}
+
+AppModel.prototype.SetThemePreference = function(theController) {
+    if (appModel.AppSettingsCurrent["ThemePreference"] != "system-theme") {
+        theController.document.body.className = appModel.AppSettingsCurrent["ThemePreference"];
+        Mojo.Log.info("Using local theme pref: " + appModel.AppSettingsCurrent["ThemePreference"]);
+    } else {
+        systemModel.LoadWOSAPrefs(function(response) {
+            if (response) {
+                Mojo.Log.error("Using system theme pref: " + systemModel.WOSAPrefs.theme);
+                theController.document.body.className = systemModel.WOSAPrefs.theme;
+            }
+        }.bind(this))
+    }
 }
 
 AppModel.prototype.ShowNotificationStage = function() {

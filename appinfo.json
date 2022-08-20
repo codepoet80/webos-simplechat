@@ -1,7 +1,7 @@
 {
     "id": "com.palm.app.jonandnic.simplechat",
-    "version": "1.7.1",
-    "vendor": "Jon Wise",
+    "version": "1.8.0",
+    "vendor": "codepoet80",
     "type": "web",
     "main": "index.html",
     "noWindow": true,
@@ -9,9 +9,8 @@
     "appMuseumTitle": "webOS SimpleChat",
     "icon": "icon.png",
     "pageTitle": "webOS SimpleChat",
-    "startupMessage": "<img src='icon.png' style='float:left; margin-right:8px'>Welcome to SimpleChat! We're so excited you're here chatting with us 10 years after this platform was supposed to have died!<br>You can also join this chat from Discord: <a href='discord.gg/7NrrT8exrn'>discord.gg/7NrrT8exrn</a> or view the log on the web: <a href='http://chat.webosarchive.com'>chat.webosarchive.com</a>",
-    "serviceURL": "http://chat.webosarchive.com/",
+    "startupMessage": "<img src='icon.png' style='float:left; margin-right:8px'>Welcome to SimpleChat! We're so excited you're here chatting with us more than 10 years after this platform was supposed to have died!<br>You can also join this chat from Discord: <a href='http://www.webosarchive.org/discord'>webosarchive.org/discord</a> or view the log on the web: <a href='http://chat.webosarchive.org'>chat.webosarchive.org</a>",
+    "serviceURL": "http://chat.webosarchive.org/",
     "splashicon": "icon-256x256.png",
-    "uiRevision": "2",
-    "theme": "light"
+    "uiRevision": "2"
 }

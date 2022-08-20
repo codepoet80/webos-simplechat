@@ -5,6 +5,10 @@
     background-size: 32px 32px;
 }
 
+.palm-dark .header-text {
+    color:lightgray !important;
+}
+
 .explanation-text {
     margin-top: -5px;
     padding: 14px;
@@ -12,8 +16,16 @@
     color: #000;
 }
 
+.palm-dark .explanation-text {
+    color: lightgray;
+}
+
 .chat-log {
     margin-top: 8px;
+}
+
+.palm-dark .chat-log {
+    color:lightgray !important;
 }
 
 .sender {
@@ -36,6 +48,22 @@
     padding-bottom: 14px;
 }
 
+.palm-dark .chat-time {
+    color: white;
+}
+
+.textFieldClass {
+    min-height:56px; 
+    background-color:white;
+    border: 1px solid dimgray;
+}
+
+.palm-dark .textFieldClass {
+    min-height:56px; 
+    background-color:lightgray;
+    border: 1px solid dimgray;
+}
+
 .textFieldClass input {
     padding: 1px;
 }
@@ -46,6 +74,10 @@
 
 textarea {
     margin-top: 0px !important;
+}
+
+.palm-dark .palm-dialog-content .palm-body-text {
+    color: black !important;
 }
 
 .multiline-hint-text.oblique {

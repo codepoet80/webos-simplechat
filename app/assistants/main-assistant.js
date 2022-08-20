@@ -15,6 +15,8 @@ function MainAssistant() {
 }
 
 MainAssistant.prototype.setup = function() {
+    appModel.SetThemePreference(this.controller);
+
     // title
     this.controller.get('spnTitle').innerHTML = Mojo.Controller.appInfo.pageTitle;
     // setup message field
@@ -388,7 +390,7 @@ MainAssistant.prototype.handleCommand = function(event) {
                 stageController.pushScene({ name: "version", disableSceneScroller: false });
                 break;
             case 'do-myAbout':
-                Mojo.Additions.ShowDialogBox(Mojo.Controller.appInfo.title + " - " + Mojo.Controller.appInfo.version, "SimpleChat client for webOS. Copyright 2021, Jon Wise. Distributed under an MIT License.<br>Source code available at: https://github.com/codepoet80/webos-simplechat");
+                Mojo.Additions.ShowDialogBox(Mojo.Controller.appInfo.title + " - " + Mojo.Controller.appInfo.version, "SimpleChat client for webOS. Copyright 2022, codepoet80. Distributed under an MIT License.<br>Source code available at: https://github.com/codepoet80/webos-simplechat");
                 break;
         }
     }
@@ -836,7 +838,7 @@ MainAssistant.prototype.replaceImageLinks = function(str) {
     var pattern = /href=\"(https)?:?(\/\/[^"']*\.(?:png|jpg|jpeg|gif|png|svg))/g;
     str = str.replace(pattern, function(match, protocol, url) {
         return "href=\"" + urlBase + btoa("https:" + url);
-        //return "href=\"http://chat.webosarchive.com/image.php?" + btoa("https:" + url);
+        //return "href=\"http://chat.webosarchive.org/image.php?" + btoa("https:" + url);
     });
     return str;
 }

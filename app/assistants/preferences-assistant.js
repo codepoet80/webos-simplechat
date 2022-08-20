@@ -8,6 +8,16 @@ function PreferencesAssistant() {
 PreferencesAssistant.prototype.setup = function() {
     /* setup widgets here */
 
+    this.controller.setupWidget("listThemePreference",
+    {label: $L({value:"Theme", key:"theme"}),
+        labelPlacement: Mojo.Widget.labelPlacementLeft,
+        choices: [
+            {label: $L({value:"Light", key:"themeLight"}), value: "palm-default"},
+            {label: $L({value:"Dark", key:"themeDark"}), value: "palm-dark"},
+            {label: $L({value:"System Pref", key:"themeSystem"}), value: "system-theme"}
+        ]},
+    { value: appModel.AppSettingsCurrent["ThemePreference"] });
+
     //Timeout picker
     this.controller.setupWidget("listForegroundUpdate",
         this.attributes = {
@@ -187,6 +197,7 @@ PreferencesAssistant.prototype.setup = function() {
     this.controller.setupWidget(Mojo.Menu.appMenu, this.appMenuAttributes, this.appMenuModel);
 
     /* add event handlers to listen to events from widgets */
+    Mojo.Event.listen(this.controller.get("listThemePreference"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.controller.get("listForegroundUpdate"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.controller.get("listBackgroundUpdate"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
     Mojo.Event.listen(this.controller.get("toggleEmojis"), Mojo.Event.propertyChange, this.handleValueChange.bind(this));
@@ -215,6 +226,10 @@ PreferencesAssistant.prototype.handleValueChange = function(event) {
 
     Mojo.Log.info(event.srcElement.id + " value changed to " + event.value);
     switch (event.srcElement.id) {
+        case "listThemePreference":
+            appModel.AppSettingsCurrent["ThemePreference"] = event.value;
+            appModel.SetThemePreference(this.controller);
+            break;
         case "toggleParsing":
             Mojo.Controller.getAppController().showBanner({ messageText: "Re-launch app to apply this setting" }, "", "");
             break;
@@ -325,7 +340,7 @@ PreferencesAssistant.prototype.okClick = function(event) {
 PreferencesAssistant.prototype.deactivate = function(event) {
     /* remove any event handlers you added in activate and do any other cleanup that should happen before
        this scene is popped or another scene is pushed on top */
-    Mojo.Event.stopListening(this.controller.get("listForegroundUpdate"), Mojo.Event.propertyChange, this.handleValueChange);
+    Mojo.Event.stopListening(this.controller.get("listThemePreference"), Mojo.Event.propertyChange, this.handleValueChange);
     Mojo.Event.stopListening(this.controller.get("listBackgroundUpdate"), Mojo.Event.propertyChange, this.handleValueChange);
     Mojo.Event.stopListening(this.controller.get("toggleEmojis"), Mojo.Event.propertyChange, this.handleValueChange);
     Mojo.Event.stopListening(this.controller.get("toggleParsing"), Mojo.Event.propertyChange, this.handleValueChange);
