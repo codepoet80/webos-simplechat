@@ -16,7 +16,7 @@ var SystemModel = function() {
 SystemModel.WOSAPrefs = {};
 
 //You should probably use Mojo.Environment.DeviceInfo for this
-//  http://sdk.webosarchive.com/docs/docs.html#reference/mojo/classes/mojo-environment.html#summary
+//  http://sdk.webosarchive.org/docs/docs.html#reference/mojo/classes/mojo-environment.html#summary
 SystemModel.prototype.DetectDevice = function() {
     //find out what kind of device this is
     var deviceType;
