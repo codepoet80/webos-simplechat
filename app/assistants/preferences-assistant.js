@@ -8,6 +8,7 @@ function PreferencesAssistant() {
 PreferencesAssistant.prototype.setup = function() {
     /* setup widgets here */
 
+    //Theme picker
     this.controller.setupWidget("listThemePreference",
     {label: $L({value:"Theme", key:"theme"}),
         labelPlacement: Mojo.Widget.labelPlacementLeft,
@@ -17,7 +18,6 @@ PreferencesAssistant.prototype.setup = function() {
             {label: $L({value:"System Pref", key:"themeSystem"}), value: "system-theme"}
         ]},
     { value: appModel.AppSettingsCurrent["ThemePreference"] });
-
     //Timeout picker
     this.controller.setupWidget("listForegroundUpdate",
         this.attributes = {
