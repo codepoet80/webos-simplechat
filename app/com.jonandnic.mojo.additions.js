@@ -2,7 +2,7 @@
 Mojo Additions
  Version 0.3e
  Created: 2018
- Author: Jonathan Wise
+ Author: Jon W
  License: MIT
  Description: Functions I use often, that probably should have been part of Mojo.
               They either fix bugs in Mojo or make it easier to use.

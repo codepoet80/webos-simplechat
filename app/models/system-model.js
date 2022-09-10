@@ -2,7 +2,7 @@
 System Model
  Version 1.6
  Created: 2022
- Author: Jonathan Wise
+ Author: Jon W
  License: MIT
  Description: A generic and re-usable model for accessing webOS system features more easily
 				Privileged functions can only be called if your App ID starts with com.palm

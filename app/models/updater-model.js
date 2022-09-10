@@ -2,7 +2,7 @@
 Updater Model - Mojo
  Version 0.6
  Created: 2021
- Author: Jonathan Wise
+ Author: Jon W
  License: MIT
  Description: A model to check for and get updates from App Museum II web service.
     Does not require App Museum to be installed, but does require internet access, and Preware to do the actual install.
