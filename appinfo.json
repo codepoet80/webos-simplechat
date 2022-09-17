@@ -1,7 +1,7 @@
 {
     "id": "com.palm.app.jonandnic.simplechat",
     "version": "1.8.0",
-    "vendor": "codepoet80",
+    "vendor": "Jon W",
     "type": "web",
     "main": "index.html",
     "noWindow": true,
