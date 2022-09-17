@@ -1,7 +1,7 @@
 /*
     Share Space clipboard app for webOS.
     This app depends on a sharing service, which is hosted by webOS Archive at no cost for what remains of the webOS mobile community.
-    You can also host the service yourself: http://www.github.com/codepoet80/sharing-service
+    You can also host the service yourself: http://www.github.com/webosarchive/sharing-service
 */
 
 var refreshInt;
@@ -274,7 +274,7 @@ MainAssistant.prototype.handleCommand = function(event) {
                 stageController.pushScene({ name: "preferences", disableSceneScroller: false });
                 break;
             case 'do-myAbout':
-                Mojo.Additions.ShowDialogBox("Share Space - " + Mojo.Controller.appInfo.version, "Share Space sharing service client for webOS. Copyright 2021, Jon Wise. Distributed under an MIT License.<br>Source code available at: https://github.com/codepoet80/webos-sharespace");
+                Mojo.Additions.ShowDialogBox("Share Space - " + Mojo.Controller.appInfo.version, "Share Space sharing service client for webOS. Copyright 2022, webOS Archive. Distributed under an MIT License.<br>Source code available at: https://github.com/webosarchive/webos-sharespace");
                 break;
             case 'do-versionInfo':
                 var stageController = Mojo.Controller.getAppController().getActiveStageController();

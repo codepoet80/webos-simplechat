@@ -2,7 +2,6 @@
 ShareBoard Model - Mojo
  Version 1.0
  Created: 2021
- Author: Jonathan Wise
  License: MIT
  Description: A model to interact with a share service
 */

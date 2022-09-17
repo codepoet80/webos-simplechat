@@ -1,7 +1,7 @@
 {
     "id": "com.palm.webos.sharespace",
     "version": "1.0.3",
-    "vendor": "Jon Wise",
+    "vendor": "webOS Archive",
     "type": "web",
     "main": "index.html",
     "title": "Share Space",
@@ -10,18 +10,17 @@
     "noWindow": true,
     "splashicon": "icon-256.png",
     "uiRevision": "2",
-    "theme": "light",
-    "serviceURL": "https://share.webosarchive.com/",
+    "serviceURL": "https://share.webosarchive.org/",
     "shortURL": "https://wosa.link/",
     "tapToShareSupported": true,
     "universalSearch": {
         "action": {
             "displayName": "New Share",
-            "url": "com.jonandnic.sharespace",
+            "url": "com.palm.webos.sharespace",
             "launchParam": {
                 "newshare": "#{searchTerms}"
             }
         }
     },
-    "startupMessage": "<img src='icon.png' style='float:right; margin-left: 6px'>Welcome to ShareSpace -- a powerful app for getting content on and off your webOS device! You can interact with this app from anywhere at <a href='http://share.webosarchive.com'>share.webosarchive.com</a>!<br>Here are some things you can do..."
+    "startupMessage": "<img src='icon.png' style='float:right; margin-left: 6px'>Welcome to ShareSpace -- a powerful app for getting content on and off your webOS device! You can interact with this app from anywhere at <a href='http://share.webosarchive.org'>share.webosarchive.org</a>!<br>Here are some things you can do..."
 }
