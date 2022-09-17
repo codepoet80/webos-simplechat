@@ -1,16 +1,22 @@
 /*
 System Model
- Version 1.3
- Created: 2021
+ Version 1.6
+ Created: 2022
+ Author: Jon W
  License: MIT
  Description: A generic and re-usable model for accessing webOS system features more easily
 				Privileged functions can only be called if your App ID starts with com.palm
 */
 
-var SystemModel = function() {
+//** Note: If you synced this file from a common repository, local edits may be over-written! */
+
+var SystemModel = function() { 
 
 };
+SystemModel.WOSAPrefs = {};
 
+//You should probably use Mojo.Environment.DeviceInfo for this
+//  http://sdk.webosarchive.org/docs/docs.html#reference/mojo/classes/mojo-environment.html#summary
 SystemModel.prototype.DetectDevice = function() {
     //find out what kind of device this is
     var deviceType;
@@ -102,15 +108,20 @@ SystemModel.prototype.ClearSystemAlarm = function(alarmName) {
 
 //Allow the display to sleep
 SystemModel.prototype.AllowDisplaySleep = function(stageController) {
-    if (!stageController)
-        stageController = Mojo.Controller.getAppController().getActiveStageController();
+    try {
+        if (!stageController)
+            stageController = Mojo.Controller.getAppController().getActiveStageController();
 
-    //Tell the System it doesn't have to stay awake any more
-    Mojo.Log.info("Allowing display sleep");
+        //Tell the System it doesn't have to stay awake any more
+        Mojo.Log.info("Allowing display sleep");
 
-    stageController.setWindowProperties({
-        blockScreenTimeout: false
-    });
+        stageController.setWindowProperties({
+            blockScreenTimeout: false
+        });
+    } catch(e) {
+        //If the stage has already gone away, this function will return an error
+        //  But it doesn't matter because webOS will perform this function anyway during stage clean-up
+    }
 }
 
 //Prevent the display from sleeping
@@ -128,6 +139,7 @@ SystemModel.prototype.PreventDisplaySleep = function(stageController) {
 
 //Show a notification window in its own small stage
 //	Launches with sound: pass true for default, false for no sound, or pass the path to a specific sound file
+//  Note: This implementation will not work for pure background notifications as it requires the app to be active
 SystemModel.prototype.ShowNotificationStage = function(stageName, sceneName, heightToUse, sound, vibrate) {
     Mojo.Log.info("Showing notification stage.");
     //Determine what sound to use
@@ -173,6 +185,8 @@ SystemModel.prototype.PlaySound = function(soundName) {
 }
 
 //Play an alert sound
+//Note: If you want more control, include an HTML5 audio tag with the id "audioPlayer"
+//  Otherwise a system function will be used
 SystemModel.prototype.PlayAlertSound = function(sound) {
     if (!sound || sound == "") {
         sound = "Subtle (short)";
@@ -219,6 +233,21 @@ SystemModel.prototype.Vibrate = function(vibrate) {
     return success;
 }
 
+//Lock the physical volume buttons to the media volume (instead of default, notification volume)
+SystemModel.prototype.LockVolumeKeys = function() {
+    Mojo.Log.info("Locking media volume to hardware buttons");
+    this.wakeupRequest = new Mojo.Service.Request("palm://com.palm.audio/media", {
+        method: "lockVolumeKeys",
+        onSuccess: function(response) {
+            Mojo.Log.info("Lock Volume Keys Success", JSON.stringify(response));
+        },
+        onFailure: function(response) {
+            Mojo.Log.error("Lock Volume Keys Failure: ", JSON.stringify(response));
+        }
+    });
+    return true;
+}
+
 //Launch an app
 SystemModel.prototype.LaunchApp = function(appName, params) {
     if (!params)
@@ -232,13 +261,13 @@ SystemModel.prototype.LaunchApp = function(appName, params) {
             Mojo.Log.info("App Launch Success", appName, JSON.stringify(response));
         },
         onFailure: function(response) {
-            Mojo.Log.error("Alarm Launch Failure", appName, JSON.stringify(response));
+            Mojo.Log.error("App Launch Failure", appName, JSON.stringify(response));
         }
     });
     return true;
 }
 
-//Launch an app
+//Use in combination with a Touch2Share launch to send a URI to a tapped device
 SystemModel.prototype.SendDataForTouch2Share = function(url, callback) {
     if (!url) {
         Mojo.Log.error("Share URL not supplied");
@@ -272,6 +301,7 @@ SystemModel.prototype.SendDataForTouch2Share = function(url, callback) {
 }
 
 //Download a file
+//A fire-and-forget way to interact with the DownloadManager. The user will get a generic notification when the download is complete.
 SystemModel.prototype.DownloadFile = function (url, mimetype, pathFromInteral, fileName, subscribe, callback) {
     if (!url) {
         Mojo.Log.error("Download URL not supplied");
@@ -336,6 +366,40 @@ SystemModel.prototype.DownloadFile = function (url, mimetype, pathFromInteral, f
                 Mojo.Controller.getAppController().showBanner({ messageText: "Download error:" + JSON.stringify(response) }, "", "");
             }
         }
+    });
+}
+
+SystemModel.prototype.LoadWOSAPrefs = function (callback) {
+    if (callback)
+        callback.bind(this);
+    var req = new Ajax.Request("/media/internal/.wosaprefs", {
+        method: 'get',
+        onFailure: function() {
+            Mojo.Log.warn("Could not load .wosaprefs file. Preferences cannot be opened.");
+            callback(null);
+        },
+        on404: function() {
+            Mojo.Log.warn("Could not find .wosaprefs file. Preferences cannot be opened.");
+            callback(null);
+        },
+        onSuccess: function(response) {
+            if (response && response.responseText) {
+                Mojo.Log.info("Loaded .wosaprefs file: " + JSON.stringify(response.responseText));
+                try {
+                    prefsObj = JSON.parse(response.responseText);
+                    this.WOSAPrefs = prefsObj.preferences;
+                } catch(ex) {
+                    Mojo.Log.warn("Could not parse .wosaprefs file. Preferences cannot be opened. " + ex);
+                    callback(null);
+                    return;
+                }
+                callback(prefsObj);
+                return;
+            } else {
+                Mojo.Log.warn("Could not read .wosaprefs file. Preferences cannot be opened.");
+            }
+            callback(null);
+        }.bind(this)
     });
 }
 
@@ -495,7 +559,7 @@ SystemModel.prototype.SetDisplayState = function(state) {
 }
 
 //Set the Notifications-When-Locked state
-SystemModel.prototype.setShowNotificationsWhenLocked = function(value) {
+SystemModel.prototype.SetShowNotificationsWhenLocked = function(value) {
     if (Mojo.Controller.appInfo.id.indexOf("com.palm") != -1) {
         Mojo.Log.info("Setting Notifications When Locked to " + value);
         this.service_identifier = 'palm://com.palm.systemservice';
@@ -511,7 +575,7 @@ SystemModel.prototype.setShowNotificationsWhenLocked = function(value) {
 }
 
 //Set the LED Notification state
-SystemModel.prototype.setLEDLightNotifications = function(value) {
+SystemModel.prototype.SetLEDLightNotifications = function(value) {
     if (Mojo.Controller.appInfo.id.indexOf("com.palm") != -1) {
         Mojo.Log.info("Setting LED Notifications to " + value);
         this.service_identifier = 'palm://com.palm.systemservice';
@@ -544,7 +608,7 @@ SystemModel.prototype.GetInternetConnectionState = function(callback) {
 }
 
 //Set the WAN state
-SystemModel.prototype.setWANEnabled = function(value) {
+SystemModel.prototype.SetWANEnabled = function(value) {
     var state = value ? 'off' : 'on';
     if (Mojo.Controller.appInfo.id.indexOf("com.palm") != -1) {
         Mojo.Log.info("Setting WAN State to " + value);
@@ -563,7 +627,7 @@ SystemModel.prototype.setWANEnabled = function(value) {
 }
 
 //Set the WIFI state
-SystemModel.prototype.setWifiEnabled = function(value) {
+SystemModel.prototype.SetWifiEnabled = function(value) {
     var state = value ? 'enabled' : 'disabled';
     if (Mojo.Controller.appInfo.id.indexOf("com.palm") != -1) {
         Mojo.Log.info("Setting WIFI State to " + state);
@@ -596,6 +660,7 @@ SystemModel.prototype.SetBluetoothEnabled = function(value) {
     }
 }
 
+//Helper for Bluetooth functions, do not call directly
 SystemModel.prototype.bluetoothControlService = function(url, params, cb) {
     return new Mojo.Service.Request(url, {
         onSuccess: cb,
@@ -604,16 +669,16 @@ SystemModel.prototype.bluetoothControlService = function(url, params, cb) {
     });
 }
 
-SystemModel.prototype.GetInstalledApps = function(callBack) {
-    if (callBack)
-        callBack.bind(this);
+SystemModel.prototype.GetInstalledApps = function(callback) {
+    if (callback)
+        callback.bind(this);
     if (Mojo.Controller.appInfo.id.indexOf("com.palm") != -1) {
         Mojo.Log.info("Getting list of installed apps.");
         this.appRequest = new Mojo.Service.Request("palm://com.palm.applicationManager/listApps", {
             method: "",
             parameters: {},
-            onSuccess: callBack,
-            onFailure: callBack
+            onSuccess: callback,
+            onFailure: callback
         });
     } else {
         Mojo.Log.error("Privileged system services can only be called by apps with an ID that starts with 'com.palm'!");
@@ -730,7 +795,7 @@ SystemModel.prototype.AddHandlerForURL = function(urlPattern, appId, callback) {
     }
 }
 
-SystemModel.prototype.removeHandlerForURL = function(appId, callback) {
+SystemModel.prototype.RemoveHandlerForURL = function(appId, callback) {
     if (Mojo.Controller.appInfo.id.indexOf("com.palm") != -1) {
 
         if (!appId)

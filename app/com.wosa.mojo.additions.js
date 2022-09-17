@@ -2,15 +2,17 @@
 Mojo Additions
  Version 0.3e
  Created: 2018
- Author: webOS Archive
+ Author: Jon W
  License: MIT
  Description: Functions I use often, that probably should have been part of Mojo.
               They either fix bugs in Mojo or make it easier to use.
 */
 
+//** Note: If you synced this file from a common repository, local edits may be over-written! */
+
 this.Additions = function() {}
 
-console.log("#### Mojo Additions added");
+Mojo.Log.info("#### Mojo Additions added");
 
 Additions.ShowDialogBox = function(title, message) {
     var stageController = Mojo.Controller.getAppController().getActiveStageController();
@@ -60,6 +62,16 @@ Additions.SetWidgetLabel = function(widgetName, newvalue) {
         var thisWidgetModel = this.controller.getWidgetSetup(widgetName).model;
         thisWidgetModel.label = newvalue;
         this.controller.setWidgetModel(widgetName, thisWidgetModel);
+    }
+}
+
+Additions.GetWidgetLabel = function(widgetName) {
+    var stageController = Mojo.Controller.getAppController().getActiveStageController();
+    if (stageController) {
+        this.controller = stageController.activeScene();
+
+        var thisWidgetModel = this.controller.getWidgetSetup(widgetName).model;
+        return thisWidgetModel.label;
     }
 }
 
