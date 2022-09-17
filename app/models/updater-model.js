@@ -1,14 +1,16 @@
 /*
 Updater Model - Mojo
- Version 0.6
- Created: 2021
+ Version 1.0
+ Created: 2022
  Author: Jon W
  License: MIT
  Description: A model to check for and get updates from App Museum II web service.
     Does not require App Museum to be installed, but does require internet access, and Preware to do the actual install.
- Source: Find the latest version of this library and clean samples of how to use it on GitHub:
+ Source: Find the latest version of this library and info on how to use it on GitHub:
     https://github.com/webosarchive/webos-common
 */
+
+//** Note: If you synced this file from a common repository, local edits may be over-written! */
 
 var UpdaterModel = function() {
     this.updateURL = "http://appcatalog.webosarchive.org/WebService/getLatestVersionInfo.php?app=";
@@ -111,7 +113,7 @@ UpdaterModel.prototype.performIdentifiedUpdateCheck = function(appName, currVers
         updateURL = updateURL + "&clientid=" + response[Object.keys(response)[0]];
     }
     // Send some info about the device (could be used for compat checks)
-    deviceData = Mojo.Environment.DeviceInfo.modelName + "/" + Mojo.Environment.DeviceInfo.platformVersion + "/" + Mojo.Environment.DeviceInfo.carrierName + "/" + Mojo.Locale.getCurrentLocale();
+    deviceData = Mojo.Environment.DeviceInfo.modelName + "/" + Mojo.Environment.DeviceInfo.platformVersion + "/" + (Mojo.Environment.DeviceInfo.carrierName || "WiFi") + "/" + Mojo.Locale.getCurrentLocale();
     updateURL = updateURL + "&device=" + encodeURIComponent(deviceData);
     
     if (callback)   // set scope for xmlhttp anonymous function callback

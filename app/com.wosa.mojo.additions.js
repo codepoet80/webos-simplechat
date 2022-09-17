@@ -8,7 +8,11 @@ Mojo Additions
               They either fix bugs in Mojo or make it easier to use.
 */
 
+//** Note: If you synced this file from a common repository, local edits may be over-written! */
+
 this.Additions = function() {}
+
+Mojo.Log.info("#### Mojo Additions added");
 
 Additions.ShowDialogBox = function(title, message) {
     var stageController = Mojo.Controller.getAppController().getActiveStageController();
@@ -20,7 +24,6 @@ Additions.ShowDialogBox = function(title, message) {
             title: title,
             message: message,
             choices: [{ label: 'OK', value: 'OK' }],
-            preventCancel: true,
             allowHTMLMessage: true
         });
     }
@@ -59,6 +62,16 @@ Additions.SetWidgetLabel = function(widgetName, newvalue) {
         var thisWidgetModel = this.controller.getWidgetSetup(widgetName).model;
         thisWidgetModel.label = newvalue;
         this.controller.setWidgetModel(widgetName, thisWidgetModel);
+    }
+}
+
+Additions.GetWidgetLabel = function(widgetName) {
+    var stageController = Mojo.Controller.getAppController().getActiveStageController();
+    if (stageController) {
+        this.controller = stageController.activeScene();
+
+        var thisWidgetModel = this.controller.getWidgetSetup(widgetName).model;
+        return thisWidgetModel.label;
     }
 }
 
