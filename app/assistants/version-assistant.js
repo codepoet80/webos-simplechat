@@ -7,6 +7,12 @@ function VersionAssistant(startup) {
     //New Features
     this.changelog = [
         {
+            version: "Version 1.8.5",
+            detail: [
+                "Add support for sharing from JustType and other apps.",
+            ]
+        },
+        {
             version: "Version 1.8.0",
             detail: [
                 "Dark theme now available in Preferences!",
