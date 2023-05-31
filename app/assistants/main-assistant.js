@@ -980,14 +980,20 @@ MainAssistant.prototype.rememberLastMessage = function() {
 
 /* Mojo Lifecycle Stuff */
 MainAssistant.prototype.activateWindow = function(event) {
-    Mojo.Log.warn("SimpleChat being maximized!");
+    Mojo.Log.info("SimpleChat being maximized!");
     this.maximized = true;
     this.rememberLastMessage();
     appModel.CloseNotificationStage();
+    //If we were re-launched with some share text, insert that
+    if (appModel.LaunchQuery != "") {
+        Mojo.Log.info("using launch action: " + appModel.LaunchQuery);
+        this.controller.get('txtMessage').mojo.setValue(appModel.LaunchQuery);
+        appModel.LaunchQuery = "";
+    }
 };
 
 MainAssistant.prototype.deactivateWindow = function(event) {
-    Mojo.Log.warn("SimpleChat being minimized!");
+    Mojo.Log.info("SimpleChat being minimized!");
     this.maximized = false;
     this.rememberLastMessage();
 };

@@ -38,9 +38,15 @@ AppAssistant.prototype.handleLaunch = function(params) {
         Mojo.Log.info("Found existing main stage, app was already running");
 
         var stageController = this.controller.getStageController("main");
-        if (!params || params["action"] == undefined) //If no parameters were passed, this is a normal launch
+        if (!params || params["action"] == undefined) //If no action parameters was passed, this is a normal launch
         {
-            Mojo.Log.info("This is a normal re-launch");
+            //if there was a share action, load with that
+            if (params && params["newshare"] != undefined) {
+                appModel.LaunchQuery = decodeURI(params["newshare"]);
+                Mojo.Log.info("This is re-launch with share action: " + appModel.LaunchQuery);
+            } else {
+                Mojo.Log.info("This is a normal re-launch");
+            }
             stageController.activate(); //bring existing stage into focus
             return;
         } else //If parameters were passed, this is a launch from a system alarm
@@ -49,14 +55,20 @@ AppAssistant.prototype.handleLaunch = function(params) {
             appModel.ShowNotificationStage();
             return;
         }
-    } else //If not, determine if we should make one
+    } else //If no stage exists, determine if we should make one
     {
         Mojo.Log.info("Did not find existing main stage, app is not running");
 
-        if (!params || params["action"] == undefined) //If no parameters were passed, this is a normal launch
+        if (!params || params["action"] == undefined) //If no action parameters was passed, this is a normal launch
         {
             var currVersion = Mojo.Controller.appInfo.version;
-            Mojo.Log.info("This is a normal launch of version " + currVersion);
+            //if there was a share action, load with that
+            if (params && params["newshare"] != undefined) {
+                appModel.LaunchQuery = decodeURI(params["newshare"]);
+                Mojo.Log.info("This is launch with share action: " + appModel.LaunchQuery);
+            } else {
+                Mojo.Log.info("This is a normal launch of version " + currVersion);
+            }
 
             var stageArguments = { name: MainStageName, lightweight: true };
             this.controller.createStageWithCallback(stageArguments, function(stageController) {

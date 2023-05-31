@@ -1,5 +1,5 @@
 {
-    "logLevel": 1,
+    "logLevel": 10,
     "debuggingEnabled": false,
     "timingEnabled": false,
     "logEvents": false,
