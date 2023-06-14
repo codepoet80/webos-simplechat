@@ -851,11 +851,11 @@ MainAssistant.prototype.parseShareSpaceLinks = function(str) {
     }
     if (appModel.AppSettingsCurrent["ShowWOSAThumbs"] == true) {
         if (str.indexOf("wosa.link") != -1) {
-            Mojo.Log.info("Found WOSA link to parse!");
+            Mojo.Log.info("Found WOSA link to parse! " + str);
             str = str.replace("download.php", "image.php");
-            var linkPortion = str.split("?");
+            var linkPortion = str.split("image.php?");
             if (linkPortion.length > 0) {
-                linkPortion = linkPortion[1]
+                linkPortion = linkPortion[1];
                 linkPortion = linkPortion.replace("\"", " ");
                 linkPortion = linkPortion.replace("'", " ");
                 linkPortion = linkPortion.replace("<", " ");
@@ -869,7 +869,7 @@ MainAssistant.prototype.parseShareSpaceLinks = function(str) {
                 }
                 var thumbnail = "<img src=\"" + linkPortion + "\" style=\"float:right; width: 64px; height: 64px; margin-top: -2px;\"> "
                 str = thumbnail + str;
-                Mojo.Log.warn("Using html: " + str);
+                Mojo.Log.warn("Parsed WOSA link html: " + str);
             }
         }
     }
