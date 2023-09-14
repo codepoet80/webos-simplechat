@@ -850,26 +850,28 @@ MainAssistant.prototype.parseShareSpaceLinks = function(str) {
         appModel.SaveSettings();
     }
     if (appModel.AppSettingsCurrent["ShowWOSAThumbs"] == true) {
-        if (str.indexOf("wosa.link") != -1) {
+        if (str.indexOf("share.wosa.link") != -1) {
             Mojo.Log.info("Found WOSA link to parse! " + str);
-            str = str.replace("download.php", "image.php");
-            var linkPortion = str.split("image.php?");
-            if (linkPortion.length > 0) {
-                linkPortion = linkPortion[1];
-                linkPortion = linkPortion.replace("\"", " ");
-                linkPortion = linkPortion.replace("'", " ");
-                linkPortion = linkPortion.replace("<", " ");
-                linkPortion = linkPortion.replace(">", " ");
-                linkPortion = linkPortion.split(" ");
-                linkPortion = linkPortion[0];
-                if (str.indexOf("t.php") != -1) {
-                    linkPortion = "http://wosa.link/tthumb.php?" + linkPortion;
-                } else {
-                    linkPortion = "http://wosa.link/ithumb.php?" + linkPortion;
+            if (str.indexOf("download.php")) {
+                str = str.replace("download.php", "image.php");
+                var linkPortion = str.split("image.php?");
+                if (Array.isArray(linkPortion) && linkPortion.length > 1) {
+                    linkPortion = linkPortion[1];
+                    linkPortion = linkPortion.replace("\"", " ");
+                    linkPortion = linkPortion.replace("'", " ");
+                    linkPortion = linkPortion.replace("<", " ");
+                    linkPortion = linkPortion.replace(">", " ");
+                    linkPortion = linkPortion.split(" ");
+                    linkPortion = linkPortion[0];
+                    if (str.indexOf("t.php") != -1) {
+                        linkPortion = "http://share.wosa.link/tthumb.php?" + linkPortion;
+                    } else {
+                        linkPortion = "http://share.wosa.link/ithumb.php?" + linkPortion;
+                    }
+                    var thumbnail = "<img src=\"" + linkPortion + "\" style=\"float:right; width: 64px; height: 64px; margin-top: -2px;\"> "
+                    str = thumbnail + str;
+                    Mojo.Log.warn("Parsed WOSA link html: " + str);
                 }
-                var thumbnail = "<img src=\"" + linkPortion + "\" style=\"float:right; width: 64px; height: 64px; margin-top: -2px;\"> "
-                str = thumbnail + str;
-                Mojo.Log.warn("Parsed WOSA link html: " + str);
             }
         }
     }
