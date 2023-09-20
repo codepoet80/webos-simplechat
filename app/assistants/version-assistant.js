@@ -7,6 +7,12 @@ function VersionAssistant(startup) {
     //New Features
     this.changelog = [
         {
+            version: "Version 1.8.6",
+            detail: [
+                "Fix a bug parsing certain kinds of links.",
+            ]
+        },
+        {
             version: "Version 1.8.5",
             detail: [
                 "Add support for sharing from JustType and other apps.",
