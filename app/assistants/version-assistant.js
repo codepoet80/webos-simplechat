@@ -7,6 +7,12 @@ function VersionAssistant(startup) {
     //New Features
     this.changelog = [
         {
+            version: "Version 1.9.0",
+            detail: [
+                "Share images in the chat, right from your webOS device!",
+            ]
+        },
+        {
             version: "Version 1.8.6",
             detail: [
                 "Fix a bug parsing certain kinds of links.",

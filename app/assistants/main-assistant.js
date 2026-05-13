@@ -75,6 +75,12 @@ MainAssistant.prototype.setup = function() {
         friction: 'low'
     };
     this.controller.setupWidget('chatScroller', {}, this.scrollerModel);
+    //Detect device type for UI layout decisions (Pixi/Veer lack 480px or 800px dimension)
+    var isTiny = Mojo.Environment.DeviceInfo.platformVersionMajor < 3 &&
+                 this.controller.window.screen.width !== 800 &&
+                 this.controller.window.screen.height !== 800 &&
+                 this.controller.window.screen.width !== 480 &&
+                 this.controller.window.screen.height !== 480;
     //Menu
     this.appMenuAttributes = { omitDefaultItems: true };
     this.appMenuModel = {
@@ -84,6 +90,7 @@ MainAssistant.prototype.setup = function() {
             { label: Mojo.Controller.appInfo.title + " Info", command: 'do-Info' },
             { label: "Change Username", command: 'do-Username' },
             { label: "Preferences", command: 'do-Preferences' },
+            { label: "Share Image", command: 'do-ShareImage' },
             { label: "About", command: 'do-myAbout' }
         ]
     };
@@ -93,12 +100,13 @@ MainAssistant.prototype.setup = function() {
         spacerHeight: 0,
         menuClass: 'no-fade'
     };
+    var leftButtons = [{ label: 'Emoticon', iconPath: 'assets/emoticon.png', command: 'do-Emoticon' }];
+    if (!isTiny)
+        leftButtons.push({ label: 'Photo', command: 'do-ShareImage' });
     this.cmdMenuModel = {
         visible: true,
         items: [{
-                items: [
-                    { label: 'Emoticon', iconPath: 'assets/emoticon.png', command: 'do-Emoticon' }
-                ]
+                items: leftButtons
             },
             {
                 items: [
@@ -114,7 +122,6 @@ MainAssistant.prototype.setup = function() {
     Mojo.Event.listen(this.controller.get("chatList"), Mojo.Event.listTap, this.handleListClick.bind(this));
     Mojo.Event.listen(this.controller.stageController.document, Mojo.Event.stageActivate, this.activateWindow.bind(this));
     Mojo.Event.listen(this.controller.stageController.document, Mojo.Event.stageDeactivate, this.deactivateWindow.bind(this));
-    Mojo.Event.listen(this.controller.get("chatList"), Mojo.Event.listTap, this.handleListClick.bind(this));
     Mojo.Event.listenForFocusChanges(this.controller.get("txtMessage"), this.handleTextFocus.bind(this));
 
     // Non-Mojo handlers
@@ -161,7 +168,7 @@ MainAssistant.prototype.activate = function(event) {
     this.maximized = true;
     this.serverRetries = 0;
     this.pendingMessages = [];
-    this.firstPoll = true;
+    this.firstPoll = this.listInfoModel.items.length === 0;
 
     //Disable background sync
     Mojo.Log.info("Switching to foreground sync")
@@ -392,6 +399,9 @@ MainAssistant.prototype.handleCommand = function(event) {
             case 'do-myAbout':
                 Mojo.Additions.ShowDialogBox(Mojo.Controller.appInfo.title + " - " + Mojo.Controller.appInfo.version, "SimpleChat client for webOS. Copyright 2022, Jon W. Distributed under an MIT License.<br>Source code available at: https://github.com/codepoet80/webos-simplechat");
                 break;
+            case 'do-ShareImage':
+                this.handleShareImage();
+                break;
         }
     }
 }
@@ -422,6 +432,56 @@ MainAssistant.prototype.doLikeMessage = function(message) {
 }
 
 /* Server Interactions */
+MainAssistant.prototype.handleShareImage = function() {
+    var self = this;
+    Mojo.FilePicker.pickFile({
+        kind: 'image',
+        actionName: 'Share',
+        onSelect: function(file) {
+            Mojo.Log.info("Photo selected: " + file.fullPath);
+            Mojo.Controller.getAppController().showBanner({ messageText: 'Uploading image...' }, { source: 'notification' });
+            self.disableUI();
+            serviceModel.uploadPhoto(
+                file.fullPath,
+                appModel.AppSettingsCurrent["SenderName"],
+                self.serviceEndpointBase,
+                self.clientId,
+                function(attachment) {
+                    self.postPhotoToService(attachment);
+                },
+                function(errorText) {
+                    self.enableUI();
+                    Mojo.Log.error("Photo upload failed: " + errorText);
+                    Mojo.Controller.getAppController().showBanner({ messageText: 'Upload failed' }, { source: 'notification' });
+                }
+            );
+        }
+    }, this.controller.stageController);
+};
+
+MainAssistant.prototype.postPhotoToService = function(attachment) {
+    serviceModel.postChatWithAttachment(
+        appModel.AppSettingsCurrent["SenderName"],
+        [attachment],
+        this.serviceEndpointBase,
+        this.clientId,
+        function(response) {
+            this.enableUI();
+            try {
+                var responseObj = JSON.parse(response);
+                if (responseObj.error) {
+                    Mojo.Log.error("Server error posting photo: " + responseObj.error);
+                    Mojo.Controller.getAppController().showBanner({ messageText: 'Server error posting image' }, { source: 'notification' });
+                } else {
+                    Mojo.Log.info("Photo posted: " + responseObj.posted);
+                }
+            } catch (e) {
+                Mojo.Log.error("Failed to parse photo post response");
+            }
+        }.bind(this)
+    );
+};
+
 MainAssistant.prototype.handleSendMessage = function(event) {
     this.controller.get('txtMessage').mojo.blur();
     var newMessage = this.controller.get('txtMessage').mojo.getValue();
@@ -563,8 +623,7 @@ MainAssistant.prototype.getChats = function() {
                         this.serverRetries = 0;
                         this.updateChatsList(responseObj.messages);
                     } else {
-                        Mojo.Log.warn("Search results were empty. This is unlikely; server, API or connectivity problem possible");
-                        Mojo.Additions.ShowDialogBox("No results", "The server did not report any matches for the search.");
+                        Mojo.Log.warn("Server returned empty message list.");
                     }
                 }
             } else {
@@ -635,17 +694,14 @@ MainAssistant.prototype.updateChatsList = function(results) {
     for (var m = 0; m < thisWidgetSetup.model.items.length; m++) {
         for (var n = 0; n < newMessages.length; n++) {
             if (newMessages[n].uid == thisWidgetSetup.model.items[m].uid) {
-                var changed = false;
                 if (newMessages[n].message != thisWidgetSetup.model.items[m].message ||
                     newMessages[n].likes != thisWidgetSetup.model.items[m].likes ||
                     newMessages[n].color != thisWidgetSetup.model.items[m].color) {
                     thisWidgetSetup.model.items[m] = newMessages[n];
                     this.controller.get('chatList').mojo.noticeUpdatedItems(m, [thisWidgetSetup.model.items[m]]);
-                    changed = true;
+                    updated = true;
                 }
             }
-            if (changed)
-                updated = true;
         }
     }
     //Insert new messages
@@ -828,6 +884,9 @@ MainAssistant.prototype.unescapeEntities = function(str) {
 }
 
 MainAssistant.prototype.replaceImageLinks = function(str) {
+    if (typeof btoa === 'undefined')
+        return str;
+
     var urlBase = serviceModel.makeServiceUrl(this.serviceEndpointBase, "image.php") + "?";
 
     var pattern = /href=\"(http)?:?(\/\/[^"']*\.(?:png|jpg|jpeg|gif|png|svg))/g;
@@ -838,7 +897,6 @@ MainAssistant.prototype.replaceImageLinks = function(str) {
     var pattern = /href=\"(https)?:?(\/\/[^"']*\.(?:png|jpg|jpeg|gif|png|svg))/g;
     str = str.replace(pattern, function(match, protocol, url) {
         return "href=\"" + urlBase + btoa("https:" + url);
-        //return "href=\"http://chat.webosarchive.org/image.php?" + btoa("https:" + url);
     });
     return str;
 }
